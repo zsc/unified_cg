@@ -271,28 +271,421 @@ $$D^{UTD} = D^{PTD} \cdot T(\xi)$$
 
 ## 19.4 复射线与衍射系数
 
+复射线理论将实射线推广到复空间，为处理焦散、爬行波和隧穿等现象提供了统一框架。这种方法在处理阴影区域的指数衰减场和过渡区域的振荡行为时特别有效。
+
 ### 19.4.1 复射线的概念
+
+传统射线理论中，射线路径由实空间中的轨迹描述。复射线理论允许射线在复空间中传播，其位置和方向可以具有虚部：
+
+$$\mathbf{r}_c = \mathbf{r}_r + i\mathbf{r}_i$$
+$$\hat{\mathbf{s}}_c = \hat{\mathbf{s}}_r + i\hat{\mathbf{s}}_i$$
+
+复射线场的一般形式：
+
+$$u_c(\mathbf{r}) = A_c(\mathbf{r}) \exp[ik_0 S_c(\mathbf{r})]$$
+
+其中复程函 $S_c = S_r + iS_i$ 满足复程函方程：
+
+$$(\nabla S_c)^2 = n^2(\mathbf{r}_c)$$
+
+#### 高斯束表示
+
+最常用的复射线是高斯束，其在垂直于传播方向的平面上具有高斯分布：
+
+$$u_{GB}(\mathbf{r}) = \frac{A_0}{\sqrt{q(s)}} \exp\left[ik_0\left(s + \frac{(\mathbf{r}_\perp)^2}{2q(s)}\right)\right]$$
+
+其中：
+- $s$：沿射线的弧长
+- $\mathbf{r}_\perp$：垂直于射线的位移
+- $q(s)$：复曲率参数
+
+复曲率参数满足Riccati方程：
+
+$$\frac{dq}{ds} = 1 + \frac{q^2}{R^2(s)}$$
+
+初始条件：$q(0) = q_0 = w_0^2/(ik_0)$，其中 $w_0$ 是束腰半径。
+
+#### 复射线的物理意义
+
+1. **实部**：描述能量集中的区域
+2. **虚部**：描述场的指数衰减或增长
+3. **相位**：包含几何相位和Gouy相位
+
+在阴影区域，复射线可以描述隧穿效应：
+
+$$u_{shadow} \sim \exp[-k_0 \text{Im}(S_c)]$$
 
 ### 19.4.2 衍射系数的解析延拓
 
+衍射系数在复角度平面上是解析函数，这允许我们通过解析延拓处理各种特殊情况。
+
+#### Sommerfeld积分表示
+
+对于楔形衍射，精确解可以表示为Sommerfeld积分：
+
+$$u(\mathbf{r}, \phi) = \frac{1}{2\pi i} \int_{\Gamma} \frac{e^{ik_0 r \cos(\theta - \phi)}}{\sin(\theta \pi/\alpha)} d\theta$$
+
+其中积分路径 $\Gamma$ 是Sommerfeld轮廓。
+
+#### 衍射系数的解析结构
+
+衍射系数 $D(\phi, \phi'; \alpha)$ 在复 $\phi$ 平面上具有：
+
+1. **极点**：对应于几何光学射线
+   - 位置：$\phi = \pm \phi' + 2n\alpha$（$n \in \mathbb{Z}$）
+   - 留数：给出反射/透射系数
+
+2. **分支点**：对应于掠射
+   - 位置：$\phi = 0, \pm \alpha$
+   - 分支切割：定义场的物理片
+
+3. **鞍点**：对应于衍射射线
+   - 通过最陡下降法确定
+   - 给出GTD射线方向
+
+#### Watson变换
+
+将Sommerfeld积分转换为级数表示：
+
+$$u = \sum_n \text{Res}[f(\theta)] + \int_{\text{SDP}} f(\theta) d\theta$$
+
+其中：
+- 第一项：几何光学贡献（极点留数）
+- 第二项：衍射贡献（鞍点积分）
+
 ### 19.4.3 因果性与解析性
+
+物理场必须满足因果性，这对衍射系数施加了解析性约束。
+
+#### Kramers-Kronig关系
+
+对于频率相关的衍射系数 $D(\omega)$：
+
+$$\text{Re}[D(\omega)] = \frac{1}{\pi} \mathcal{P} \int_{-\infty}^{\infty} \frac{\text{Im}[D(\omega')]}{\omega' - \omega} d\omega'$$
+
+$$\text{Im}[D(\omega)] = -\frac{1}{\pi} \mathcal{P} \int_{-\infty}^{\infty} \frac{\text{Re}[D(\omega')]}{\omega' - \omega} d\omega'$$
+
+其中 $\mathcal{P}$ 表示主值积分。
+
+#### 时域因果性
+
+脉冲响应 $h(t)$ 必须满足：
+
+$$h(t) = 0, \quad t < 0$$
+
+这要求频域传递函数 $H(\omega)$ 在上半复平面解析。
+
+对于衍射问题：
+
+$$D(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty} D(\omega) e^{-i\omega t} d\omega$$
+
+因果性要求积分路径可以在上半平面闭合。
 
 ### 19.4.4 数值计算方法
 
+实际计算衍射系数需要高效的数值方法，特别是在过渡区域。
+
+#### 特殊函数计算
+
+许多衍射问题涉及特殊函数：
+
+1. **Fresnel积分**：
+   $$C(\xi) + iS(\xi) = \int_0^\xi e^{i\pi t^2/2} dt$$
+   
+   快速计算：使用有理函数近似或级数展开
+
+2. **过渡函数**：
+   $$F(\xi) = 2i\sqrt{\pi} \xi e^{i\xi^2} \text{erfc}(-i\xi)$$
+   
+   其中 $\text{erfc}$ 是互补误差函数
+
+3. **Fock函数**：用于爬行波
+   $$v(z) = \frac{1}{\sqrt{\pi}} \int_{\infty e^{-i\pi/3}}^{\infty} e^{zt - t^3/3} dt$$
+
+#### 快速算法
+
+1. **查表法**：预计算常用配置的衍射系数
+   - 内存需求：$O(N_\phi \times N_{\phi'} \times N_\alpha)$
+   - 精度：通过插值达到 $10^{-4}$
+
+2. **渐近展开**：
+   - 大参数：$|k_0 L| \gg 1$
+   $$D \approx D_0 + \frac{D_1}{k_0 L} + \frac{D_2}{(k_0 L)^2} + \cdots$$
+   
+   - 小参数：$|k_0 L| \ll 1$
+   $$D \approx a_0 + a_1(k_0 L) + a_2(k_0 L)^2 + \cdots$$
+
+3. **数值积分**：
+   - 自适应Gauss-Kronrod积分
+   - 复平面上的轮廓积分
+   - FFT加速卷积计算
+
+#### 矢量衍射系数
+
+电磁场的矢量性质需要二阶张量衍射系数：
+
+$$\mathbf{E}^d = \overleftrightarrow{D} \cdot \mathbf{E}^i$$
+
+对于边缘衍射：
+
+$$\overleftrightarrow{D} = D_\parallel \hat{\mathbf{e}}_\parallel \hat{\mathbf{e}}_\parallel + D_\perp \hat{\mathbf{e}}_\perp \hat{\mathbf{e}}_\perp$$
+
+其中：
+- $\hat{\mathbf{e}}_\parallel$：平行于入射面的单位矢量
+- $\hat{\mathbf{e}}_\perp$：垂直于入射面的单位矢量
+
+软硬边界条件下：
+
+$$D_\perp^{soft} = -D_{scalar}$$
+$$D_\parallel^{hard} = D_{scalar}$$
+
+#### 误差估计
+
+数值计算的误差来源：
+
+1. **截断误差**：级数或积分截断
+   $$\epsilon_{trunc} \sim O(N^{-p})$$
+   
+2. **离散化误差**：数值积分
+   $$\epsilon_{disc} \sim O(h^q)$$
+   
+3. **舍入误差**：浮点运算
+   $$\epsilon_{round} \sim O(\epsilon_{machine})$$
+
+总误差：
+$$\epsilon_{total} \leq C_1 N^{-p} + C_2 h^q + C_3 \epsilon_{machine}$$
+
+优化策略：平衡各项误差，使 $N^{-p} \approx h^q \approx \sqrt{\epsilon_{machine}}$。
+
 ## 19.5 计算机图形学中的衍射效应
+
+衍射效应虽然在日常场景中通常较微弱，但在某些情况下对视觉真实感至关重要。本节探讨如何将衍射理论集成到现代渲染系统中，平衡物理准确性和计算效率。
 
 ### 19.5.1 衍射在渲染中的重要性
 
+#### 视觉显著的衍射场景
+
+1. **锐利边缘和刀口**：
+   - 剃刀刀片边缘的彩虹色条纹
+   - 建筑物边缘在逆光下的光晕
+   - 特征尺度：$d \sim 1-10\mu m$
+
+2. **狭缝和小孔**：
+   - 百叶窗的衍射图案
+   - 针孔相机的艾里斑
+   - 特征尺度：$d \sim 0.1-1mm$
+
+3. **光学仪器**：
+   - 望远镜的衍射极限
+   - 相机光圈的星芒效果
+   - 显微镜的分辨率限制
+
+4. **特殊材料**：
+   - CD/DVD的彩虹反射
+   - 衍射光栅和全息图
+   - 蝴蝶翅膀等生物结构
+
+#### 衍射的尺度分析
+
+判断是否需要考虑衍射的准则：
+
+$$\text{菲涅尔数} = \frac{a^2}{L\lambda}$$
+
+其中：
+- $a$：特征尺寸（边缘到观察点的横向距离）
+- $L$：传播距离
+- $\lambda$：波长
+
+分类：
+- $F \gg 1$：几何光学区域，衍射可忽略
+- $F \sim 1$：菲涅尔衍射区域，需要考虑
+- $F \ll 1$：夫琅禾费衍射区域，远场近似
+
 ### 19.5.2 基于GTD的射线追踪扩展
+
+#### 衍射射线的生成
+
+扩展传统射线追踪器以支持衍射：
+
+1. **边缘检测与参数化**：
+   ```
+   对每个几何体：
+     提取锐利边缘（二面角 < 阈值）
+     参数化边缘曲线 r(t)
+     存储边缘切向 t(t) 和法向信息
+   ```
+
+2. **衍射点采样**：
+   - 均匀采样：$t_i = i\Delta t$
+   - 自适应采样：基于观察角度和距离
+   - 重要性采样：基于入射场强度
+
+3. **衍射锥构造**：
+   对每个衍射点 $Q_D$：
+   ```
+   计算入射角 β₀ = arccos(s^i · t)
+   构造Keller锥（半角 = β₀）
+   在锥上采样衍射方向
+   ```
+
+#### 射线树的扩展
+
+传统射线树：`入射 → 反射/折射 → ...`
+
+GTD射线树：`入射 → 反射/折射/衍射 → ...`
+
+递归深度控制：
+- 几何光学射线：深度 $\leq D_{geo}$
+- 衍射射线：深度 $\leq D_{diff}$（通常 $D_{diff} < D_{geo}$）
+
+#### 衍射贡献的计算
+
+对于点 $P$ 的衍射场：
+
+$$L_d(P) = \sum_{edges} \int_{edge} L_i(Q) \cdot D(Q,P) \cdot V(Q,P) \cdot G(Q,P) dl$$
+
+其中：
+- $L_i(Q)$：边缘点 $Q$ 的入射辐射度
+- $D(Q,P)$：衍射系数（GTD/UTD）
+- $V(Q,P)$：可见性函数
+- $G(Q,P)$：几何衰减因子
+
+离散化：
+
+$$L_d(P) \approx \sum_{i} L_i(Q_i) \cdot D_i \cdot V_i \cdot G_i \cdot \Delta l_i$$
 
 ### 19.5.3 实时衍射近似
 
+实时渲染需要高效的近似方法，牺牲一定精度换取性能。
+
+#### 屏幕空间衍射
+
+1. **边缘检测**（后处理）：
+   - 深度不连续：$|\nabla z| > \epsilon_z$
+   - 法向不连续：$|\nabla \mathbf{n}| > \epsilon_n$
+   - 材质边界：ID buffer
+
+2. **衍射核卷积**：
+   ```glsl
+   vec3 diffraction = vec3(0);
+   for(int i = -N; i <= N; i++) {
+     vec2 uv = texCoord + i * edgeNormal * spacing;
+     float phase = k * i * spacing;
+     vec3 color = texture(colorBuffer, uv).rgb;
+     diffraction += color * sinc(phase) * exp(-abs(i)/sigma);
+   }
+   ```
+
+3. **色散近似**：
+   - 使用RGB通道的不同相位
+   - 简化的波长依赖：$k_R < k_G < k_B$
+
+#### 预计算衍射纹理
+
+对于已知几何形状，预计算衍射图案：
+
+1. **刀口衍射**：
+   $$I(x) = I_0 \left| \frac{1 + i}{2} - (C(\xi) + iS(\xi)) \right|^2$$
+   
+   存储为1D查找表
+
+2. **狭缝衍射**：
+   $$I(\theta) = I_0 \left( \frac{\sin(\beta)}{\beta} \right)^2, \quad \beta = \frac{\pi a \sin\theta}{\lambda}$$
+   
+   参数化存储：$(a/\lambda, \theta) \to I$
+
+3. **圆孔衍射**（艾里图案）：
+   $$I(r) = I_0 \left( \frac{2J_1(x)}{x} \right)^2, \quad x = \frac{2\pi a r}{\lambda f}$$
+
+#### GPU加速实现
+
+利用GPU并行性加速衍射计算：
+
+1. **边缘缓冲区**：
+   ```hlsl
+   struct Edge {
+     float3 start, end;    // 端点
+     float3 tangent;       // 切向
+     float2 angles;        // 楔角
+     uint materialID;      // 材质
+   };
+   StructuredBuffer<Edge> edgeBuffer;
+   ```
+
+2. **并行衍射计算**：
+   ```hlsl
+   [numthreads(32,32,1)]
+   void DiffractionCS(uint3 id : SV_DispatchThreadID) {
+     float3 P = GetWorldPos(id.xy);
+     float3 diffraction = 0;
+     
+     for(uint i = 0; i < numEdges; i++) {
+       Edge e = edgeBuffer[i];
+       float3 contrib = ComputeDiffraction(P, e);
+       diffraction += contrib;
+     }
+     
+     outputTexture[id.xy] += float4(diffraction, 1);
+   }
+   ```
+
+3. **层次化加速**：
+   - 边缘的空间划分（BVH/octree）
+   - 屏幕空间瓦片化
+   - 重要性驱动的LOD
+
 ### 19.5.4 与波动光学方法的比较
 
-## 本章小结
+#### 方法对比
 
-## 练习题
+| 方法 | 精度 | 速度 | 内存 | 适用场景 |
+|------|------|------|------|----------|
+| 完整波动方程 | 最高 | 最慢 | 最大 | 科学计算 |
+| BPM/FDTD | 高 | 慢 | 大 | 光学设计 |
+| 物理光学(PO) | 中 | 中 | 中 | 雷达散射 |
+| GTD/UTD | 中 | 快 | 小 | 实时渲染 |
+| 屏幕空间近似 | 低 | 最快 | 最小 | 游戏/VR |
 
-## 常见陷阱与错误
+#### 混合方法
 
-## 最佳实践检查清单
+结合不同方法的优势：
+
+1. **近场-远场分离**：
+   - 近场（$r < 10\lambda$）：波动方程
+   - 过渡区：物理光学
+   - 远场（$r > 100\lambda$）：GTD/UTD
+
+2. **频率分解**：
+   - 低频（$ka < 1$）：矩量法(MoM)
+   - 中频（$1 < ka < 100$）：物理光学
+   - 高频（$ka > 100$）：射线方法
+
+3. **自适应精度**：
+   ```
+   if (visualImportance > threshold1) {
+     使用完整波动方法
+   } else if (visualImportance > threshold2) {
+     使用GTD/UTD
+   } else {
+     使用屏幕空间近似
+   }
+   ```
+
+#### 验证与校准
+
+确保近似方法的准确性：
+
+1. **解析解对比**：
+   - 半平面衍射（Sommerfeld解）
+   - 楔形衍射（精确级数解）
+   - 圆柱衍射（贝塞尔函数解）
+
+2. **数值收敛性**：
+   $$\text{误差} = \|u_{approx} - u_{exact}\|_2 / \|u_{exact}\|_2$$
+   
+   要求：误差 $< 5\%$ 在视觉重要区域
+
+3. **感知度量**：
+   - SSIM（结构相似性）
+   - 色差 $\Delta E$
+   - 用户研究验证
