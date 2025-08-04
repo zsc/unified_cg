@@ -15,178 +15,449 @@ After completing this chapter, you will be able to:
 
 ### Light as Rays in Geometric Optics
 
-In geometric optics, we model light propagation using rays—infinitesimal beams that travel in straight lines through homogeneous media. A ray is parameterized as:
+In geometric optics, we model light propagation using rays—infinitesimal beams that travel in straight lines through homogeneous media. This approximation holds when wavelength λ << feature size, allowing us to ignore diffraction and interference. A ray is parameterized as:
 
 **r**(t) = **o** + t**d**
 
 where **o** ∈ ℝ³ is the origin, **d** ∈ ℝ³ is the direction (||**d**|| = 1), and t ≥ 0 is the parameter along the ray.
 
+The ray equation emerges from the eikonal equation ∇S = n**k̂** in the limit λ → 0, where S is the phase and n is the refractive index. In inhomogeneous media, rays follow curved paths satisfying:
+
+d/ds(n d**r**/ds) = ∇n
+
+This reduces to straight lines when n is constant.
+
 ### Radiometric Quantities
 
-Before deriving the rendering equation, we must establish our radiometric framework:
+Before deriving the rendering equation, we must establish our radiometric framework. These quantities form a hierarchy, each building upon the previous:
+
+**Radiant energy** Q measures total electromagnetic energy:
+Q [J]
 
 **Radiant flux (power)** Φ measures energy per unit time:
 Φ = dQ/dt [W]
 
-**Irradiance** E measures flux per unit area:
+**Radiant intensity** I measures flux per unit solid angle from a point source:
+I = dΦ/dω [W/sr]
+
+**Irradiance** E measures flux incident per unit area:
 E = dΦ/dA [W/m²]
 
-**Radiance** L measures flux per unit area per unit solid angle:
-L = d²Φ/(dA cos θ dω) [W/(m²·sr)]
+**Radiant exitance** M measures flux leaving per unit area:
+M = dΦ/dA [W/m²]
 
-Radiance is the fundamental quantity in rendering because it remains constant along rays in vacuum (radiance invariance).
+**Radiance** L measures flux per unit area per unit solid angle:
+L = d²Φ/(dA cos θ dω) = d²Φ/(dA⊥ dω) [W/(m²·sr)]
+
+where dA⊥ = dA cos θ is the projected area perpendicular to the ray direction.
+
+Radiance is the fundamental quantity in rendering because:
+1. It remains constant along rays in vacuum (radiance invariance theorem)
+2. It's what cameras and eyes measure
+3. All other radiometric quantities can be derived from it
 
 ### The Rendering Equation
 
-The rendering equation, introduced by Kajiya (1986), describes the equilibrium distribution of light in a scene. At any surface point **x** with normal **n**, the outgoing radiance L_o in direction **ω**_o equals:
+The rendering equation, introduced by Kajiya (1986), describes the equilibrium distribution of light in a scene. It emerges from power balance: at any surface point, outgoing power equals emitted plus reflected power.
+
+At surface point **x** with normal **n**, the outgoing radiance L_o in direction **ω**_o satisfies:
 
 L_o(**x**, **ω**_o) = L_e(**x**, **ω**_o) + ∫_Ω f_r(**x**, **ω**_i, **ω**_o) L_i(**x**, **ω**_i) (**ω**_i · **n**) dω_i
 
 where:
-- L_e is emitted radiance
-- f_r is the BRDF (bidirectional reflectance distribution function)
-- L_i is incident radiance
-- Ω is the hemisphere above **x**
+- L_e(**x**, **ω**_o) is emitted radiance from **x** in direction **ω**_o
+- f_r(**x**, **ω**_i, **ω**_o) is the BRDF [sr⁻¹]
+- L_i(**x**, **ω**_i) is incident radiance at **x** from direction **ω**_i
+- Ω is the hemisphere above **x** (where **ω** · **n** > 0)
 - (**ω**_i · **n**) = cos θ_i accounts for projected area
+
+The integral represents the scattering integral—summing contributions from all incident directions, weighted by the BRDF and cosine foreshortening.
 
 ### Energy Conservation and the Measurement Equation
 
-The rendering equation conserves energy when:
+Energy conservation constrains the BRDF. The directional-hemispherical reflectance (albedo) must satisfy:
 
-∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_i dω_i ≤ 1 for all **ω**_o
+ρ(**ω**_o) = ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_i dω_i ≤ 1 for all **ω**_o
 
-This constraint ensures physically plausible BRDFs. The measurement equation connects scene radiance to sensor response:
+Equality holds for lossless surfaces. The white furnace test verifies energy conservation: in a uniformly lit environment (L_i = L_0), a closed surface should neither gain nor lose energy.
+
+The measurement equation connects scene radiance to sensor response:
 
 I_j = ∫_A ∫_Ω W_j(**x**, **ω**) L(**x**, **ω**) cos θ dω dA
 
-where W_j is the importance (sensitivity) function for pixel j.
+where W_j(**x**, **ω**) is the importance (sensitivity) function for pixel j. This duality between radiance and importance enables bidirectional algorithms.
+
+For a pinhole camera with pixel j subtending solid angle Ω_j from the pinhole:
+
+I_j = ∫_{Ω_j} L(**x**_lens, **ω**) cos⁴ θ dω
+
+The cos⁴ θ term accounts for:
+- cos θ: projected lens area
+- cos³ θ: inverse square falloff and pixel foreshortening
 
 ### Operator Form and Neumann Series
 
-We can write the rendering equation in operator form:
-
-L = L_e + 𝒯L
-
-where 𝒯 is the transport operator:
+The rendering equation admits an elegant operator formulation. Define the transport operator 𝒯:
 
 (𝒯L)(**x**, **ω**) = ∫_Ω f_r(**x**, **ω**', **ω**) L(**x**, **ω**') (**ω**' · **n**) dω'
 
-The solution is given by the Neumann series:
+Then the rendering equation becomes:
 
-L = ∑_{k=0}^∞ 𝒯^k L_e = L_e + 𝒯L_e + 𝒯²L_e + ...
+L = L_e + 𝒯L
 
-Each term represents light that has bounced k times, providing the foundation for path tracing algorithms.
+This is a Fredholm equation of the second kind. The solution via Neumann series:
+
+L = (I - 𝒯)⁻¹L_e = ∑_{k=0}^∞ 𝒯^k L_e = L_e + 𝒯L_e + 𝒯²L_e + ...
+
+Each term has physical meaning:
+- L_e: Direct illumination (emission only)
+- 𝒯L_e: Single-bounce illumination
+- 𝒯²L_e: Two-bounce illumination
+- 𝒯^k L_e: k-bounce illumination
+
+The series converges when ||𝒯|| < 1, which occurs when max albedo < 1. This decomposition naturally leads to path tracing algorithms that sample paths of increasing length.
+
+### Three-Point Form and Geometric Coupling
+
+The rendering equation can be rewritten in three-point form, making the geometric coupling explicit:
+
+L(**x** → **x**') = L_e(**x** → **x**') + ∫_M f_r(**x**'' → **x** → **x**') L(**x**'' → **x**) G(**x**'' ↔ **x**) dA(**x**'')
+
+where the geometry factor is:
+
+G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**'||²
+
+with:
+- V(**x** ↔ **x**'): binary visibility function (1 if mutually visible, 0 otherwise)
+- cos θ, cos θ': angles between surface normals and connecting line
+- ||**x** - **x**'||²: squared distance for inverse square falloff
+
+This form emphasizes that light transport couples all surface points, leading to the path integral formulation.
 
 ## 1.2 Coordinate Systems and Transformations
 
 ### World, Camera, and Object Spaces
 
-Rendering involves multiple coordinate systems:
+Rendering pipelines involve a hierarchy of coordinate systems, each optimized for specific calculations:
 
-1. **World space**: Global scene coordinates
-2. **Object space**: Local to each geometric primitive
-3. **Camera space**: Origin at eye, z-axis along view direction
-4. **Screen space**: 2D projection plane coordinates
+1. **Object space (Model space)**: Geometry defined in canonical form
+   - Origin typically at object center or base
+   - Axes aligned with natural symmetries
+   - Simplifies modeling and animation
 
-Transformations between spaces use 4×4 homogeneous matrices:
+2. **World space**: Unified scene coordinates
+   - All objects transformed to common frame
+   - Lighting and physics calculations
+   - Ray-object intersections
 
-**p**' = **M****p**
+3. **Camera space (View space)**: Observer-centric coordinates
+   - Origin at eye point
+   - -z axis along view direction (OpenGL convention)
+   - +z into screen (DirectX convention)
+   - Simplifies projection and culling
 
-where **p** = [x, y, z, 1]^T for points and **p** = [x, y, z, 0]^T for vectors.
+4. **Clip space**: Post-projection homogeneous coordinates
+   - 4D coordinates before perspective divide
+   - View frustum becomes [-1,1]³ cube (NDC)
 
-### Normal Transformations
+5. **Screen space (Raster space)**: Final 2D image coordinates
+   - Integer pixel coordinates
+   - Origin at top-left or bottom-left
 
-Normals transform differently than points to preserve orthogonality. If **M** transforms points, then normals transform by:
+### Homogeneous Coordinates and Transformations
 
-**n**' = (**M**^{-T})^{3×3} **n**
+Homogeneous coordinates unify translation and linear transformations. A 3D point **p** = (x, y, z) becomes **p̃** = (x, y, z, 1), while vectors use **ṽ** = (x, y, z, 0).
 
-This uses the upper-left 3×3 submatrix of the inverse transpose.
+The general affine transformation matrix:
 
-### Spherical Coordinates
+**M** = [**A** **t**]
+      [**0** 1  ]
 
-Many rendering calculations benefit from spherical coordinates:
+where **A** is 3×3 linear part and **t** is translation. Common transformations:
+
+**Translation by (tx, ty, tz):**
+[1  0  0  tx]
+[0  1  0  ty]
+[0  0  1  tz]
+[0  0  0  1 ]
+
+**Rotation around axis **a** by angle θ:**
+**R** = cos θ **I** + (1 - cos θ) **a****a**^T + sin θ [**a**]_×
+
+where [**a**]_× is the skew-symmetric cross-product matrix.
+
+**Scale by (sx, sy, sz):**
+[sx 0  0  0]
+[0  sy 0  0]
+[0  0  sz 0]
+[0  0  0  1]
+
+### Normal and Tangent Transformations
+
+Normals must transform to remain perpendicular to surfaces. Given transformation **M** for points:
+
+**n**' = (**M**^{-T})^{3×3} **n** / ||(**M**^{-T})^{3×3} **n**||
+
+Proof: For tangent **t** on surface, **n** · **t** = 0. After transformation:
+**n**' · **t**' = (**M**^{-T}**n**) · (**M****t**) = **n**^T **M**^{-1} **M** **t** = **n** · **t** = 0
+
+For orthonormal tangent frames {**t**, **b**, **n**}:
+- Forward: transform **t** and **b**, then **n** = **t** × **b**
+- Or transform **n** as above, then reconstruct frame
+
+### Spherical and Solid Angle Parameterizations
+
+Spherical coordinates provide natural parameterization for directions:
 
 **ω** = (sin θ cos φ, sin θ sin φ, cos θ)
 
-where θ ∈ [0, π] is polar angle and φ ∈ [0, 2π] is azimuthal angle. The differential solid angle is:
+where:
+- θ ∈ [0, π]: polar angle from +z axis
+- φ ∈ [0, 2π]: azimuthal angle from +x axis
 
-dω = sin θ dθ dφ
+The Jacobian gives differential solid angle:
+
+dω = |∂(ω_x, ω_y)/∂(θ, φ)| dθ dφ = sin θ dθ dφ
+
+Total solid angle of hemisphere: ∫_Ω dω = 2π
+
+Alternative parameterizations useful for sampling:
+
+**Concentric disk mapping** (Shirley-Chiu):
+(u, v) ∈ [-1, 1]² → (r, φ) → (x, y) on unit disk
+
+**Octahedral mapping**:
+Unit sphere → octahedron → unit square
+Preserves area better than spherical coordinates
 
 ### Change of Variables in Integrals
 
-When changing integration variables, we must include the Jacobian determinant. For example, converting from solid angle to area:
+The general change of variables formula for integrals:
 
-∫_Ω f(**ω**) dω = ∫_A f(**ω**(**x**')) |∂**ω**/∂**x**'| dA'
+∫_Ω f(**x**) d**x** = ∫_Ω' f(**x**(**u**)) |det(∂**x**/∂**u**)| d**u**
 
-For visibility between points **x** and **x**':
+Critical for rendering:
 
-dω = cos θ'/||**x** - **x**'||² dA'
+**Solid angle to area**:
+∫_Ω L(**x**, **ω**) cos θ dω = ∫_A L(**x**, **ω**(**x**')) G(**x** ↔ **x**') dA'
 
-This relationship is crucial for area light sampling.
+where G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**'||²
 
-### Barycentric Coordinates
+**Hemisphere to disk** (for cosine-weighted sampling):
+Map (θ, φ) → (r, φ) where r = sin θ
+Then p(r, φ) = p(θ, φ) |∂(θ, φ)/∂(r, φ)| = p(θ, φ) / cos θ
 
-For triangles with vertices **v**₀, **v**₁, **v**₂, any point **p** can be expressed as:
+### Projective Transformations and Perspective
+
+The perspective projection matrix maps view frustum to clip space:
+
+**P** = [n/r   0     0          0     ]
+       [0     n/t   0          0     ]
+       [0     0     -(f+n)/(f-n)  -2fn/(f-n)]
+       [0     0     -1         0     ]
+
+where n, f are near/far planes, r, t are right/top at near plane.
+
+After perspective divide by w:
+- x_ndc = x_clip / w_clip ∈ [-1, 1]
+- y_ndc = y_clip / w_clip ∈ [-1, 1]
+- z_ndc = z_clip / w_clip ∈ [-1, 1]
+
+Important properties:
+- Lines remain lines (except through eye)
+- Planes remain planes
+- Depth precision is non-linear (more near than far)
+
+### Barycentric Coordinates and Interpolation
+
+For triangle with vertices **v**₀, **v**₁, **v**₂, barycentric coordinates (u, v, w) satisfy:
 
 **p** = u**v**₀ + v**v**₁ + w**v**₂
 
-where u + v + w = 1. These coordinates enable efficient interpolation and intersection tests.
+with constraint u + v + w = 1. Computation via areas:
+
+u = Area(**p**, **v**₁, **v**₂) / Area(**v**₀, **v**₁, **v**₂)
+
+Properties:
+- u, v, w ∈ [0, 1] iff **p** inside triangle
+- Linear interpolation: f(**p**) = uf₀ + vf₁ + wf₂
+- Perspective-correct interpolation requires 1/z correction
+
+For perspective-correct attribute interpolation:
+1. Interpolate a/z, b/z, c/z and 1/z in screen space
+2. Recover attributes: a = (a/z)/(1/z)
+
+### Differential Geometry and Local Frames
+
+At each surface point, we construct a local frame for shading calculations:
+
+**Tangent space basis**:
+- **n**: surface normal (∂**p**/∂u × ∂**p**/∂v normalized)
+- **t**: tangent (often ∂**p**/∂u normalized)
+- **b**: bitangent (**n** × **t**)
+
+**Transformation to/from world space**:
+[**t**_world]   [t_x t_y t_z] [**t**_local]
+[**b**_world] = [b_x b_y b_z] [**b**_local]
+[**n**_world]   [n_x n_y n_z] [**n**_local]
+
+This orthonormal matrix can be inverted by transpose.
+
+**Anisotropic BRDF parameterization**:
+Many BRDFs depend on angle relative to tangent:
+- φ_h: azimuthal angle of half-vector in tangent space
+- Enables modeling of brushed metals, fabrics, hair
 
 ## 1.3 BRDF, BSDF, and BSSRDF
 
 ### Bidirectional Reflectance Distribution Function (BRDF)
 
-The BRDF f_r quantifies how light reflects off a surface:
+The BRDF f_r quantifies the differential relationship between incident irradiance and reflected radiance:
 
-f_r(**x**, **ω**_i, **ω**_o) = dL_o(**x**, **ω**_o) / (L_i(**x**, **ω**_i) cos θ_i dω_i) [sr⁻¹]
+f_r(**x**, **ω**_i, **ω**_o) = dL_o(**x**, **ω**_o) / dE_i(**x**, **ω**_i) = dL_o(**x**, **ω**_o) / (L_i(**x**, **ω**_i) cos θ_i dω_i) [sr⁻¹]
 
-It represents the ratio of reflected radiance to incident irradiance.
+Physically, it represents the probability density (after normalization) that a photon from direction **ω**_i scatters into direction **ω**_o.
+
+The BRDF can be decomposed into components:
+f_r = f_d + f_s + f_g + ...
+
+where f_d is diffuse, f_s is specular, f_g is glossy, etc. This decomposition aids importance sampling.
 
 ### Fundamental BRDF Properties
 
-**Reciprocity (Helmholtz reciprocity):**
+**Helmholtz Reciprocity:**
 f_r(**x**, **ω**_i, **ω**_o) = f_r(**x**, **ω**_o, **ω**_i)
 
-This follows from the reversibility of light paths and is essential for bidirectional algorithms.
+This follows from time-reversal symmetry of Maxwell's equations and the principle of detailed balance. It enables bidirectional path tracing and photon mapping.
 
-**Energy conservation:**
-∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_o dω_o ≤ 1 for all **ω**_i
+**Energy Conservation:**
+The directional-hemispherical reflectance must satisfy:
 
-The albedo ρ(**ω**_i) equals this integral and represents total reflectance.
+ρ(**ω**_i) = ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_o dω_o ≤ 1 for all **ω**_i
+
+For energy-conserving BRDFs, equality holds when absorption is zero. The hemispherical-hemispherical reflectance:
+
+ρ_hh = (1/π) ∫_Ω ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_i cos θ_o dω_i dω_o ≤ 1
 
 **Non-negativity:**
 f_r(**x**, **ω**_i, **ω**_o) ≥ 0
 
+Negative values would imply energy absorption dependent on outgoing direction, violating causality.
+
+**Measurability and Integrability:**
+For Monte Carlo integration convergence:
+f_r ∈ L²(Ω × Ω) (square-integrable)
+
+### Classical BRDF Models
+
+**Lambertian (Perfectly Diffuse):**
+f_r = ρ_d/π
+
+where ρ_d ∈ [0, 1] is the diffuse albedo. Energy-conserving by construction.
+
+**Phong Model:**
+f_r = (ρ_d/π) + ρ_s (n+2)/(2π) (**r** · **ω**_o)^n
+
+where **r** = 2(**n** · **ω**_i)**n** - **ω**_i is the reflection direction. Not reciprocal!
+
+**Blinn-Phong (Reciprocal):**
+f_r = (ρ_d/π) + ρ_s (n+2)/(8π) (**n** · **h**)^n / max(cos θ_i, cos θ_o)
+
+where **h** = (**ω**_i + **ω**_o)/||**ω**_i + **ω**_o|| is the half-vector.
+
+**Cook-Torrance Microfacet Model:**
+f_r = (ρ_d/π) + D(**h**)G(**ω**_i, **ω**_o)F(**ω**_i, **h**) / (4 cos θ_i cos θ_o)
+
+where:
+- D(**h**): Normal distribution function (e.g., GGX)
+- G(**ω**_i, **ω**_o): Geometric attenuation (masking/shadowing)
+- F(**ω**_i, **h**): Fresnel reflectance
+
 ### Extension to BSDF
 
-The Bidirectional Scattering Distribution Function (BSDF) generalizes BRDF to include transmission:
+The Bidirectional Scattering Distribution Function (BSDF) unifies reflection and transmission:
 
-f_s(**x**, **ω**_i, **ω**_o) = f_r(**x**, **ω**_i, **ω**_o) + f_t(**x**, **ω**_i, **ω**_o)
+f_s(**x**, **ω**_i, **ω**_o) = {
+  f_r(**x**, **ω**_i, **ω**_o) if **ω**_i · **n** and **ω**_o · **n** have same sign
+  f_t(**x**, **ω**_i, **ω**_o) if **ω**_i · **n** and **ω**_o · **n** have opposite sign
+}
 
-For transmission through interfaces with refractive indices n_i and n_o, reciprocity becomes:
+For dielectric interfaces (e.g., glass), Snell's law governs refraction:
+n_i sin θ_i = n_o sin θ_o
+
+The Fresnel equations determine reflection/transmission probabilities:
+F_r = ((n_i cos θ_i - n_o cos θ_o)/(n_i cos θ_i + n_o cos θ_o))² (s-polarized)
+
+**Generalized Reciprocity for BTDF:**
+Due to radiance compression/expansion across interfaces:
 
 n_i² f_t(**x**, **ω**_i, **ω**_o) = n_o² f_t(**x**, **ω**_o, **ω**_i)
 
+This accounts for the n² factor in radiance L/n² being invariant.
+
 ### BSSRDF for Subsurface Scattering
 
-The Bidirectional Scattering Surface Reflectance Distribution Function accounts for light entering at **x**_i and exiting at **x**_o:
+The Bidirectional Scattering Surface Reflectance Distribution Function generalizes the BRDF to non-local transport:
 
-S(**x**_i, **ω**_i, **x**_o, **ω**_o) = dL_o(**x**_o, **ω**_o) / (dΦ_i(**x**_i, **ω**_i))  [m⁻²sr⁻¹]
+S(**x**_i, **ω**_i, **x**_o, **ω**_o) = dL_o(**x**_o, **ω**_o) / dΦ_i(**x**_i, **ω**_i) [m⁻²sr⁻¹]
 
-The rendering equation with BSSRDF becomes:
+Key differences from BRDF:
+- Couples different surface points
+- Units include inverse area
+- No longer a pure material property (depends on geometry)
 
-L_o(**x**_o, **ω**_o) = ∫_A ∫_Ω S(**x**_i, **ω**_i, **x**_o, **ω**_o) L_i(**x**_i, **ω**_i) cos θ_i dω_i dA_i
+The rendering equation with BSSRDF:
+
+L_o(**x**_o, **ω**_o) = L_e(**x**_o, **ω**_o) + ∫_A ∫_Ω S(**x**_i, **ω**_i, **x**_o, **ω**_o) L_i(**x**_i, **ω**_i) cos θ_i dω_i dA_i
+
+**Diffusion Approximation:**
+For highly scattering media, the BSSRDF can be approximated:
+
+S(**x**_i, **ω**_i, **x**_o, **ω**_o) ≈ (1/π)F_t(**ω**_i)R(||**x**_i - **x**_o||)F_t(**ω**_o)
+
+where R(r) is the diffusion profile and F_t is the Fresnel transmittance.
 
 ### Mathematical Constraints and Physical Plausibility
 
-A physically plausible BRDF must satisfy:
+A physically valid BRDF must satisfy:
 
-1. **Reciprocity**: f_r(**ω**_i, **ω**_o) = f_r(**ω**_o, **ω**_i)
-2. **Energy conservation**: ρ(**ω**) ≤ 1 for all **ω**
-3. **Positivity**: f_r ≥ 0
-4. **Measurability**: f_r ∈ L¹(Ω × Ω)
+1. **Reciprocity**: f_r(**x**, **ω**_i, **ω**_o) = f_r(**x**, **ω**_o, **ω**_i)
+   - Test: Render scene with swapped lights and cameras
 
-For anisotropic materials, the BRDF depends on the surface orientation relative to a tangent frame.
+2. **Energy Conservation**: ∀**ω**_i: ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_o dω_o ≤ 1
+   - Test: White furnace test (uniform illumination)
+
+3. **Non-negativity**: f_r(**x**, **ω**_i, **ω**_o) ≥ 0
+   - Violations cause energy absorption anomalies
+
+4. **Smoothness**: f_r should be C⁰ continuous (C¹ preferred)
+   - Discontinuities cause sampling difficulties
+
+5. **Fresnel Behavior**: f_r → 1 as θ → π/2 for smooth surfaces
+   - All surfaces become mirrors at grazing angles
+
+### Anisotropic BRDFs
+
+For materials with directional structure (brushed metal, fabric, hair), the BRDF depends on the azimuthal angle:
+
+f_r(**x**, **ω**_i, **ω**_o, φ) 
+
+where φ is the angle between the half-vector projection and tangent direction.
+
+**Ward Anisotropic Model:**
+f_r = (ρ_d/π) + ρ_s exp(-tan²θ_h(cos²φ/α_x² + sin²φ/α_y²)) / (4π α_x α_y √(cos θ_i cos θ_o))
+
+where α_x, α_y control anisotropic roughness.
+
+### Spatially Varying BRDFs (SVBRDFs)
+
+Real materials exhibit spatial variation:
+f_r(**x**, **ω**_i, **ω**_o) = f_r(u, v, **ω**_i, **ω**_o)
+
+where (u, v) are texture coordinates. This enables:
+- Texture mapping of material properties
+- Measured BRDF data (BTF - Bidirectional Texture Function)
+- Procedural material variation
 
 ## 1.4 Monte Carlo Integration in Rendering
 
