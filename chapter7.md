@@ -2,6 +2,8 @@
 
 The real world is inherently dynamic. While static Neural Radiance Fields (NeRF) have revolutionized 3D scene representation, extending them to handle temporal changes opens up possibilities for modeling everything from human performances to fluid dynamics. This chapter explores how to incorporate time as an additional dimension in neural radiance fields, transforming the volume rendering equation to handle dynamic scenes while maintaining the mathematical elegance of our unified framework.
 
+Dynamic scenes present unique challenges: capturing fast motions without aliasing, maintaining temporal coherence, handling topological changes, and managing the exponential growth in data complexity when adding time as a fourth dimension. We'll see how careful mathematical formulation, combined with insights from physics and signal processing, leads to practical and efficient solutions.
+
 ## Learning Objectives
 
 After completing this chapter, you will be able to:
@@ -19,8 +21,11 @@ This chapter builds upon:
 - Chapter 6: Neural Radiance Fields (static formulation)
 - Understanding of vector calculus (Jacobians, divergence theorem)
 - Familiarity with optimization and regularization techniques
+- Basic knowledge of continuum mechanics (helpful but not required)
 
 ## 7.1 Time-varying Radiance Field Representations
+
+Dynamic radiance fields require us to model how both geometry (density $\sigma$) and appearance (color $\mathbf{c}$) evolve over time. The key insight is that while the mathematical framework remains elegant, the choice of temporal representation profoundly impacts both expressiveness and computational efficiency.
 
 ### 7.1.1 Extending the Volume Rendering Equation
 
@@ -30,7 +35,7 @@ $$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t)\sigma(\mathbf{r}(t))\mathbf{c}(\mathbf{r
 
 where $T(t) = \exp\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s))ds\right)$
 
-For dynamic scenes, we introduce time $\tau$ as an additional parameter:
+For dynamic scenes, we introduce time $\tau$ as an additional parameter (note: we use $\tau$ for scene time to distinguish from ray parameter $t$):
 
 $$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt$$
 
@@ -38,21 +43,61 @@ The transmittance also becomes time-dependent:
 
 $$T(t, \tau) = \exp\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s), \tau)ds\right)$$
 
+This seemingly simple extension has profound implications:
+
+1. **Increased Dimensionality**: The radiance field is now $f: \mathbb{R}^3 \times \mathbb{S}^2 \times \mathbb{R} \rightarrow \mathbb{R}^4$
+2. **Temporal Coherence**: Neighboring time frames should produce similar radiance values
+3. **Motion Blur**: Fast motions during exposure time require integration over $\tau$
+
+For motion blur modeling, the observed color becomes:
+
+$$C_{\text{blur}}(\mathbf{r}) = \frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} C(\mathbf{r}, \tau) d\tau$$
+
+where $\Delta\tau$ is the exposure time.
+
 ### 7.1.2 Discrete vs Continuous Time Modeling
+
+The choice between discrete and continuous time representations involves fundamental tradeoffs between expressiveness, memory efficiency, and optimization complexity.
 
 **Discrete Time Representation:**
 For a sequence of $N$ time steps $\{\tau_i\}_{i=1}^N$, we can represent the radiance field as:
 
 $$\mathcal{F}_{\text{discrete}} = \{f_{\theta_i}: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}^4\}_{i=1}^N$$
 
-Memory complexity: $O(N \cdot |\theta|)$
+Advantages:
+- Perfect reconstruction at sampled times
+- No temporal aliasing at discrete points
+- Independent optimization per frame
+
+Disadvantages:
+- Memory complexity: $O(N \cdot |\theta|)$
+- No intermediate frame generation
+- Temporal discontinuities possible
 
 **Continuous Time Representation:**
 A single network that takes time as input:
 
 $$f_\theta: \mathbb{R}^3 \times \mathbb{S}^2 \times \mathbb{R} \rightarrow \mathbb{R}^4$$
 
-Memory complexity: $O(|\theta|)$
+The time dimension typically uses positional encoding:
+$$\gamma(\tau) = [\sin(2^0\pi\tau), \cos(2^0\pi\tau), ..., \sin(2^{L-1}\pi\tau), \cos(2^{L-1}\pi\tau)]$$
+
+Advantages:
+- Memory complexity: $O(|\theta|)$ (independent of sequence length)
+- Natural temporal interpolation
+- Smooth motion trajectories
+
+Disadvantages:
+- Limited temporal resolution (bounded by network capacity)
+- Potential temporal aliasing
+- Harder to fit rapid changes
+
+**Hybrid Approaches:**
+Combine benefits by using time-conditioned hypernetworks:
+
+$$f_\theta(\mathbf{x}, \mathbf{d}, \tau) = g_{\phi(\tau)}(\mathbf{x}, \mathbf{d})$$
+
+where $\phi(\tau)$ generates time-specific network parameters.
 
 ### 7.1.3 Temporal Basis Functions
 
@@ -62,73 +107,292 @@ $$\sigma(\mathbf{x}, \tau) = \sum_{k=1}^K \sigma_k(\mathbf{x}) \cdot \phi_k(\tau
 
 $$\mathbf{c}(\mathbf{x}, \mathbf{d}, \tau) = \sum_{k=1}^K \mathbf{c}_k(\mathbf{x}, \mathbf{d}) \cdot \phi_k(\tau)$$
 
-Common choices for $\phi_k(\tau)$:
-- Fourier basis: $\phi_k(\tau) = \sin(2\pi k\tau/T)$ or $\cos(2\pi k\tau/T)$
-- B-splines: Local support for efficient updates
-- Learned basis: $\phi_k(\tau) = \text{MLP}_k(\gamma(\tau))$
+This separable representation reduces the problem to learning $K$ spatial fields and temporal basis functions.
+
+**Common Basis Function Choices:**
+
+1. **Fourier Basis** (for periodic motions):
+   $$\phi_k(\tau) = \begin{cases}
+   \sin(2\pi k\tau/T) & k \text{ odd} \\
+   \cos(2\pi k\tau/T) & k \text{ even}
+   \end{cases}$$
+   
+   Properties:
+   - Global support (affects entire timeline)
+   - Orthogonal basis
+   - Natural for cyclic motions
+   - Spectral interpretation via FFT
+
+2. **B-spline Basis** (for local control):
+   $$\phi_k(\tau) = B_n\left(\frac{\tau - \tau_k}{\Delta\tau}\right)$$
+   
+   where $B_n$ is the $n$-th order B-spline kernel.
+   
+   Properties:
+   - Compact support: $\phi_k(\tau) = 0$ for $|\tau - \tau_k| > n\Delta\tau/2$
+   - $C^{n-1}$ continuity
+   - Local editing capability
+   - Efficient evaluation
+
+3. **Learned Basis** (data-driven):
+   $$\phi_k(\tau) = \text{softmax}(\text{MLP}_k(\gamma(\tau)))_k$$
+   
+   Properties:
+   - Adapts to data distribution
+   - Can capture complex temporal patterns
+   - Requires careful regularization
+
+**Optimal Basis Selection:**
+The choice depends on the expected motion characteristics:
+- Periodic scenes → Fourier basis
+- Localized changes → B-splines
+- Complex, non-periodic → Learned basis
+
+The truncation parameter $K$ controls the temporal bandwidth:
+$$K \approx 2 \cdot f_{\text{max}} \cdot T$$
+
+where $f_{\text{max}}$ is the maximum motion frequency and $T$ is the sequence duration.
 
 ### 7.1.4 Frequency Analysis of Temporal Changes
 
-The Nyquist-Shannon theorem provides bounds on temporal sampling:
+Understanding the frequency content of dynamic scenes is crucial for avoiding aliasing and ensuring adequate temporal resolution.
+
+**Nyquist-Shannon Sampling Theorem:**
+The fundamental requirement for alias-free reconstruction:
 
 $$f_{\text{sample}} \geq 2 f_{\text{max}}$$
 
 where $f_{\text{max}}$ is the maximum frequency of scene changes.
 
-For periodic motion with frequency $\omega$:
-$$\tau_{\text{samples}} \geq \frac{4\pi}{\omega}$$
+**Motion-Specific Analysis:**
+
+1. **Periodic Motion** (e.g., rotating objects):
+   For motion with angular frequency $\omega$:
+   $$\mathbf{x}(\tau) = \mathbf{R}(\omega\tau)\mathbf{x}_0$$
+   
+   Minimum samples per period:
+   $$N_{\text{min}} = \frac{4\pi}{\omega \Delta\tau} \geq 4$$
+
+2. **Linear Motion** (constant velocity $\mathbf{v}$):
+   $$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}\tau$$
+   
+   Frequency content depends on observation window:
+   $$f_{\text{max}} \approx \frac{\|\mathbf{v}\|}{2\lambda_{\text{min}}}$$
+   
+   where $\lambda_{\text{min}}$ is the smallest spatial feature size.
+
+3. **Accelerated Motion**:
+   $$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}_0\tau + \frac{1}{2}\mathbf{a}\tau^2$$
+   
+   Instantaneous frequency:
+   $$f(\tau) = \frac{\|\mathbf{v}_0 + \mathbf{a}\tau\|}{2\pi\lambda_{\text{min}}}$$
+
+**Practical Sampling Strategy:**
+
+Given a capture rate $f_{\text{capture}}$, the representable motion bandwidth is:
+
+$$f_{\text{motion}} < \frac{f_{\text{capture}}}{2}$$
+
+For neural representations with positional encoding level $L$:
+$$f_{\text{neural}} \leq 2^{L-1}$$
+
+The effective temporal resolution is:
+$$f_{\text{effective}} = \min(f_{\text{motion}}, f_{\text{neural}})$$
+
+**Anti-aliasing Strategies:**
+
+1. **Temporal Supersampling**: Sample at $kf_{\text{sample}}$ and average
+2. **Motion Blur Integration**: Explicitly model exposure time
+3. **Adaptive Sampling**: Increase samples in high-motion regions
 
 ## 7.2 Deformation Field Modeling
 
+Rather than learning a time-varying radiance field directly, we can decompose the problem into learning a static canonical representation and a time-varying deformation field. This approach leverages the insight that many dynamic scenes exhibit strong spatial-temporal correlations that can be captured through warping.
+
 ### 7.2.1 Forward Deformation Fields
 
-Instead of modeling the radiance field directly as time-varying, we can model a deformation field that warps a canonical space:
+The core idea is to model a deformation field that maps points from a canonical (reference) space to the observation space at each time:
 
 $$\mathbf{x}_{\text{obs}} = \mathbf{W}(\mathbf{x}_{\text{can}}, \tau)$$
 
-The volume rendering equation becomes:
+where:
+- $\mathbf{x}_{\text{can}} \in \mathbb{R}^3$: Point in canonical space
+- $\mathbf{x}_{\text{obs}} \in \mathbb{R}^3$: Corresponding point in observation space at time $\tau$
+- $\mathbf{W}: \mathbb{R}^3 \times \mathbb{R} \rightarrow \mathbb{R}^3$: Deformation field
 
-$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t)\sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau))\mathbf{c}_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau), \mathbf{d}) \left|\det J_{\mathbf{W}^{-1}}\right| dt$$
+**Volume Rendering with Deformation:**
 
-where $J_{\mathbf{W}^{-1}}$ is the Jacobian of the inverse deformation.
+The key challenge is correctly transforming the volume rendering integral. Starting from:
+
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt$$
+
+We substitute the warped coordinates and must account for the change of variables:
+
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t)\sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau))\mathbf{c}_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau), \mathbf{d}_{\text{can}}) \left|\det J_{\mathbf{W}^{-1}}\right| dt$$
+
+where:
+- $J_{\mathbf{W}^{-1}} = \frac{\partial \mathbf{W}^{-1}}{\partial \mathbf{x}}$ is the Jacobian of the inverse deformation
+- $\mathbf{d}_{\text{can}}$ is the transformed view direction
+
+**Density Transformation:**
+The density transforms according to:
+$$\sigma_{\text{obs}}(\mathbf{x}, \tau) = \sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{x}, \tau)) \left|\det J_{\mathbf{W}^{-1}}(\mathbf{x}, \tau)\right|$$
+
+This ensures mass conservation: integrating density over any region gives the same total mass in both canonical and observation spaces.
 
 ### 7.2.2 Volume Preservation Constraints
 
-For incompressible deformations:
+Many physical deformations preserve volume locally (incompressibility), which provides powerful constraints for regularization.
+
+**Incompressibility Condition:**
+For volume-preserving deformations:
 
 $$\det(J_{\mathbf{W}}) = 1$$
 
-This leads to the divergence-free constraint:
+where $J_{\mathbf{W}} = \frac{\partial \mathbf{W}}{\partial \mathbf{x}_{\text{can}}}$ is the deformation gradient.
+
+**Velocity Field Formulation:**
+Define the velocity field as the time derivative of deformation:
+
+$$\mathbf{v}(\mathbf{x}, \tau) = \frac{\partial \mathbf{W}(\mathbf{x}, \tau)}{\partial \tau}$$
+
+The incompressibility constraint in Eulerian form:
 
 $$\nabla \cdot \mathbf{v} = 0$$
 
-where $\mathbf{v} = \frac{\partial \mathbf{W}}{\partial \tau}$ is the velocity field.
+**Practical Enforcement:**
+
+1. **Soft Constraint** (penalty method):
+   $$\mathcal{L}_{\text{volume}} = \lambda \int_{\Omega} (\det(J_{\mathbf{W}}) - 1)^2 d\mathbf{x}$$
+
+2. **Projection Method**:
+   Decompose velocity into incompressible and potential components:
+   $$\mathbf{v} = \mathbf{v}_{\text{incomp}} + \nabla \phi$$
+   
+   Then solve the Poisson equation:
+   $$\nabla^2 \phi = \nabla \cdot \mathbf{v}_{\text{initial}}$$
+   
+   And project: $\mathbf{v}_{\text{incomp}} = \mathbf{v}_{\text{initial}} - \nabla \phi$
+
+3. **Stream Function** (2D) or **Vector Potential** (3D):
+   For 2D: $\mathbf{v} = \nabla^\perp \psi = (\frac{\partial \psi}{\partial y}, -\frac{\partial \psi}{\partial x})$
+   
+   Automatically satisfies $\nabla \cdot \mathbf{v} = 0$
+
+**Approximate Volume Preservation:**
+For small deformations, linearize the constraint:
+$$\det(J_{\mathbf{W}}) \approx 1 + \text{tr}(J_{\mathbf{W}} - I) = 1 + \nabla \cdot (\mathbf{W} - \mathbf{x})$$
+
+Leading to the simpler constraint:
+$$\nabla \cdot \mathbf{u} = 0$$
+
+where $\mathbf{u} = \mathbf{W} - \mathbf{x}$ is the displacement field.
 
 ### 7.2.3 Regularization Strategies
 
-**Smoothness Regularization:**
+Deformation fields have many degrees of freedom and require careful regularization to ensure physically plausible and stable solutions.
+
+**1. Spatial Smoothness Regularization:**
+Penalizes high-frequency spatial variations:
+
 $$\mathcal{L}_{\text{smooth}} = \int_{\Omega} \int_{\mathcal{T}} \|\nabla^2 \mathbf{W}(\mathbf{x}, \tau)\|_F^2 d\mathbf{x} d\tau$$
 
-**Rigidity Regularization:**
+Alternative first-order smoothness:
+$$\mathcal{L}_{\text{grad}} = \int_{\Omega} \int_{\mathcal{T}} \|\nabla \mathbf{W} - I\|_F^2 d\mathbf{x} d\tau$$
+
+**2. Rigidity Regularization:**
+Encourages locally rigid transformations (rotation + translation):
+
 $$\mathcal{L}_{\text{rigid}} = \int_{\Omega} \|J_{\mathbf{W}}^T J_{\mathbf{W}} - I\|_F^2 d\mathbf{x}$$
 
-**Temporal Coherence:**
+This is zero when $J_{\mathbf{W}}$ is a rotation matrix. For computational efficiency, use the polar decomposition:
+$$J_{\mathbf{W}} = \mathbf{R}\mathbf{S}$$
+
+where $\mathbf{R}$ is rotation and $\mathbf{S}$ is symmetric. Then penalize:
+$$\mathcal{L}_{\text{rigid}} = \|\mathbf{S} - I\|_F^2$$
+
+**3. Temporal Coherence:**
+Ensures smooth motion over time:
+
 $$\mathcal{L}_{\text{temporal}} = \int_{\Omega} \int_{\mathcal{T}} \left\|\frac{\partial^2 \mathbf{W}}{\partial \tau^2}\right\|^2 d\mathbf{x} d\tau$$
+
+For discrete time steps:
+$$\mathcal{L}_{\text{temporal}} = \sum_{i} \|\mathbf{W}(\mathbf{x}, \tau_{i+1}) - 2\mathbf{W}(\mathbf{x}, \tau_i) + \mathbf{W}(\mathbf{x}, \tau_{i-1})\|^2$$
+
+**4. Elastic Energy:**
+Based on continuum mechanics, penalizes deformation energy:
+
+$$\mathcal{L}_{\text{elastic}} = \int_{\Omega} \frac{\lambda}{2}(\text{tr}(\mathbf{E}))^2 + \mu \text{tr}(\mathbf{E}^2) d\mathbf{x}$$
+
+where $\mathbf{E} = \frac{1}{2}(J_{\mathbf{W}}^T J_{\mathbf{W}} - I)$ is the Green strain tensor, and $\lambda, \mu$ are Lamé parameters.
+
+**5. As-Rigid-As-Possible (ARAP):**
+$$\mathcal{L}_{\text{ARAP}} = \sum_{i} \sum_{j \in \mathcal{N}(i)} w_{ij} \|(\mathbf{W}(\mathbf{x}_i) - \mathbf{W}(\mathbf{x}_j)) - \mathbf{R}_i(\mathbf{x}_i - \mathbf{x}_j)\|^2$$
+
+where $\mathbf{R}_i$ is the optimal rotation at point $i$.
+
+**Combined Regularization:**
+$$\mathcal{L}_{\text{reg}} = \lambda_1 \mathcal{L}_{\text{smooth}} + \lambda_2 \mathcal{L}_{\text{rigid}} + \lambda_3 \mathcal{L}_{\text{temporal}} + \lambda_4 \mathcal{L}_{\text{volume}}$$
+
+The weights $\lambda_i$ control the relative importance and depend on the scene type:
+- Fluid scenes: High $\lambda_1$, low $\lambda_2$
+- Articulated objects: High $\lambda_2$, moderate $\lambda_3$
+- Soft bodies: Balanced weights
 
 ### 7.2.4 Bijective Mapping Guarantees
 
-To ensure invertibility, we can parameterize the deformation using:
+Ensuring that deformation fields are invertible (bijective) is crucial for stable optimization and physically meaningful results.
 
-**Residual Formulation:**
+**1. Residual Formulation:**
+Parameterize deformation as identity plus small displacement:
+
 $$\mathbf{W}(\mathbf{x}, \tau) = \mathbf{x} + \epsilon \cdot \mathbf{u}(\mathbf{x}, \tau)$$
 
-For small $\epsilon$, invertibility is guaranteed by:
+**Invertibility Condition:**
+By the Banach fixed-point theorem, if:
 $$\|\nabla \mathbf{u}\|_{\text{op}} < \frac{1}{\epsilon}$$
 
-**Neural ODE Formulation:**
-$$\frac{d\mathbf{x}}{d\tau} = \mathbf{v}(\mathbf{x}, \tau)$$
+then $\mathbf{W}$ is a diffeomorphism (smooth bijection).
 
-Invertibility follows from the existence and uniqueness theorem for ODEs.
+**Proof Sketch:**
+The inverse satisfies: $\mathbf{y} = \mathbf{W}^{-1}(\mathbf{y}) + \epsilon \mathbf{u}(\mathbf{W}^{-1}(\mathbf{y}))$
+
+Define operator $T(\mathbf{x}) = \mathbf{y} - \epsilon \mathbf{u}(\mathbf{x})$. If $\epsilon\|\nabla \mathbf{u}\|_{\text{op}} < 1$, then $T$ is a contraction, guaranteeing unique fixed point.
+
+**2. Neural ODE Formulation:**
+Model deformation through continuous flow:
+
+$$\frac{d\mathbf{x}}{d\tau} = \mathbf{v}(\mathbf{x}, \tau), \quad \mathbf{x}(0) = \mathbf{x}_0$$
+
+**Advantages:**
+- Invertibility guaranteed by ODE theory (if $\mathbf{v}$ is Lipschitz)
+- Inverse computed by integrating backward: $\frac{d\mathbf{x}}{d\tau} = -\mathbf{v}(\mathbf{x}, -\tau)$
+- Natural temporal continuity
+
+**Implementation:**
+$$\mathbf{W}(\mathbf{x}_0, \tau) = \mathbf{x}_0 + \int_0^\tau \mathbf{v}(\mathbf{x}(s), s) ds$$
+
+Use numerical ODE solvers (e.g., Runge-Kutta) with adaptive step size.
+
+**3. Diffeomorphic Registration:**
+Ensure smooth bijection through regularized velocity fields:
+
+$$\mathcal{L}_{\text{diffeo}} = \int_0^T \int_{\Omega} \|\mathbf{L}\mathbf{v}(\mathbf{x}, t)\|^2 d\mathbf{x} dt$$
+
+where $\mathbf{L}$ is a differential operator (e.g., $\mathbf{L} = \alpha\nabla^2 + \beta I$).
+
+**4. Barrier Methods:**
+Add penalty that approaches infinity as Jacobian determinant approaches zero:
+
+$$\mathcal{L}_{\text{barrier}} = \int_{\Omega} \phi(\det(J_{\mathbf{W}})) d\mathbf{x}$$
+
+where $\phi(s) = -\log(s)$ for $s > 0$ or $\phi(s) = \frac{1}{s} - 1$ for $s > 0$.
+
+**Practical Guidelines:**
+- Initialize near identity: $\mathbf{W}(\mathbf{x}, 0) = \mathbf{x}$
+- Monitor $\min_{\mathbf{x}} \det(J_{\mathbf{W}})$ during training
+- Use graduated optimization: start with strong regularization, gradually relax
+- For neural networks, use spectral normalization to control Lipschitz constant
 
 ## 7.3 Optical Flow and Scene Flow Constraints
 
