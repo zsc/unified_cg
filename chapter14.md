@@ -21,10 +21,26 @@ $$\Theta^* = \arg\min_\Theta \mathcal{L}(\mathcal{R}(\Theta), I_{\text{obs}}) + 
 
 其中 $I_{\text{obs}}$ 是观测图像，$\mathcal{L}$ 是重建损失，$\mathcal{R}_{\text{reg}}$ 是正则化项。
 
+这个优化问题的核心挑战在于：
+1. **非凸性**：目标函数通常有多个局部极小值
+2. **高维性**：参数空间维度可达百万级
+3. **不适定性**：多个参数配置可能产生相似的渲染结果
+4. **计算成本**：每次梯度计算需要完整的渲染过程
+
 对于神经场表示，参数 $\Theta$ 包含：
 - 网络权重 $\mathbf{W} = \{W_i, b_i\}_{i=1}^L$
 - 位置编码参数 $\gamma$
 - 特征网格或其他显式表示
+
+逆向渲染的数学框架可以从变分推断角度理解。给定观测 $I_{\text{obs}}$，我们希望推断后验分布：
+
+$$p(\Theta|I_{\text{obs}}) = \frac{p(I_{\text{obs}}|\Theta)p(\Theta)}{p(I_{\text{obs}})}$$
+
+点估计 $\Theta^*$ 对应最大后验（MAP）估计：
+
+$$\Theta^* = \arg\max_\Theta \log p(I_{\text{obs}}|\Theta) + \log p(\Theta)$$
+
+其中 $-\log p(I_{\text{obs}}|\Theta)$ 对应重建损失，$-\log p(\Theta)$ 对应正则化项。
 
 ### 14.1.2 神经场参数化的梯度计算
 
@@ -46,6 +62,33 @@ $$\frac{\partial C(\mathbf{r})}{\partial \mathbf{W}} = \int_{t_n}^{t_f} \left[ \
 
 $$\frac{\partial T(t)}{\partial \mathbf{W}} = -T(t) \int_{t_n}^t \frac{\partial \sigma(\mathbf{r}(s))}{\partial \mathbf{W}} ds$$
 
+**数值实现的关键考虑**：
+
+1. **离散化**：使用分层采样将积分转化为求和
+   $$C(\mathbf{r}) \approx \sum_{i=1}^N T_i \alpha_i \mathbf{c}_i$$
+   其中 $\alpha_i = 1 - \exp(-\sigma_i \delta_i)$，$T_i = \prod_{j=1}^{i-1}(1-\alpha_j)$
+
+2. **梯度累积**：反向传播时需要正确处理累积透射率
+   $$\frac{\partial T_i}{\partial \alpha_j} = \begin{cases}
+   -\prod_{k=1}^{j-1}(1-\alpha_k) \prod_{k=j+1}^{i-1}(1-\alpha_k) & j < i \\
+   0 & j \geq i
+   \end{cases}$$
+
+3. **数值稳定性**：使用对数空间计算防止数值下溢
+   $$\log T_i = \sum_{j=1}^{i-1} \log(1-\alpha_j)$$
+
+4. **重要性采样**：根据透射率分布自适应调整采样密度
+   $$p(t) \propto T(t)\sigma(t)$$
+
+**二阶优化方法**：
+
+Hessian 矩阵的近似计算：
+$$\mathbf{H} \approx \mathbf{J}^T\mathbf{J} + \lambda\mathbf{I}$$
+
+其中 $\mathbf{J}$ 是 Jacobian 矩阵。使用 Gauss-Newton 或 Levenberg-Marquardt 方法可以提高收敛速度：
+
+$$\mathbf{W}_{k+1} = \mathbf{W}_k - (\mathbf{H} + \mu\mathbf{I})^{-1}\nabla_{\mathbf{W}}\mathcal{L}$$
+
 ### 14.1.3 多视图一致性约束
 
 给定 $N$ 个视图 $\{I_i\}_{i=1}^N$ 及其相机参数 $\{\mathbf{P}_i\}_{i=1}^N$，多视图重建损失为：
@@ -60,6 +103,36 @@ $$\mathcal{L}_{\text{depth}} = \sum_{i,j} \sum_{\mathbf{p}} w_{ij}(\mathbf{p}) \
 
 其中 $\Pi_{ij}$ 是从视图 $j$ 到视图 $i$ 的投影变换，$w_{ij}$ 是可见性权重。
 
+**光度一致性约束**：
+
+考虑表面点 $\mathbf{X}$ 在不同视图下的投影：
+$$\mathbf{p}_i = \mathbf{P}_i\mathbf{X}, \quad \mathbf{p}_j = \mathbf{P}_j\mathbf{X}$$
+
+光度一致性要求：
+$$\mathcal{L}_{\text{photo}} = \sum_{\mathbf{X}} \sum_{i,j} v_{ij}(\mathbf{X}) \|I_i(\mathbf{p}_i) - I_j(\mathbf{p}_j)\|$$
+
+其中可见性函数 $v_{ij}(\mathbf{X})$ 检查 $\mathbf{X}$ 在两个视图中是否都可见。
+
+**极线约束**：
+
+对于对应点 $\mathbf{p}_i$、$\mathbf{p}_j$，必须满足：
+$$\mathbf{p}_j^T \mathbf{F}_{ij} \mathbf{p}_i = 0$$
+
+其中 $\mathbf{F}_{ij}$ 是基础矩阵。这可以作为软约束加入：
+$$\mathcal{L}_{\text{epipolar}} = \sum_{(\mathbf{p}_i, \mathbf{p}_j)} (\mathbf{p}_j^T \mathbf{F}_{ij} \mathbf{p}_i)^2$$
+
+**时间一致性**（对于视频序列）：
+
+$$\mathcal{L}_{\text{temporal}} = \sum_t \|\Theta(t) - \Theta(t-1)\|^2_{\text{smooth}} + \sum_t \|\mathcal{F}(\Theta(t), \Theta(t-1))\|^2$$
+
+其中 $\mathcal{F}$ 是光流或场景流约束。
+
+**联合优化框架**：
+
+$$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{multi}} + \lambda_d \mathcal{L}_{\text{depth}} + \lambda_p \mathcal{L}_{\text{photo}} + \lambda_e \mathcal{L}_{\text{epipolar}} + \lambda_t \mathcal{L}_{\text{temporal}}$$
+
+权重 $\{\lambda_d, \lambda_p, \lambda_e, \lambda_t\}$ 需要仔细调节以平衡不同约束的贡献。
+
 ### 14.1.4 正则化策略与收敛性分析
 
 **密度正则化**：促进紧凑的几何表示
@@ -72,6 +145,17 @@ $$\mathcal{R}_{\text{density}} = \int_{\mathcal{V}} \sigma(\mathbf{x}) \log \sig
 
 $$\mathcal{R}_{\text{smooth}} = \int_{\mathcal{V}} \|\nabla \sigma(\mathbf{x})\|^2 + \|\nabla \mathbf{c}(\mathbf{x})\|^2 d\mathbf{x}$$
 
+**分布正则化**：
+
+1. **Lipschitz 正则化**：限制函数的变化率
+   $$\mathcal{R}_{\text{Lip}} = \max_{\mathbf{x}_1, \mathbf{x}_2} \frac{\|f(\mathbf{x}_1) - f(\mathbf{x}_2)\|}{\|\mathbf{x}_1 - \mathbf{x}_2\|}$$
+
+2. **TV 正则化**：保持边缘的同时促进平滑
+   $$\mathcal{R}_{\text{TV}} = \int_{\mathcal{V}} \|\nabla \sigma(\mathbf{x})\|_1 d\mathbf{x}$$
+
+3. **频谱正则化**：在频域控制复杂度
+   $$\mathcal{R}_{\text{freq}} = \int_{\boldsymbol{\omega}} |\boldsymbol{\omega}|^2 |\hat{f}(\boldsymbol{\omega})|^2 d\boldsymbol{\omega}$$
+
 **收敛性分析**：考虑梯度下降 $\Theta_{k+1} = \Theta_k - \eta_k \nabla_\Theta \mathcal{L}$
 
 在适当的条件下（Lipschitz 连续梯度，凸性），收敛速率为：
@@ -79,6 +163,30 @@ $$\mathcal{R}_{\text{smooth}} = \int_{\mathcal{V}} \|\nabla \sigma(\mathbf{x})\|
 $$\mathcal{L}(\Theta_k) - \mathcal{L}(\Theta^*) \leq \frac{\|\Theta_0 - \Theta^*\|^2}{2\sum_{i=0}^{k-1} \eta_i}$$
 
 对于非凸神经场，通常只能保证收敛到局部极小值。
+
+**非凸优化的理论保证**：
+
+1. **梯度主导条件**：如果满足
+   $$\langle \nabla \mathcal{L}(\Theta), \Theta - \Theta^* \rangle \geq \mu \|\Theta - \Theta^*\|^2 + \frac{1}{2L}\|\nabla \mathcal{L}(\Theta)\|^2$$
+   则可以保证全局收敛。
+
+2. **景观分析**：对于过参数化网络，局部极小值往往接近全局最优
+   $$\mathcal{L}(\Theta_{\text{local}}) - \mathcal{L}(\Theta^*) = O(1/\sqrt{m})$$
+   其中 $m$ 是网络宽度。
+
+3. **逃逸鞍点**：使用随机梯度或二阶方法
+   $$\Theta_{k+1} = \Theta_k - \eta\nabla\mathcal{L} + \sqrt{2\eta\beta^{-1}}\xi_k$$
+   其中 $\xi_k \sim \mathcal{N}(0, \mathbf{I})$ 是噪声项。
+
+**自适应学习率策略**：
+
+1. **余弦退火**：
+   $$\eta_k = \eta_{\min} + \frac{1}{2}(\eta_{\max} - \eta_{\min})(1 + \cos(\pi k/K))$$
+
+2. **多项式衰减**：
+   $$\eta_k = \eta_0 (1 - k/K)^p$$
+
+3. **重启机制**：周期性重置学习率以逃离局部极小值
 
 ## 14.2 分解表示：几何、材质、光照
 
@@ -94,6 +202,43 @@ $$I(\mathbf{x}) = A(\mathbf{x}) \cdot S(\mathbf{x}) \cdot \text{vis}(\mathbf{x})
 - $\text{vis}(\mathbf{x})$：可见性/阴影
 
 在神经渲染框架下，我们将这种分解扩展到体积表示。
+
+**理论基础**：
+
+内在图像分解问题可以形式化为求解以下方程组：
+
+$$\begin{cases}
+I(\mathbf{x}) = A(\mathbf{x}) \odot S(\mathbf{x}) \\
+\nabla \cdot (\nabla S) = \text{sparse} \quad \text{(着色平滑)} \\
+A(\mathbf{x}) \in [0, 1]^3 \quad \text{(反照率范围)}
+\end{cases}$$
+
+这是一个欠定系统，因为我们有 3 个未知通道（RGB）但只有 3 个约束。
+
+**Retinex 理论**：
+
+根据 Land 的 Retinex 理论，人类视觉系统假设：
+1. 照明在空间上缓慢变化
+2. 反照率在物体边界处不连续
+
+数学上，在对数域：
+$$\log I = \log A + \log S$$
+
+使用高通滤波器分离：
+$$\log A \approx \text{HPF}(\log I)$$
+$$\log S \approx \text{LPF}(\log I)$$
+
+**体积渲染中的分解**：
+
+对于体积表示，分解变得更加复杂：
+
+$$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(t) \left[ A(\mathbf{r}(t)) \odot \int_{\mathbb{S}^2} f_r L(\mathbf{r}(t), \boldsymbol{\omega}) (\boldsymbol{\omega} \cdot \mathbf{n})^+ d\boldsymbol{\omega} \right] dt$$
+
+其中：
+- $A(\mathbf{x})$：体积反照率
+- $L(\mathbf{x}, \boldsymbol{\omega})$：入射光照
+- $f_r$：体积 BRDF
+- $\mathbf{n}$：由密度梯度计算的法线
 
 ### 14.2.2 神经场中的分解架构
 
@@ -114,6 +259,40 @@ $$\mathbf{c}(\mathbf{x}, \boldsymbol{\omega}_o) = \mathbf{a}(\mathbf{x}) \odot \
 
 其中 $f_r$ 是 BRDF，$\mathbf{n}$ 是表面法线（从密度梯度计算）。
 
+**高级架构设计**：
+
+1. **分支网络架构**：
+   ```
+   输入 → 共享编码器 → [几何分支, 材质分支, 光照分支]
+   ```
+   共享编码器提取通用特征：
+   $$\mathbf{h} = f_{\text{enc}}(\mathbf{x}; \Theta_{\text{enc}})$$
+   
+   各分支使用专门解码器：
+   $$\sigma = f_{\sigma}(\mathbf{h}; \Theta_{\sigma})$$
+   $$\mathbf{a} = f_{A}(\mathbf{h}; \Theta_{A})$$
+   $$\mathbf{l} = f_{L}(\mathbf{h}, \boldsymbol{\omega}; \Theta_{L})$$
+
+2. **注意力机制**：
+   使用交叉注意力促进分支间信息交流：
+   $$\mathbf{h}_{\text{geo}} = \text{Attention}(Q_{\text{geo}}, K_{\text{mat}}, V_{\text{mat}})$$
+   
+3. **级联细化**：
+   逐步增加复杂度：
+   - 第1阶段：只优化几何
+   - 第2阶段：固定几何，优化材质+光照
+   - 第3阶段：联合精调所有组件
+
+**BRDF 参数化**：
+
+使用神经网络学习 BRDF：
+$$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{n}) = f_{\text{BRDF}}(\boldsymbol{\omega}_i \cdot \mathbf{n}, \boldsymbol{\omega}_o \cdot \mathbf{n}, \boldsymbol{\omega}_i \cdot \boldsymbol{\omega}_o; \Theta_{\text{BRDF}})$$
+
+或使用解析模型（如 Disney BRDF）：
+$$f_r = \frac{\mathbf{a}}{\pi}(1-F)(1-\text{metallic}) + F\cdot G \cdot D$$
+
+其中 $F$ 是 Fresnel 项，$G$ 是几何遮蔽，$D$ 是微面分布。
+
 ### 14.2.3 物理约束与解耦损失
 
 **反照率一致性**：相同材质在不同光照下应保持恒定
@@ -130,6 +309,52 @@ $$\mathcal{L}_{\text{light}} = \int_{\mathbb{S}^2} \|\nabla_{\boldsymbol{\omega}
 
 $$\mathcal{L}_{\text{white}} = \left\| \frac{1}{|\mathcal{V}|} \int_{\mathcal{V}} \mathbf{a}(\mathbf{x}) d\mathbf{x} - \mathbf{a}_{\text{ref}} \right\|^2$$
 
+**高级物理约束**：
+
+1. **能量守恒**：
+   $$\int_{\mathbb{S}^2} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{n}) (\boldsymbol{\omega}_i \cdot \mathbf{n})^+ d\boldsymbol{\omega}_i \leq 1$$
+   
+   损失函数：
+   $$\mathcal{L}_{\text{energy}} = \max\left(0, \int_{\mathbb{S}^2} f_r (\boldsymbol{\omega}_i \cdot \mathbf{n})^+ d\boldsymbol{\omega}_i - 1\right)^2$$
+
+2. **互易性**：
+   $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{n}) = f_r(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i, \mathbf{n})$$
+   
+   损失函数：
+   $$\mathcal{L}_{\text{reciprocity}} = \|f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{n}) - f_r(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i, \mathbf{n})\|^2$$
+
+3. **阴影一致性**：
+   软阴影应与几何遮挡一致：
+   $$\mathcal{L}_{\text{shadow}} = \sum_{\mathbf{x}} \|V(\mathbf{x}) - V_{\text{geo}}(\mathbf{x})\|^2$$
+   
+   其中 $V(\mathbf{x})$ 是学习的可见性，$V_{\text{geo}}$ 是从几何计算的可见性。
+
+4. **材质稀疏性**：
+   鼓励材质分布的稀疏性：
+   $$\mathcal{L}_{\text{sparse}} = \sum_{\mathbf{x}} \|\nabla \mathbf{a}(\mathbf{x})\|_0$$
+   
+   使用 $L_1$ 范数作为 $L_0$ 的凸松弛：
+   $$\mathcal{L}_{\text{sparse}} \approx \sum_{\mathbf{x}} \|\nabla \mathbf{a}(\mathbf{x})\|_1$$
+
+**解耦损失设计**：
+
+为了促进不同组件的解耦，设计以下损失：
+
+1. **正交性损失**：
+   $$\mathcal{L}_{\text{ortho}} = \sum_{i \neq j} |\langle \mathbf{f}_i, \mathbf{f}_j \rangle|$$
+   
+   其中 $\mathbf{f}_i$ 是第 $i$ 个组件的特征表示。
+
+2. **信息瓶颈**：
+   限制共享信息：
+   $$\mathcal{L}_{\text{MI}} = I(\mathbf{h}_{\text{geo}}; \mathbf{h}_{\text{mat}}) + I(\mathbf{h}_{\text{mat}}; \mathbf{h}_{\text{light}})$$
+   
+   其中 $I(\cdot;\cdot)$ 是互信息。
+
+3. **对抗性训练**：
+   使用判别器确保分解的质量：
+   $$\mathcal{L}_{\text{adv}} = \mathbb{E}[\log D(\mathbf{a}_{\text{real}})] + \mathbb{E}[\log(1 - D(\mathbf{a}_{\text{pred}}))]$$
+
 ### 14.2.4 歧义性与规范化
 
 分解问题存在固有歧义性：
@@ -143,6 +368,44 @@ $$\mathcal{L}_{\text{white}} = \left\| \frac{1}{|\mathcal{V}|} \int_{\mathcal{V}
 3. **统计先验**：利用自然图像统计
 
 $$\mathcal{L}_{\text{prior}} = D_{\text{KL}}(p(\mathbf{a}) \| p_{\text{natural}}(\mathbf{a}))$$
+
+**数学分析**：
+
+分解问题的解空间可以表示为：
+$$\mathcal{S} = \{(\mathbf{a}, \mathbf{l}) : \mathbf{a} \odot \mathbf{l} = \mathbf{c}_{\text{obs}}\}$$
+
+这是一个流形，其维度为：
+$$\dim(\mathcal{S}) = \dim(\mathbf{a}) + \dim(\mathbf{l}) - \dim(\mathbf{c})$$
+
+**解决歧义性的方法**：
+
+1. **引入物理先验**：
+   - 材质库：$\mathbf{a} \in \{\mathbf{a}_1, \mathbf{a}_2, ..., \mathbf{a}_K\}$
+   - 光照模板：$\mathbf{l} = \sum_{i=1}^M \alpha_i \mathbf{l}_i^{\text{basis}}$
+
+2. **多模态约束**：
+   - 深度信息：$\mathcal{L}_{\text{depth}} = \|D_{\text{pred}} - D_{\text{sensor}}\|^2$
+   - 法线信息：$\mathcal{L}_{\text{normal}} = 1 - \mathbf{n}_{\text{pred}} \cdot \mathbf{n}_{\text{sensor}}$
+
+3. **时空连贯性**：
+   - 时间连贯：$\mathcal{L}_{\text{temporal}} = \|\mathbf{a}_t - \mathbf{a}_{t-1}\|^2$
+   - 空间连贯：$\mathcal{L}_{\text{spatial}} = \sum_{(i,j) \in \mathcal{N}} w_{ij}\|\mathbf{a}_i - \mathbf{a}_j\|^2$
+
+4. **主动学习**：
+   选择最能减少歧义性的视角：
+   $$\mathbf{v}_{\text{next}} = \arg\max_{\mathbf{v}} H(\mathbf{a}|\mathbf{c}_{1:n}) - H(\mathbf{a}|\mathbf{c}_{1:n}, \mathbf{c}_\mathbf{v})$$
+
+**理论保证**：
+
+在以下条件下，分解是唯一的：
+1. 至少 3 个不共线的光源方向
+2. 非Lambertian BRDF
+3. 足够的纹理变化
+
+形式化为条件数：
+$$\kappa(\mathbf{J}) = \frac{\sigma_{\max}(\mathbf{J})}{\sigma_{\min}(\mathbf{J})} < \tau$$
+
+其中 $\mathbf{J}$ 是分解问题的 Jacobian 矩阵。
 
 ## 14.3 生成模型作为先验
 
