@@ -15,7 +15,21 @@
 3. **发射（Emission）**：介质自身发光
 4. **内散射（In-scattering）**：其他方向的光被散射到当前方向
 
-辐射传输方程的微分形式为：
+**从微观到宏观的严格推导**
+
+考虑体积元 dV = dA·ds，其中 dA 是垂直于传播方向的截面积。时间 dt 内通过该体积元的能量变化：
+
+1. **入射能量**：L(**x**, **ω**) dA dω dt
+2. **出射能量**：L(**x** + ds**ω**, **ω**) dA dω dt
+3. **吸收损失**：σₐ(**x**) L(**x**, **ω**) dV dω dt
+4. **散射损失**：σₛ(**x**) L(**x**, **ω**) dV dω dt
+5. **发射增益**：σₐ(**x**) Lₑ(**x**, **ω**) dV dω dt
+6. **散射增益**：σₛ(**x**) ∫_{S²} p(**ω'** → **ω**) L(**x**, **ω'**) dω' dV dω dt
+
+能量守恒要求：
+$$[L(\mathbf{x}, \boldsymbol{\omega}) - L(\mathbf{x} + ds\boldsymbol{\omega}, \boldsymbol{\omega})] dA = [-\sigma_t L + \sigma_a L_e + \sigma_s \int p L' d\omega'] dA \cdot ds$$
+
+取极限 ds → 0，得到微分形式：
 
 $$\frac{dL(\mathbf{x}, \boldsymbol{\omega})}{ds} = -\sigma_t(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) + \sigma_a(\mathbf{x}) L_e(\mathbf{x}, \boldsymbol{\omega}) + \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
 
@@ -26,12 +40,23 @@ $$\frac{dL(\mathbf{x}, \boldsymbol{\omega})}{ds} = -\sigma_t(\mathbf{x}) L(\math
 - Lₑ：发射项（emission term）
 - p(**ω'** → **ω**)：相位函数（phase function）
 
-将方向导数展开：
-$$\frac{dL}{ds} = \boldsymbol{\omega} \cdot \nabla L$$
+**方向导数的几何解释**
 
-得到标准形式的辐射传输方程：
+射线参数化：**x**(s) = **x₀** + s**ω**，则：
+$$\frac{dL}{ds} = \frac{\partial L}{\partial x_i} \frac{dx_i}{ds} = \frac{\partial L}{\partial x_i} \omega_i = \boldsymbol{\omega} \cdot \nabla L$$
+
+这将沿射线的变化率转换为空间导数。
+
+**辐射传输方程的标准形式**
 
 $$(\boldsymbol{\omega} \cdot \nabla) L(\mathbf{x}, \boldsymbol{\omega}) + \sigma_t(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) = \sigma_a(\mathbf{x}) L_e(\mathbf{x}, \boldsymbol{\omega}) + \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+
+**时间相关形式**
+
+对于非稳态问题，需要考虑时间导数：
+$$\frac{1}{c} \frac{\partial L}{\partial t} + (\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L = \sigma_a L_e + \sigma_s \int_{S^2} p L' d\boldsymbol{\omega}'$$
+
+其中 c 是介质中的光速。
 
 ### 5.1.2 边界条件与初始条件
 
@@ -56,37 +81,90 @@ $$L_r = R(\theta_i) L_i$$
 
 **情况1：均匀介质无散射**（σₛ = 0）
 
-沿射线参数化：**x**(s) = **x₀** + s**ω**，方程简化为：
+沿射线参数化：**x**(s) = **x₀** + s**ω**，方程简化为常微分方程：
 $$\frac{dL}{ds} + \sigma_a L = \sigma_a L_e$$
 
-解为：
+这是一阶线性ODE，使用积分因子μ(s) = e^{σₐs}：
+$$\frac{d}{ds}[L(s)e^{\sigma_a s}] = \sigma_a L_e(s) e^{\sigma_a s}$$
+
+积分得到通解：
 $$L(s) = L(0)e^{-\sigma_a s} + \sigma_a \int_0^s L_e(s') e^{-\sigma_a(s-s')} ds'$$
 
-这就是比尔-朗伯定律（Beer-Lambert law）的推广。
+这就是比尔-朗伯定律（Beer-Lambert law）的推广，包含了发射项。
 
 **情况2：各向同性单次散射**
 
-假设散射仅发生一次，且相位函数各向同性 p = 1/(4π)：
-$$L^{(1)}(\mathbf{x}, \boldsymbol{\omega}) = \int_0^s T(0,s') \frac{\sigma_s}{4\pi} \int_{S^2} L^{(0)}(\mathbf{x}(s'), \boldsymbol{\omega}') d\boldsymbol{\omega}' ds'$$
+假设散射仅发生一次，且相位函数各向同性 p = 1/(4π)。使用Born近似：
+$$L = L^{(0)} + L^{(1)} + \mathcal{O}(\sigma_s^2)$$
 
-其中 T(s₁,s₂) = exp(-∫_{s₁}^{s₂} σₜ(s')ds') 为透射率。
+其中 L^{(0)} 是无散射解，L^{(1)} 是单次散射贡献：
+$$L^{(1)}(\mathbf{x}, \boldsymbol{\omega}) = \int_0^s T(0,s') \frac{\sigma_s(\mathbf{x}')}{4\pi} \int_{S^2} L^{(0)}(\mathbf{x}(s'), \boldsymbol{\omega}') d\boldsymbol{\omega}' ds'$$
 
-**数值方法概述**
+其中 T(s₁,s₂) = exp(-∫_{s₁}^{s₂} σₜ(s')ds') 为光学透射率。
 
-1. **离散坐标法（Discrete Ordinates）**：
-   将角度空间离散化为 N 个方向 {**ωᵢ**}，权重 {wᵢ}：
+**情况3：小角度散射近似**
+
+当相位函数强烈前向散射（g → 1）时，使用Fokker-Planck近似：
+$$\frac{\partial L}{\partial s} + \sigma_t L = \sigma_a L_e + \sigma_s L + \frac{\sigma_s(1-g)}{2} \nabla_\perp^2 L$$
+
+其中 ∇_⊥² 是垂直于 **ω** 的拉普拉斯算子。
+
+**积分方程形式**
+
+将RTE改写为Volterra型积分方程，便于迭代求解：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = L_0(\mathbf{x}, \boldsymbol{\omega}) + \int_0^{\tau_b} e^{-\tau} Q(\mathbf{x}(\tau), \boldsymbol{\omega}) d\tau$$
+
+其中：
+- τ = ∫₀ˢ σₜ(s')ds' 是光学深度
+- Q = σₐLₑ + σₛ∫p L dω' 是源项
+- L₀ 是边界贡献
+
+**数值方法详述**
+
+1. **离散坐标法（Discrete Ordinates, S_N方法）**：
+   
+   将角度空间离散化为 N 个方向 {**ωᵢ**}，权重 {wᵢ}满足：
+   $$\sum_{i=1}^N w_i = 4\pi, \quad \sum_{i=1}^N w_i \omega_{i,k} = 0, \quad \sum_{i=1}^N w_i \omega_{i,k}\omega_{i,l} = \frac{4\pi}{3}\delta_{kl}$$
+   
+   离散化的RTE系统：
    $$(\boldsymbol{\omega}_i \cdot \nabla) L_i + \sigma_t L_i = \sigma_a L_{e,i} + \sigma_s \sum_{j=1}^N w_j p_{ij} L_j$$
+   
+   常用正交集：Gauss-Legendre、Chebyshev等。
 
-2. **球谐函数展开（Spherical Harmonics）**：
+2. **球谐函数展开（P_N方法）**：
+   
+   将辐射亮度展开为球谐函数：
    $$L(\mathbf{x}, \boldsymbol{\omega}) = \sum_{l=0}^{\infty} \sum_{m=-l}^{l} L_{lm}(\mathbf{x}) Y_{lm}(\boldsymbol{\omega})$$
    
-   代入RTE并利用球谐函数的正交性，得到耦合的偏微分方程组。
+   其中球谐系数：
+   $$L_{lm}(\mathbf{x}) = \int_{S^2} L(\mathbf{x}, \boldsymbol{\omega}) Y_{lm}^*(\boldsymbol{\omega}) d\boldsymbol{\omega}$$
+   
+   代入RTE，利用球谐函数的递推关系和正交性，得到耦合PDE系统。P₁近似保留l=0,1项，导出扩散方程。
 
 3. **蒙特卡洛方法（Monte Carlo）**：
-   将RTE转化为积分方程：
-   $$L(\mathbf{x}, \boldsymbol{\omega}) = \int_0^{\infty} T(0,s) \left[ \sigma_a L_e + \sigma_s \int_{S^2} p L d\boldsymbol{\omega}' \right]_{\mathbf{x}-s\boldsymbol{\omega}} ds$$
    
-   使用路径追踪采样该积分。
+   路径积分表示：
+   $$L(\mathbf{x}, \boldsymbol{\omega}) = \sum_{k=0}^{\infty} L^{(k)}(\mathbf{x}, \boldsymbol{\omega})$$
+   
+   其中 L^{(k)} 是k次散射贡献。使用俄罗斯轮盘终止无限级数：
+   $$L \approx \sum_{k=0}^{K} \frac{L^{(k)}}{p_k}$$
+   
+   其中 pₖ 是继续追踪的概率。
+
+4. **有限元方法（FEM）**：
+   
+   弱形式：
+   $$\int_{\Omega \times S^2} \psi \left[ (\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L \right] d\mathbf{x} d\boldsymbol{\omega} = \int_{\Omega \times S^2} \psi S d\mathbf{x} d\boldsymbol{\omega}$$
+   
+   选择适当的测试函数ψ和基函数，构建稀疏线性系统。
+
+**收敛性分析**
+
+对于迭代方法，收敛条件是散射算子的谱半径小于1：
+$$\rho(\mathcal{K}) = \sup_{\mathbf{x}} \frac{\sigma_s(\mathbf{x})}{\sigma_t(\mathbf{x})} < 1$$
+
+收敛速度：
+$$||L^{(n)} - L|| \leq C \rho^n ||L^{(0)} - L||$$
 
 ## 5.2 体积散射与相位函数
 
@@ -156,12 +234,17 @@ $$p(\cos\theta) = \frac{1}{4\pi}$$
 
 特点：g = 0，数学最简单，适用于高度多次散射的情况。
 
+采样：cosθ = 1 - 2ξ₁, φ = 2πξ₂
+
 **2. Rayleigh 散射**
 
-适用于粒子尺寸远小于波长的情况：
-$$p(\cos\theta) = \frac{3}{16\pi}(1 + \cos^2\theta)$$
+适用于粒子尺寸远小于波长的情况（x ≪ 1）：
+$$p_{Rayleigh}(\cos\theta) = \frac{3}{16\pi}(1 + \cos^2\theta)$$
 
 各向异性参数：g = 0（对称散射）
+
+偏振形式（考虑偏振态）：
+$$p_{Rayleigh}(\cos\theta, \phi) = \frac{3}{16\pi} \begin{pmatrix} 1 + \cos^2\theta & \sin^2\theta \cos(2\phi) \\ \sin^2\theta \cos(2\phi) & 1 + \cos^2\theta \end{pmatrix}$$
 
 **3. Henyey-Greenstein 相位函数**
 
@@ -169,50 +252,105 @@ $$p(\cos\theta) = \frac{3}{16\pi}(1 + \cos^2\theta)$$
 $$p_{HG}(\cos\theta) = \frac{1}{4\pi} \frac{1 - g^2}{(1 + g^2 - 2g\cos\theta)^{3/2}}$$
 
 优点：
-- 单参数 g 控制各向异性
+- 单参数 g ∈ [-1,1] 控制各向异性
 - 解析形式简单
 - 满足归一化条件
+- 存在解析采样方法
 
 缺点：
-- 无法准确模拟强后向散射
-- 对某些材质过于简化
+- 无法准确模拟强后向散射峰
+- 对某些材质（如生物组织）过于简化
+
+勒让德展开：
+$$p_{HG}(\cos\theta) = \frac{1}{4\pi} \sum_{l=0}^{\infty} (2l+1) g^l P_l(\cos\theta)$$
 
 **4. Schlick 相位函数**
 
-Henyey-Greenstein 的近似，计算更高效：
+Henyey-Greenstein 的有理近似，计算更高效：
 $$p_{Schlick}(\cos\theta) = \frac{1}{4\pi} \frac{1 - k^2}{(1 + k\cos\theta)^2}$$
 
-其中 k ≈ 1.55g - 0.55g³
+参数转换：k = 1.55g - 0.55g³（保持相同的平均余弦）
+
+误差分析：|p_{Schlick} - p_{HG}|/p_{HG} < 0.02 对大部分角度
 
 **5. 双 Henyey-Greenstein（Double HG）**
 
-混合前向和后向散射：
+混合前向和后向散射，更好地拟合实测数据：
 $$p_{DHG}(\cos\theta) = \alpha p_{HG}(\cos\theta; g_1) + (1-\alpha) p_{HG}(\cos\theta; g_2)$$
 
-通常 g₁ > 0（前向）且 g₂ < 0（后向）。
+参数约束确保物理合理性：
+- α ∈ [0,1]：混合权重
+- g₁ > 0：前向散射成分
+- g₂ < 0：后向散射成分
+- 平均各向异性：g = αg₁ + (1-α)g₂
 
-**6. Mie 散射**
+**6. Fournier-Forand 相位函数**
 
-对于球形粒子的精确解，需要求解麦克斯韦方程。相位函数形式复杂：
-$$p_{Mie}(\cos\theta) = \frac{\lambda^2}{2\pi\sigma_s} \left[ |S_1(\cos\theta)|^2 + |S_2(\cos\theta)|^2 \right]$$
+海洋光学中常用，考虑颗粒大小分布：
+$$p_{FF}(\cos\theta) = \frac{1}{4\pi(1-\delta)^2\delta^v} \left[ v(1-\delta) - (1-\delta^v) \right] + \frac{1-\delta^v}{4\pi(1-\delta)^2\delta^v} \frac{3\cos^2\theta - 1}{(\sin\theta/2)^2}$$
 
-其中 S₁ 和 S₂ 是散射振幅函数，涉及贝塞尔函数和勒让德多项式。
+其中：
+- δ = 4sin²(θ/2)/(3(n-1)²)
+- v = (3-μ)/2
+- μ：颗粒大小分布的Junge指数
 
-**Lorenz-Mie 理论的关键参数**：
-- 尺寸参数：x = 2πr/λ
-- 相对折射率：m = n_particle/n_medium
+**7. Mie 散射理论**
+
+对于球形粒子的精确解，基于麦克斯韦方程：
+
+散射振幅函数：
+$$S_1(\theta) = \sum_{n=1}^{\infty} \frac{2n+1}{n(n+1)} [a_n \pi_n(\cos\theta) + b_n \tau_n(\cos\theta)]$$
+$$S_2(\theta) = \sum_{n=1}^{\infty} \frac{2n+1}{n(n+1)} [a_n \tau_n(\cos\theta) + b_n \pi_n(\cos\theta)]$$
+
+其中 aₙ, bₙ 是Mie系数，涉及球贝塞尔函数：
+$$a_n = \frac{m\psi_n(mx)\psi'_n(x) - \psi_n(x)\psi'_n(mx)}{m\psi_n(mx)\xi'_n(x) - \xi_n(x)\psi'_n(mx)}$$
+
+相位函数：
+$$p_{Mie}(\cos\theta) = \frac{4\pi}{k^2\sigma_s} \left[ |S_1(\theta)|^2 + |S_2(\theta)|^2 \right]$$
+
+**8. SGGX 相位函数**
+
+基于微表面理论，适用于纤维和毛发：
+$$p_{SGGX}(\cos\theta) = \frac{D(\mathbf{h})}{4|\boldsymbol{\omega}' \cdot \mathbf{h}|}$$
+
+其中 D(h) 是SGGX分布，h 是半向量。
 
 **相位函数的重要性采样**
 
-对于蒙特卡洛渲染，需要高效采样相位函数。以 Henyey-Greenstein 为例：
+**Henyey-Greenstein 采样**：
 
-给定均匀随机数 ξ ∈ [0,1]，采样方向：
+给定均匀随机数 ξ₁, ξ₂ ∈ [0,1]：
+1. 采样散射角：
 $$\cos\theta = \begin{cases}
-\frac{1}{2g}\left[1 + g^2 - \left(\frac{1-g^2}{1-g+2g\xi}\right)^2\right] & g \neq 0 \\
-1 - 2\xi & g = 0
+\frac{1}{2g}\left[1 + g^2 - \left(\frac{1-g^2}{1-g+2g\xi_1}\right)^2\right] & g \neq 0 \\
+1 - 2\xi_1 & g = 0
 \end{cases}$$
 
-然后在垂直于 **ω'** 的平面上均匀采样方位角 φ = 2πξ₂。
+2. 采样方位角：φ = 2πξ₂
+
+3. 构造散射方向（局部坐标系）
+
+PDF值：p_{HG}(cosθ)
+
+**拒绝采样法（通用方法）**：
+
+对于复杂相位函数：
+1. 找到包络函数 M·q(θ) ≥ p(θ)
+2. 从 q(θ) 采样候选值
+3. 以概率 p(θ)/(M·q(θ)) 接受
+
+**表格法采样**：
+
+1. 预计算CDF：F(θᵢ) = ∫₀^{θᵢ} p(θ)sinθ dθ
+2. 二分查找：F⁻¹(ξ)
+3. 线性插值获得精确值
+
+**混合重要性采样**：
+
+结合相位函数和其他因素（如光源方向）：
+$$p_{mix}(\boldsymbol{\omega}) = \alpha p_{phase}(\boldsymbol{\omega}) + (1-\alpha) p_{light}(\boldsymbol{\omega})$$
+
+使用多重重要性采样（MIS）组合不同策略。
 
 ## 5.3 通过扩散的次表面散射
 
