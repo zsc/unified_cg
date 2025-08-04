@@ -27,15 +27,41 @@ $$I(\mathbf{x}) = |U_o|^2 + |U_r|^2 + U_o U_r^* + U_o^* U_r$$
 
 其中后两项包含了物光波的相位信息，这是全息记录的关键。
 
+将复振幅写成极坐标形式 $U = |U|e^{i\phi}$，干涉项展开为：
+
+$$U_o U_r^* + U_o^* U_r = 2|U_o||U_r|\cos(\phi_o - \phi_r)$$
+
+这表明干涉条纹的对比度由振幅乘积决定，条纹间距由相位差梯度决定：
+
+$$\Lambda = \frac{2\pi}{|\nabla(\phi_o - \phi_r)|}$$
+
+对于典型的离轴全息配置，参考光与物光夹角为 $\theta$，条纹间距约为：
+
+$$\Lambda \approx \frac{\lambda}{2\sin(\theta/2)}$$
+
 ### 24.1.2 菲涅尔全息图
 
 对于菲涅尔全息，参考光为球面波。设参考点源位于 $\mathbf{r}_r$，则：
 
 $$U_r(\mathbf{x}) = \frac{A_r}{|\mathbf{x} - \mathbf{r}_r|} \exp\left(ik|\mathbf{x} - \mathbf{r}_r|\right)$$
 
-在近轴近似下，记录的全息图模式为：
+在近轴近似下，设全息平面位于 $z = 0$，参考源位于 $(x_r, y_r, z_r)$，则：
+
+$$|\mathbf{x} - \mathbf{r}_r| \approx z_r + \frac{(x - x_r)^2 + (y - y_r)^2}{2z_r}$$
+
+参考光相位在全息平面上的分布为：
+
+$$\phi_r(x, y) = k\left[z_r + \frac{(x - x_r)^2 + (y - y_r)^2}{2z_r}\right]$$
+
+记录的全息图模式为：
 
 $$H(\mathbf{x}) = |U_o|^2 + |U_r|^2 + 2|U_o||U_r|\cos[\phi_o(\mathbf{x}) - \phi_r(\mathbf{x})]$$
+
+当参考光远强于物光时（$|U_r| >> |U_o|$），可简化为：
+
+$$H(\mathbf{x}) \approx |U_r|^2[1 + 2\frac{|U_o|}{|U_r|}\cos(\phi_o - \phi_r)]$$
+
+这种线性记录条件下，全息图的调制深度正比于物光振幅。
 
 ### 24.1.3 重建过程
 
@@ -43,39 +69,116 @@ $$H(\mathbf{x}) = |U_o|^2 + |U_r|^2 + 2|U_o||U_r|\cos[\phi_o(\mathbf{x}) - \phi_
 
 $$U_{trans}(\mathbf{x}) = H(\mathbf{x}) \cdot U_r(\mathbf{x})$$
 
-展开后得到四项，其中第三项重现原始物光波：
+展开后得到四项：
 
-$$U_{recon}(\mathbf{x}) \propto U_o(\mathbf{x}) |U_r(\mathbf{x})|^2$$
+$$U_{trans} = |U_o|^2 U_r + |U_r|^2 U_r + U_o |U_r|^2 + U_o^* U_r^2$$
+
+各项的物理意义：
+1. **零级衍射**：$(|U_o|^2 + |U_r|^2)U_r$ - 直透光
+2. **+1级衍射**：$U_o |U_r|^2$ - 虚像（原始物光波）
+3. **-1级衍射**：$U_o^* U_r^2$ - 实像（共轭波）
+
+虚像项准确重现原始物光波：
+
+$$U_{virtual}(\mathbf{x}) = U_o(\mathbf{x}) |U_r(\mathbf{x})|^2$$
+
+实像项产生共轭波：
+
+$$U_{real}(\mathbf{x}) = U_o^*(\mathbf{x}) U_r^2(\mathbf{x})$$
+
+在空间上，如果物体位于 $z = z_o$，则：
+- 虚像位于原物体位置 $z = z_o$
+- 实像位于 $z = -z_o + 2z_r$（相对于参考源的镜像位置）
+
+离轴配置的优势在于这三个衍射级在空间上分离，便于观察单一重建像。
 
 ### 24.1.4 体积全息与布拉格条件
 
-对于厚全息图，需考虑体积内的布拉格衍射。光栅矢量 $\mathbf{K} = \mathbf{k}_o - \mathbf{k}_r$，布拉格条件为：
+对于厚全息图，需考虑体积内的布拉格衍射。记录时在介质内形成三维折射率光栅：
+
+$$n(\mathbf{r}) = n_0 + n_1 \cos(\mathbf{K} \cdot \mathbf{r})$$
+
+其中光栅矢量 $\mathbf{K} = \mathbf{k}_o - \mathbf{k}_r$ 决定了光栅的周期和方向。
+
+布拉格条件要求入射光满足动量匹配：
 
 $$\mathbf{k}_{in} + \mathbf{K} = \mathbf{k}_{out}$$
 
-衍射效率由耦合波理论给出：
+在标量形式下，对于对称几何（入射角等于衍射角），布拉格角为：
+
+$$2d\sin\theta_B = m\lambda/n_0$$
+
+其中 $d = 2\pi/|\mathbf{K}|$ 是光栅周期。
+
+衍射效率由耦合波理论（Kogelnik理论）给出。对于透射型相位光栅：
 
 $$\eta = \sin^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
 
+对于反射型相位光栅：
+
+$$\eta = \tanh^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+
 其中 $n_1$ 是折射率调制深度，$d$ 是全息图厚度。
+
+角度选择性（半高全宽）为：
+
+$$\Delta\theta = \frac{\lambda}{d\sin(2\theta_B)}$$
+
+波长选择性为：
+
+$$\Delta\lambda = \frac{\lambda^2}{d|\cos\theta_B|}$$
+
+这种高选择性使体积全息图可用于波长复用和角度复用存储。
 
 ## 24.2 计算机生成全息图（CGH）
 
 ### 24.2.1 从物理到计算
 
-计算机生成全息图通过数值计算模拟物光波的传播和干涉过程。对于离散化的3D场景，物光波可表示为：
+计算机生成全息图通过数值计算模拟物光波的传播和干涉过程。CGH的核心优势在于：
+1. 可以生成物理上不存在的物体的全息图
+2. 精确控制光波的振幅和相位分布
+3. 无需物理干涉系统，避免了振动和相干性要求
+
+对于离散化的3D场景，物光波可表示为点源叠加：
 
 $$U_o(\mathbf{x}) = \sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x} - \mathbf{r}_j|)}{|\mathbf{x} - \mathbf{r}_j|}$$
 
 其中 $\mathbf{r}_j$ 是第 $j$ 个点源的位置，$A_j$ 是其复振幅。
 
+在实际计算中，需要考虑：
+- **采样定理**：全息平面的采样间隔 $\Delta x$ 必须满足：
+  $$\Delta x < \frac{\lambda z_{min}}{L}$$
+  其中 $L$ 是物体横向尺寸，$z_{min}$ 是最近物点距离。
+
+- **数值孔径限制**：可记录的最大空间频率：
+  $$f_{max} = \frac{2NA}{\lambda}$$
+  
+- **量化效应**：数字表示的有限精度导致量化噪声。
+
 ### 24.2.2 点源法（Point Source Method）
 
-最直接的CGH算法是点源叠加法。对于全息平面上的每个采样点 $\mathbf{x}_i$：
+最直接的CGH算法是点源叠加法。每个物点被视为球面波源，在全息平面上产生的光场为：
+
+$$U_j(\mathbf{x}) = A_j \frac{\exp(ik r_j)}{r_j} \cdot \text{obliquity}(\theta_j)$$
+
+其中 $r_j = |\mathbf{x} - \mathbf{r}_j|$，倾斜因子 $\text{obliquity}(\theta) = \frac{1 + \cos\theta}{2}$ 考虑了大角度传播的修正。
+
+对于全息平面上的每个采样点 $\mathbf{x}_i$：
 
 $$H(\mathbf{x}_i) = \left|\sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x}_i - \mathbf{r}_j|)}{|\mathbf{x}_i - \mathbf{r}_j|} + U_r(\mathbf{x}_i)\right|^2$$
 
 计算复杂度为 $O(MN)$，其中 $M$ 是全息图像素数，$N$ 是场景点数。
+
+**优化策略**：
+1. **查找表加速**：预计算 $\exp(ikr)/r$ 对于量化的 $r$ 值
+2. **并行计算**：每个全息像素独立计算，适合GPU加速
+3. **自适应采样**：根据物点分布密度调整计算精度
+
+**误差分析**：
+主要误差源包括：
+- 离散采样误差：$\epsilon_{sampling} \propto 1/\sqrt{N}$
+- 有限孔径截断：$\epsilon_{aperture} \propto \lambda z/D$
+- 数值精度：浮点运算引入的舍入误差
 
 ### 24.2.3 多边形法（Polygon-based Method）
 
@@ -83,27 +186,99 @@ $$H(\mathbf{x}_i) = \left|\sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x}_i - \mathbf{
 
 $$U_T(\mathbf{x}) = \iint_T \frac{A(\mathbf{r}')\exp(ik|\mathbf{x} - \mathbf{r}'|)}{|\mathbf{x} - \mathbf{r}'|} d\mathbf{r}'$$
 
-使用解析近似或数值积分方法计算此积分。
+对于平面三角形，可使用解析方法。设三角形顶点为 $\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3$，使用重心坐标：
+
+$$\mathbf{r}'(u,v) = (1-u-v)\mathbf{v}_1 + u\mathbf{v}_2 + v\mathbf{v}_3$$
+
+积分变换为：
+
+$$U_T(\mathbf{x}) = 2A_{triangle} \int_0^1 \int_0^{1-u} \frac{A(u,v)\exp(ikr(u,v))}{r(u,v)} dv du$$
+
+**Babinet原理优化**：
+对于不透明多边形，可利用Babinet原理：
+
+$$U_{polygon} = U_{aperture} - U_{background}$$
+
+这将复杂形状的计算转化为简单孔径的计算。
+
+**近似方法**：
+1. **恒定相位近似**：当多边形远小于到观察点的距离时
+   $$U_T \approx \frac{A_{avg} \cdot S_T \exp(ikr_c)}{r_c}$$
+   其中 $r_c$ 是到多边形质心的距离，$S_T$ 是面积。
+
+2. **Fresnel近似**：在近轴条件下使用二次相位展开
+   $$r \approx z + \frac{(x-x')^2 + (y-y')^2}{2z}$$
 
 ### 24.2.4 波前记录平面法（Wavefront Recording Plane）
 
-引入中间波前记录平面（WRP）减少计算量：
+WRP方法通过引入中间虚拟平面，将3D问题分解为多个2D传播问题，显著减少计算量。
 
-1. 计算物体到WRP的传播：
-   $$U_{WRP}(\mathbf{u}) = \mathcal{F}\{U_{obj}\} \exp(ikz\sqrt{1 - \lambda^2(f_x^2 + f_y^2)})$$
+**基本原理**：
+1. 在物体附近放置多个WRP
+2. 计算物点到最近WRP的短距离传播
+3. 计算WRP到全息平面的长距离传播
 
-2. 从WRP到全息平面的传播：
-   $$U_h(\mathbf{x}) = \mathcal{F}^{-1}\{\mathcal{F}\{U_{WRP}\} \exp(ikd\sqrt{1 - \lambda^2(f_x^2 + f_y^2)})\}$$
+**算法步骤**：
+
+1. **物体到WRP的传播**（使用Rayleigh-Sommerfeld积分）：
+   $$U_{WRP}(\mathbf{u}) = \sum_{j} A_j \frac{\exp(ik\rho_j)}{\rho_j}$$
+   其中 $\rho_j = |\mathbf{u} - \mathbf{r}_j|$ 是物点到WRP的距离。
+
+2. **WRP到全息平面的传播**（使用角谱方法）：
+   $$U_h(\mathbf{x}) = \mathcal{F}^{-1}\{\mathcal{F}\{U_{WRP}\} \cdot H(f_x, f_y)\}$$
+   
+   传播传递函数：
+   $$H(f_x, f_y) = \exp\left(ikd\sqrt{1 - \lambda^2(f_x^2 + f_y^2)}\right)$$
+   
+   对于大传播距离，可使用Fresnel近似：
+   $$H(f_x, f_y) \approx \exp(ikd)\exp\left(-i\pi\lambda d(f_x^2 + f_y^2)\right)$$
+
+**优化考虑**：
+- WRP位置选择：通常放置在物体的包围盒表面
+- WRP分辨率：由物体细节和传播距离决定
+- 多WRP策略：对复杂物体使用多个WRP，每个负责一部分物点
+
+**计算复杂度**：
+从 $O(MN)$ 降低到 $O(M\log M + KN)$，其中 $K$ 是WRP像素数，通常 $K << M$。
 
 ### 24.2.5 层析法（Layer-based Method）
 
+层析法将3D场景沿深度方向切片，特别适合体积数据和半透明物体的全息计算。
+
+**基本原理**：
 将3D场景分解为多个深度层，每层独立计算后叠加：
 
 $$U_o(\mathbf{x}) = \sum_{l=1}^L U_l(\mathbf{x}) * h_{z_l}(\mathbf{x})$$
 
-其中 $h_{z_l}$ 是从深度 $z_l$ 到全息平面的传播核：
+其中 $h_{z_l}$ 是从深度 $z_l$ 到全息平面的传播核。
 
+**Fresnel传播核**：
 $$h_z(\mathbf{x}) = \frac{\exp(ikz)}{i\lambda z}\exp\left(\frac{ik|\mathbf{x}|^2}{2z}\right)$$
+
+**频域实现**（更高效）：
+$$U_o = \sum_{l=1}^L \mathcal{F}^{-1}\{\mathcal{F}\{U_l\} \cdot H_l\}$$
+
+其中 $H_l(f_x, f_y) = \exp(ikz_l)\exp(-i\pi\lambda z_l(f_x^2 + f_y^2))$
+
+**层间距选择**：
+根据采样定理，层间距应满足：
+$$\Delta z \leq \frac{\lambda}{2(NA)^2}$$
+
+其中 NA 是系统数值孔径。这确保了轴向分辨率。
+
+**优化策略**：
+1. **非均匀层分布**：在物体密集区域使用更多层
+2. **自适应层数**：根据场景复杂度动态调整
+3. **层间插值**：使用三线性插值减少所需层数
+
+**遮挡处理**：
+对于不透明物体，需要考虑遮挡：
+$$U_l(\mathbf{x}) = A_l(\mathbf{x}) \cdot V_l(\mathbf{x})$$
+
+其中 $V_l(\mathbf{x})$ 是可见性函数，可通过深度缓冲或光线投射计算。
+
+**计算复杂度**：
+$O(LM\log M)$，其中 $L$ 是层数，利用FFT加速每层的传播计算。
 
 ## 24.3 空间光调制器显示技术
 
