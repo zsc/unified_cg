@@ -17,7 +17,13 @@
 
 $$I_{conf}(\mathbf{r}_0) = \int_V \rho(\mathbf{r}) |h_{ill}(\mathbf{r} - \mathbf{r}_0)|^2 |h_{det}(\mathbf{r} - \mathbf{r}_0)|^2 d^3\mathbf{r}$$
 
-其中 $\rho(\mathbf{r})$ 是样品的反射率或荧光分布。
+其中 $\rho(\mathbf{r})$ 是样品的反射率或荧光分布。这个方程表明共聚焦成像是照明和探测PSF的乘积，导致改善的分辨率。
+
+对于荧光共聚焦显微镜，需要考虑激发和发射波长的差异：
+
+$$I_{conf}(\mathbf{r}_0) = \int_V c(\mathbf{r}) |h_{exc}(\mathbf{r} - \mathbf{r}_0; \lambda_{exc})|^2 |h_{em}(\mathbf{r} - \mathbf{r}_0; \lambda_{em})|^2 d^3\mathbf{r}$$
+
+其中 $c(\mathbf{r})$ 是荧光团浓度，$h_{exc}$ 和 $h_{em}$ 分别是激发和发射波长下的PSF。
 
 ### 20.1.1 针孔的作用
 
@@ -34,6 +40,15 @@ $$h_{det}^{(p)}(\mathbf{r}) = \mathcal{F}^{-1}\left\{ \mathcal{F}\{h_{det}(\math
 
 其中 $M$ 是系统放大率。
 
+针孔大小的优化涉及分辨率和信号强度的权衡。定义归一化针孔半径：
+
+$$v_p = \frac{2\pi}{\lambda} \cdot \text{NA} \cdot r_{pinhole}/M$$
+
+最优值通常为 $v_p \approx 3.8$（对应1个Airy单位），此时：
+- 保留焦平面信号的84%
+- 抑制离焦信号超过90%
+- 横向分辨率改善约1.4倍
+
 ### 20.1.2 光学切片能力
 
 共聚焦系统的轴向响应函数为：
@@ -46,15 +61,52 @@ $$h(z) \approx \text{sinc}^2\left(\frac{k n z \text{NA}^2}{2}\right)$$
 
 其中 $k = 2\pi/\lambda$，$n$ 是折射率，NA 是数值孔径。
 
+共聚焦检测将轴向响应提升为四次方，显著改善光学切片：
+
+$$h_{conf}(z) = \text{sinc}^4\left(\frac{k n z \text{NA}^2}{2}\right)$$
+
+定义光学切片厚度为强度降至峰值一半的全宽（FWHM）：
+
+$$\Delta z_{conf} = \frac{0.64\lambda}{n - \sqrt{n^2 - \text{NA}^2}} \approx \frac{0.64\lambda n}{\text{NA}^2} \quad (\text{NA} \ll n)$$
+
 ### 20.1.3 扫描机制与图像形成
 
 激光扫描通过振镜系统实现，扫描位置 $\mathbf{r}_s(t)$ 的轨迹通常为：
 
 $$\mathbf{r}_s(t) = (A_x \sin(2\pi f_x t), A_y \sin(2\pi f_y t + \phi))$$
 
+对于光栅扫描，更常见的是锯齿波模式：
+
+$$x_s(t) = A_x \cdot \text{sawtooth}(2\pi f_x t), \quad y_s(t) = A_y \cdot \text{step}(t, \Delta y)$$
+
 完整的3D图像通过逐层扫描获得：
 
 $$I_{3D}(x, y, z) = \int_0^T I_{conf}(\mathbf{r}_s(t), z) \delta(\mathbf{r} - \mathbf{r}_s(t)) dt$$
+
+实际系统中需要考虑：
+
+1. **扫描非线性**：振镜的机械响应导致边缘失真
+   $$\mathbf{r}_{actual}(t) = \mathbf{r}_s(t) + \delta\mathbf{r}_{nonlinear}(t)$$
+
+2. **像素驻留时间**：影响信噪比
+   $$\text{SNR} \propto \sqrt{\tau_{dwell} \cdot I_{signal}}$$
+
+3. **光漂白效应**：累积光剂量
+   $$\frac{dc}{dt} = -k_{bleach} \cdot I_{exc} \cdot c$$
+
+### 20.1.4 共聚焦优势的数学基础
+
+共聚焦检测通过互相关提取焦平面信息：
+
+$$I_{conf} = \langle I_{ill}(\mathbf{r}) \cdot I_{det}(\mathbf{r}) \rangle$$
+
+这在频域表现为传递函数的扩展：
+
+$$\text{OTF}_{conf}(\mathbf{k}) = \text{OTF}_{ill}(\mathbf{k}) \otimes \text{OTF}_{det}(\mathbf{k})$$
+
+导致有效截止频率提高：
+
+$$k_{cutoff}^{conf} = 2 \cdot k_{cutoff}^{conv} = \frac{4\pi \cdot \text{NA}}{\lambda}$$
 
 ## 20.2 点扩散函数与光学切片
 
@@ -64,12 +116,26 @@ $$I_{3D}(x, y, z) = \int_0^T I_{conf}(\mathbf{r}_s(t), z) \delta(\mathbf{r} - \m
 
 $$h(\mathbf{r}) = \left| \int_{\Omega} A(\mathbf{k}_\perp) e^{i(\mathbf{k}_\perp \cdot \mathbf{r}_\perp + k_z z)} d^2\mathbf{k}_\perp \right|^2$$
 
-其中孔径函数 $A(\mathbf{k}_\perp)$ 由物镜的数值孔径决定：
+其中孔径函数 $A(\mathbf{k}_\perp)$ 由物镜的数值孔径决定，$k_z = \sqrt{k^2 - |\mathbf{k}_\perp|^2}$ 保证波矢量满足 $|\mathbf{k}| = k = 2\pi n/\lambda$。
+
+对于圆形孔径：
 
 $$A(\mathbf{k}_\perp) = \begin{cases}
 1, & |\mathbf{k}_\perp| \leq k \cdot \text{NA} \\
 0, & \text{否则}
 \end{cases}$$
+
+使用Debye-Wolf积分，PSF的精确表达式为：
+
+$$h(\mathbf{r}) = \left| \int_0^{\alpha} \int_0^{2\pi} \sqrt{\cos\theta} \, e^{ikr\sin\theta\cos(\phi-\phi_0)} e^{ikz\cos\theta} \sin\theta \, d\phi \, d\theta \right|^2$$
+
+其中 $\alpha = \arcsin(\text{NA}/n)$ 是最大收集角。
+
+对于高NA物镜（NA > 0.7），必须考虑矢量特性：
+
+$$\mathbf{h}(\mathbf{r}) = \int_{\Omega} \mathbf{A}(\mathbf{k}) e^{i\mathbf{k} \cdot \mathbf{r}} d^2\mathbf{k}_\perp$$
+
+其中 $\mathbf{A}(\mathbf{k})$ 包含偏振信息。
 
 ### 20.2.2 横向和轴向分辨率
 
@@ -83,6 +149,21 @@ $$A(\mathbf{k}_\perp) = \begin{cases}
 - 共聚焦横向：$\Delta r_\perp^{conf} = 0.4\lambda/\text{NA}$
 - 共聚焦轴向：$\Delta z^{conf} = 1.4n\lambda/\text{NA}^2$
 
+这些改善因子来自于PSF的平方关系。更精确的分析给出：
+
+1. **横向PSF形状**（在焦平面）：
+   $$h_\perp(r) = \left[ \frac{2J_1(v)}{v} \right]^2, \quad v = \frac{2\pi}{\lambda} \text{NA} \cdot r$$
+   
+   其中 $J_1$ 是一阶贝塞尔函数。
+
+2. **轴向PSF形状**（沿光轴）：
+   $$h_\parallel(z) = \left[ \frac{\sin(u/4)}{u/4} \right]^2, \quad u = \frac{2\pi}{\lambda} n z \left(1 - \sqrt{1 - (\text{NA}/n)^2}\right)$$
+
+3. **完整3D PSF的近似**（Born & Wolf）：
+   $$h(r,z) \approx h_\perp(r) \cdot h_\parallel(z) \cdot \cos\left(\frac{vw}{4u}\right)$$
+   
+   其中 $w = u \cdot (r/z)^2$，这个余弦项描述了横向和轴向的耦合。
+
 ### 20.2.3 PSF与体积渲染核的联系
 
 将PSF视为体积渲染中的重建核，渲染方程变为：
@@ -90,6 +171,49 @@ $$A(\mathbf{k}_\perp) = \begin{cases}
 $$I(\mathbf{x}, \boldsymbol{\omega}) = \int_V \int_{4\pi} f(\mathbf{x}', \boldsymbol{\omega}', \boldsymbol{\omega}) h(\mathbf{x} - \mathbf{x}') L(\mathbf{x}', \boldsymbol{\omega}') d\boldsymbol{\omega}' d^3\mathbf{x}'$$
 
 这表明显微成像可以理解为带有空间变化核的体积渲染过程。
+
+在频域中，这种关系更加清晰：
+
+$$\tilde{I}(\mathbf{k}) = \tilde{h}(\mathbf{k}) \cdot \tilde{O}(\mathbf{k})$$
+
+其中 $\tilde{h}(\mathbf{k})$ 是光学传递函数（OTF），即PSF的傅里叶变换。
+
+### 20.2.4 光学切片的定量分析
+
+光学切片能力可以通过积分强度响应（ISR）定量描述：
+
+$$\text{ISR}(z) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} h(x, y, z) \, dx \, dy$$
+
+对于理想的光学切片，ISR应该是一个尖锐的峰。共聚焦系统的ISR为：
+
+$$\text{ISR}_{conf}(z) = \left[ \frac{\sin(kz\text{NA}^2/4n)}{kz\text{NA}^2/4n} \right]^4$$
+
+定义切片选择性参数：
+
+$$S = \frac{\text{ISR}(0)}{\int_{-\infty}^{\infty} \text{ISR}(z) \, dz}$$
+
+共聚焦系统的 $S_{conf} \approx 2S_{conv}$，表明其优越的背景抑制能力。
+
+### 20.2.5 像差对PSF的影响
+
+实际系统中的像差通过波前畸变影响PSF：
+
+$$\Phi(\mathbf{k}_\perp) = \sum_{n,m} W_{nm} Z_{nm}(\rho, \theta)$$
+
+其中 $Z_{nm}$ 是Zernike多项式，$W_{nm}$ 是像差系数。常见像差包括：
+
+1. **球差**（$W_{040}$）：深度成像时最重要
+   $$\Phi_{spher} = W_{040} \left( 6\rho^4 - 6\rho^2 + 1 \right)$$
+
+2. **彗差**（$W_{131}$）：倾斜入射导致
+   $$\Phi_{coma} = W_{131} \left( 3\rho^3 - 2\rho \right) \cos\theta$$
+
+3. **像散**（$W_{222}$）：非圆对称系统
+   $$\Phi_{astig} = W_{222} \rho^2 \cos(2\theta)$$
+
+含像差的PSF为：
+
+$$h_{aberr}(\mathbf{r}) = \left| \int_{\Omega} A(\mathbf{k}_\perp) e^{i\Phi(\mathbf{k}_\perp)} e^{i\mathbf{k} \cdot \mathbf{r}} d^2\mathbf{k}_\perp \right|^2$$
 
 ## 20.3 双光子激发与非线性吸收
 
@@ -99,7 +223,18 @@ $$I(\mathbf{x}, \boldsymbol{\omega}) = \int_V \int_{4\pi} f(\mathbf{x}', \boldsy
 
 $$\delta_{2\gamma} = \frac{8\pi^2 e^4 \omega^2}{n^2 c^2 \hbar} \left| \sum_n \frac{\langle f | \mathbf{r} | n \rangle \langle n | \mathbf{r} | i \rangle}{E_n - E_i - \hbar\omega} \right|^2 g(\omega)$$
 
-其中 $g(\omega)$ 是光谱线型函数。
+其中 $g(\omega)$ 是光谱线型函数，描述两个光子的频率分布。
+
+对于简并双光子吸收（两个相同频率的光子），跃迁速率为：
+
+$$W_{2\gamma} = \frac{2\pi}{\hbar} \left| \sum_n \frac{\langle f | \hat{\boldsymbol{\mu}} \cdot \mathbf{E} | n \rangle \langle n | \hat{\boldsymbol{\mu}} \cdot \mathbf{E} | i \rangle}{E_n - E_i - \hbar\omega + i\Gamma_n/2} \right|^2 \rho(\omega)$$
+
+其中 $\hat{\boldsymbol{\mu}}$ 是偶极矩算符，$\Gamma_n$ 是中间态线宽。
+
+双光子吸收截面的典型值：
+- 有机染料：$\delta_{2\gamma} \sim 10^{-50} - 10^{-48}$ cm⁴·s/photon
+- 量子点：$\delta_{2\gamma} \sim 10^{-47} - 10^{-45}$ cm⁴·s/photon
+- 特殊设计分子：$\delta_{2\gamma} > 10^{-47}$ cm⁴·s/photon
 
 ### 20.3.2 强度平方依赖性
 
@@ -107,7 +242,22 @@ $$\delta_{2\gamma} = \frac{8\pi^2 e^4 \omega^2}{n^2 c^2 \hbar} \left| \sum_n \fr
 
 $$R_{2\gamma}(\mathbf{r}) = \frac{1}{2} \delta_{2\gamma} N(\mathbf{r}) \left(\frac{I(\mathbf{r})}{\hbar\omega}\right)^2$$
 
-这导致固有的光学切片能力，因为激发主要发生在焦点附近。
+对于脉冲激光，需要考虑时间分布：
+
+$$R_{2\gamma}^{pulse} = \frac{\delta_{2\gamma} N}{2} \frac{\langle I^2 \rangle}{(\hbar\omega)^2} = \frac{\delta_{2\gamma} N}{2} \frac{g^{(2)} P_{avg}^2}{(\hbar\omega)^2 f_{rep}^2 \tau_p A^2}$$
+
+其中：
+- $g^{(2)}$ 是二阶相干度（高斯脉冲为0.664）
+- $P_{avg}$ 是平均功率
+- $f_{rep}$ 是重复频率
+- $\tau_p$ 是脉冲宽度
+- $A$ 是焦斑面积
+
+这导致固有的光学切片能力，因为激发主要发生在焦点附近。激发体积可定义为：
+
+$$V_{2\gamma} = \frac{\left(\int I^2 dV\right)^2}{\int I^4 dV}$$
+
+对于高斯光束，$V_{2\gamma} \approx 0.3 \lambda^3/\text{NA}^3$。
 
 ### 20.3.3 双光子显微镜的PSF
 
@@ -119,12 +269,76 @@ $$h_{2\gamma}(\mathbf{r}) = |h_{exc}(\mathbf{r})|^4$$
 
 $$\text{FWHM}_{2\gamma}^{(z)} = \frac{\text{FWHM}_{1\gamma}^{(z)}}{\sqrt{2}}$$
 
+具体地，双光子PSF的解析形式：
+
+1. **横向分布**：
+   $$h_{2\gamma}^{\perp}(r) = \left[ \frac{2J_1(v)}{v} \right]^4, \quad v = \frac{2\pi}{\lambda_{exc}} \text{NA} \cdot r$$
+
+2. **轴向分布**：
+   $$h_{2\gamma}^{\parallel}(z) = \left[ \frac{\sin(u/4)}{u/4} \right]^4, \quad u = \frac{2\pi}{\lambda_{exc}} n z \text{NA}^2$$
+
+3. **分辨率改善**：
+   - 横向：$\Delta r_{2\gamma} = 0.32\lambda_{exc}/\text{NA}$
+   - 轴向：$\Delta z_{2\gamma} = 0.9n\lambda_{exc}/\text{NA}^2$
+
 ### 20.3.4 非线性效应的优势
 
 1. **深层成像**：近红外激发光穿透更深
+   - 散射：$\sigma_{scat} \propto \lambda^{-4}$ (Rayleigh) 或 $\lambda^{-1}$ (Mie)
+   - 吸收：生物组织在700-1300nm窗口吸收最小
+   - 典型穿透深度：单光子 ~100μm，双光子 ~500-1000μm
+
 2. **减少光损伤**：局域化激发
+   - 焦平面外无激发：$I < I_{threshold}$
+   - 总光剂量：$D_{2\gamma} \ll D_{1\gamma}$ 对于相同信号
+   - 光漂白限制在焦点体积内
+
 3. **降低背景**：无需共聚焦针孔
+   - 本征光学切片：$\Delta z_{opt} \propto I^2$
+   - 收集效率：可收集所有发射光
+   - 信噪比改善：$\text{SNR}_{2\gamma} > \text{SNR}_{conf}$ 在散射样品中
+
 4. **同时多色激发**：宽带激发谱
+   - 单一激发波长可激发多种荧光团
+   - 虚态跃迁允许灵活的能级匹配
+   - 减少色差和配准问题
+
+### 20.3.5 脉冲激光参数优化
+
+双光子激发效率依赖于脉冲参数：
+
+$$\eta_{2\gamma} \propto \frac{P_{peak}^2}{\tau_p f_{rep}} = \frac{P_{avg}^2}{\tau_p f_{rep}^2}$$
+
+优化策略：
+
+1. **脉冲宽度**：100-200 fs最优
+   - 太短：光谱展宽导致色散
+   - 太长：峰值功率不足
+
+2. **重复频率**：80-100 MHz标准
+   - 平衡荧光寿命和平均功率
+   - 避免三重态累积
+
+3. **功率控制**：
+   $$P_{sample} = P_{laser} \cdot T_{optics} \cdot \exp(-\tau_{tissue})$$
+   
+   典型值：1-50 mW at sample
+
+### 20.3.6 高阶非线性过程
+
+三光子和更高阶过程：
+
+$$R_{n\gamma} \propto I^n$$
+
+优势：
+- 更好的光学切片：$\Delta z_{n\gamma} \propto n^{-1/2}$
+- 更深的穿透：使用1300-1700nm激发
+- 更高的空间分辨率
+
+挑战：
+- 需要更高峰值功率
+- 光损伤阈值限制
+- 复杂的脉冲管理
 
 ## 20.4 体积渲染中的聚焦积分
 
