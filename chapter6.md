@@ -15,19 +15,62 @@
 
 ### 6.1 引言与动机
 
-传统的场景表示方法，如体素网格、点云或网格，本质上是离散的。它们在固定分辨率下采样3D空间，导致内存需求与分辨率立方成正比的问题。神经辐射场通过使用神经网络作为连续函数逼近器来解决这一限制。
+传统的场景表示方法，如体素网格、点云或网格，本质上是离散的。它们在固定分辨率下采样3D空间，导致内存需求与分辨率立方成正比的问题。具体而言，对于分辨率为 $N^3$ 的体素网格，存储复杂度为 $\mathcal{O}(N^3)$，这在高分辨率下变得不可行。神经辐射场通过使用神经网络作为连续函数逼近器来解决这一限制。
 
-关键洞察是：我们可以将场景表示为从3D位置和视角方向到体积密度和颜色的连续映射：
+#### 6.1.1 从离散到连续的范式转变
+
+考虑传统离散表示的数学形式。体素网格可表示为：
+
+$$\rho_{\text{voxel}}(\mathbf{x}) = \sum_{i,j,k} \rho_{ijk} \cdot \mathbb{1}_{V_{ijk}}(\mathbf{x})$$
+
+其中 $\mathbb{1}_{V_{ijk}}$ 是体素 $(i,j,k)$ 的指示函数，$\rho_{ijk}$ 是存储的属性值。这种表示存在几个根本限制：
+
+1. **分辨率-内存权衡**：提高分辨率导致内存需求立方增长
+2. **固定采样**：无法在采样点之间进行连续查询
+3. **混叠效应**：离散采样导致高频细节丢失
+
+神经辐射场通过将场景表示为神经网络参数化的连续函数来克服这些限制：
 
 $$F_\Theta: (\mathbf{x}, \mathbf{d}) \mapsto (\sigma, \mathbf{c})$$
 
-其中 $\mathbf{x} \in \mathbb{R}^3$ 是空间位置，$\mathbf{d} \in \mathbb{S}^2$ 是视角方向，$\sigma \in \mathbb{R}_+$ 是体积密度，$\mathbf{c} \in [0,1]^3$ 是RGB颜色，$\Theta$ 是神经网络参数。
+其中 $\mathbf{x} \in \mathbb{R}^3$ 是空间位置，$\mathbf{d} \in \mathbb{S}^2$ 是视角方向，$\sigma \in \mathbb{R}_+$ 是体积密度，$\mathbf{c} \in [0,1]^3$ 是RGB颜色，$\Theta \in \mathbb{R}^p$ 是神经网络的 $p$ 个参数。
+
+#### 6.1.2 与体积渲染方程的自然对应
 
 这种表示与我们在第3章中建立的统一体积渲染方程自然契合：
 
-$$L(\mathbf{r}) = \int_0^\infty T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+$$L(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
 
-其中 $T(t) = \exp\left(-\int_0^t \sigma(\mathbf{r}(s)) ds\right)$ 是透射率。
+其中透射率定义为：
+
+$$T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$$
+
+射线参数化为 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$，其中 $\mathbf{o}$ 是射线原点，$\mathbf{d}$ 是单位方向向量。
+
+#### 6.1.3 神经表示的理论优势
+
+神经网络表示提供了几个理论优势：
+
+1. **压缩表示**：根据Kolmogorov-Arnold表示定理，任何连续函数可以表示为有限个单变量连续函数的组合。神经网络通过其层次结构自然实现这种分解。
+
+2. **隐式正则化**：神经网络的参数化引入了隐式的平滑性先验，这可以通过神经切线核（NTK）理论来理解：
+   $$K_{\text{NTK}}(\mathbf{x}, \mathbf{x}') = \lim_{m \to \infty} \frac{1}{m} \sum_{i=1}^m \frac{\partial f(\mathbf{x}; \Theta)}{\partial \Theta_i} \frac{\partial f(\mathbf{x}'; \Theta)}{\partial \Theta_i}$$
+   
+   其中 $m$ 是网络宽度。这个核决定了函数空间的归纳偏置。
+
+3. **自适应分辨率**：不同于固定分辨率的离散表示，神经网络可以自适应地分配容量到场景的不同部分。信息论分析表明，对于熵为 $H$ 的场景，神经网络可以达到接近最优的压缩率 $R \approx H$。
+
+#### 6.1.4 NeRF在统一框架中的位置
+
+在我们的统一计算机图形学框架中，NeRF占据了一个特殊位置，连接了几个重要概念：
+
+1. **与基于点的渲染的联系**（第3章）：NeRF可以视为无限密集点云的极限情况，其中每个空间点都有定义的属性。
+
+2. **与基于图像的渲染的联系**（第4章）：NeRF隐式编码了光场，可以生成任意视角的图像。
+
+3. **与物理渲染的联系**（第5章）：通过适当的修改，NeRF可以扩展到建模参与介质和次表面散射。
+
+4. **向波动光学的桥梁**（第15-20章）：连续表示为后续引入相位信息和波动效应提供了自然基础。
 
 ### 6.2 连续体积表示
 
@@ -35,46 +78,117 @@ $$L(\mathbf{r}) = \int_0^\infty T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}
 
 隐式表示将几何编码为水平集函数或占用场。对于NeRF，我们扩展这一概念以包含外观信息。核心思想是学习一个函数 $F_\Theta$，它隐式地编码场景的几何和外观属性。
 
-考虑传统的有符号距离函数（SDF）表示：
-$$\phi: \mathbb{R}^3 \rightarrow \mathbb{R}$$
+考虑几种经典的隐式表示及其与NeRF的关系：
 
-NeRF将此扩展为：
+1. **有符号距离函数（SDF）**：
+   $$\phi: \mathbb{R}^3 \rightarrow \mathbb{R}, \quad \text{其中} \quad |\nabla \phi| = 1 \text{ a.e.}$$
+   
+   表面定义为零水平集：$\mathcal{S} = \{\mathbf{x} : \phi(\mathbf{x}) = 0\}$
+
+2. **占用场（Occupancy Field）**：
+   $$o: \mathbb{R}^3 \rightarrow [0,1], \quad o(\mathbf{x}) = \mathbb{P}[\mathbf{x} \in \mathcal{V}]$$
+   
+   其中 $\mathcal{V}$ 是占用体积。
+
+3. **NeRF的体积密度场**：
+   $$\sigma: \mathbb{R}^3 \rightarrow \mathbb{R}_+$$
+   
+   这可以理解为微分不透明度：$\sigma(\mathbf{x}) = -\frac{d\log T}{dt}|_{\mathbf{x}}$
+
+NeRF通过联合表示几何和外观扩展了这些概念：
 $$F_\Theta: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}_+ \times [0,1]^3$$
 
+**定理（表示能力）**：对于紧支撑集 $K \subset \mathbb{R}^3$ 上的任意连续密度场 $\sigma^*$ 和颜色场 $\mathbf{c}^*$，以及任意 $\epsilon > 0$，存在一个有限参数的神经网络 $F_\Theta$ 使得：
+
+$$\sup_{(\mathbf{x},\mathbf{d}) \in K \times \mathbb{S}^2} \|F_\Theta(\mathbf{x},\mathbf{d}) - (\sigma^*(\mathbf{x}), \mathbf{c}^*(\mathbf{x},\mathbf{d}))\| < \epsilon$$
+
 这种表示的优势包括：
-- **内存效率**：存储需求与场景复杂度无关
-- **连续性**：可在任意分辨率下查询
-- **可微性**：支持基于梯度的优化
+- **内存效率**：存储需求 $\mathcal{O}(p)$ 与场景复杂度无关，仅取决于网络参数数量 $p$
+- **连续性**：可在任意分辨率下查询，支持超分辨率渲染
+- **可微性**：几乎处处可微，支持基于梯度的优化和逆向渲染
 
 #### 6.2.2 从体素到连续函数
 
-考虑离散体素表示与连续神经表示之间的关系。离散体素网格可以视为：
+考虑离散体素表示与连续神经表示之间的数学关系。离散体素网格可以视为：
 
 $$\sigma_{\text{voxel}}(\mathbf{x}) = \sum_{i,j,k} \sigma_{ijk} \cdot \mathbb{1}_{V_{ijk}}(\mathbf{x})$$
 
-其中 $\mathbb{1}_{V_{ijk}}$ 是体素 $(i,j,k)$ 的指示函数。
+其中 $\mathbb{1}_{V_{ijk}}$ 是体素 $(i,j,k)$ 的指示函数。这种表示本质上是在函数空间中使用了阶跃基函数。
 
-神经网络表示可以理解为使用平滑基函数的推广：
+我们可以将这种表示推广到更一般的基函数展开：
 
-$$\sigma_{\text{neural}}(\mathbf{x}) = \sum_{l=1}^L w_l \cdot \phi_l(W_l \mathbf{x} + b_l)$$
+$$\sigma(\mathbf{x}) = \sum_{n=1}^N c_n \psi_n(\mathbf{x})$$
 
-其中 $\phi_l$ 是激活函数，$W_l, b_l, w_l$ 是可学习参数。这种表示通过神经网络的组合性质实现了更高效的场景编码。
+不同的基函数选择导致不同的表示：
+
+1. **体素基**：$\psi_n = \mathbb{1}_{V_n}$ - 零阶不连续
+2. **三线性插值**：$\psi_n = \prod_{i=1}^3 (1-|x_i - x_i^n|)_+$ - 一阶连续
+3. **B样条基**：$\psi_n = B^k((\mathbf{x} - \mathbf{x}_n)/h)$ - $k$阶连续
+4. **径向基函数**：$\psi_n = \exp(-\|\mathbf{x} - \mathbf{x}_n\|^2/\sigma^2)$ - 无限阶平滑
+
+神经网络表示可以理解为使用自适应、可学习基函数的推广：
+
+$$\sigma_{\text{neural}}(\mathbf{x}) = g\left(\sum_{l=1}^L W_l^{(L)} \phi_{l-1}\left(\cdots \phi_1(W_1^{(1)}\mathbf{x} + \mathbf{b}_1^{(1)})\cdots\right)\right)$$
+
+其中 $g$ 是输出激活函数（如softplus），$\phi_l$ 是隐藏层激活函数。
+
+**定理（基函数等价性）**：具有ReLU激活的深度神经网络定义了分片线性基函数的自适应划分，其中：
+- 划分区域数量：$\mathcal{O}((\text{neurons})^{\text{depth}})$
+- 每个区域内：函数是线性的
+- 边界复杂度：由网络架构决定
+
+这种表示通过神经网络的组合性质实现了更高效的场景编码，其压缩率可以通过率失真理论分析：
+
+$$R(D) = \inf_{F_\Theta} \{H(\Theta) : \mathbb{E}[\|\sigma - F_\Theta(\cdot)\|^2] \leq D\}$$
+
+其中 $H(\Theta)$ 是参数的熵，$D$ 是允许的失真。
 
 #### 6.2.3 MLP作为辐射场编码器
 
-标准的NeRF架构使用多层感知器（MLP）：
+标准的NeRF架构使用多层感知器（MLP）作为函数逼近器。让我们详细分析其架构设计和数学性质。
+
+**基本架构**：
 
 $$\mathbf{h}_0 = \gamma(\mathbf{x})$$
 $$\mathbf{h}_{l+1} = \phi(W_l \mathbf{h}_l + \mathbf{b}_l), \quad l = 0, ..., L-1$$
-$$\sigma = \text{softplus}(w_\sigma^T \mathbf{h}_L + b_\sigma)$$
-$$\mathbf{c} = \text{sigmoid}(W_c [\mathbf{h}_L, \gamma(\mathbf{d})] + \mathbf{b}_c)$$
 
-其中 $\gamma$ 是位置编码函数（下一节详述），$\phi$ 是ReLU激活函数。
+对于密度预测：
+$$\mathbf{f}_\sigma = \mathbf{h}_L$$
+$$\sigma = \text{softplus}(w_\sigma^T \mathbf{f}_\sigma + b_\sigma) = \log(1 + \exp(w_\sigma^T \mathbf{f}_\sigma + b_\sigma))$$
 
-注意架构的关键设计选择：
-- 密度 $\sigma$ 仅依赖于位置 $\mathbf{x}$
-- 颜色 $\mathbf{c}$ 依赖于位置和方向 $(\mathbf{x}, \mathbf{d})$
-- 使用跳跃连接以改善梯度流
+对于颜色预测：
+$$\mathbf{f}_c = [\mathbf{h}_L, \gamma(\mathbf{d})]$$
+$$\mathbf{c} = \text{sigmoid}(W_c \mathbf{f}_c + \mathbf{b}_c) = \frac{1}{1 + \exp(-W_c \mathbf{f}_c - \mathbf{b}_c)}$$
+
+其中 $\gamma$ 是位置编码函数，$\phi$ 是ReLU激活函数：$\phi(x) = \max(0, x)$。
+
+**架构的关键设计原则**：
+
+1. **视角无关的几何**：密度 $\sigma$ 仅依赖于位置 $\mathbf{x}$，确保几何的视角一致性
+   
+2. **视角相关的外观**：颜色 $\mathbf{c}$ 依赖于位置和方向 $(\mathbf{x}, \mathbf{d})$，允许建模镜面反射等效果
+
+3. **跳跃连接**：在第 $l^*$ 层重新注入位置编码
+   $$\mathbf{h}_{l^*+1} = \phi(W_{l^*} [\mathbf{h}_{l^*}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
+   
+   这改善了梯度流并保留了高频信息。
+
+**网络容量分析**：
+
+对于深度 $L$、宽度 $w$ 的全连接网络，其表达能力可以通过以下度量：
+
+1. **参数数量**：$p = \mathcal{O}(Lw^2)$
+2. **线性区域数量**：$N_{\text{regions}} = \mathcal{O}((w/L)^L)$
+3. **Lipschitz常数**：$\text{Lip}(F_\Theta) \leq \prod_{l=1}^L \|W_l\|_2$
+
+**激活函数选择的理论依据**：
+
+- **Softplus用于密度**：确保 $\sigma \geq 0$，且在零点处平滑
+  $$\text{softplus}'(x) = \text{sigmoid}(x) \in (0, 1)$$
+  
+- **Sigmoid用于颜色**：确保 $\mathbf{c} \in [0,1]^3$，物理上对应归一化的RGB值
+
+- **ReLU用于隐藏层**：计算效率高，且保持了分片线性性质
 
 #### 6.2.4 密度与颜色的联合建模
 
@@ -92,45 +206,116 @@ $$\mathbf{c} = F_{\text{color}}(\mathbf{f}, \gamma(\mathbf{d}))$$
 
 #### 6.3.1 神经网络的频谱偏差问题
 
-标准神经网络表现出强烈的频谱偏差，倾向于学习低频函数。这可以通过神经切线核（NTK）理论来理解。
+标准神经网络表现出强烈的频谱偏差，倾向于学习低频函数。这种现象可以从多个理论角度理解。
 
-考虑简单的单层网络：
-$$f(\mathbf{x}) = \mathbf{w}^T \phi(\mathbf{V}\mathbf{x})$$
+**频谱偏差的傅里叶分析**：
 
-其NTK为：
-$$K(\mathbf{x}, \mathbf{x}') = \langle \nabla_\theta f(\mathbf{x}), \nabla_\theta f(\mathbf{x}') \rangle$$
+考虑目标函数的傅里叶展开：
+$$f(\mathbf{x}) = \int_{\mathbb{R}^3} \hat{f}(\mathbf{k}) e^{i\mathbf{k} \cdot \mathbf{x}} d\mathbf{k}$$
 
-对于ReLU网络，这个核主要集中在低频成分上。实际上，标准MLP学习的函数可以近似表示为：
+标准神经网络在训练初期主要捕获低频成分：
+$$f_{\text{neural}}(\mathbf{x}; t) \approx \int_{|\mathbf{k}| < k_c(t)} \hat{f}(\mathbf{k}) e^{i\mathbf{k} \cdot \mathbf{x}} d\mathbf{k}$$
 
-$$f(\mathbf{x}) \approx \sum_{|\mathbf{k}| < k_c} \hat{f}_\mathbf{k} e^{i\mathbf{k} \cdot \mathbf{x}}$$
+其中截止频率 $k_c(t)$ 随训练时间缓慢增长。
 
-其中截止频率 $k_c$ 相对较小。
+**神经切线核（NTK）视角**：
+
+在无限宽度极限下，神经网络的训练动态由NTK控制：
+$$\frac{\partial f(\mathbf{x}; \Theta_t)}{\partial t} = -\eta \int K(\mathbf{x}, \mathbf{x}') \nabla_f \mathcal{L}(\mathbf{x}') d\mathbf{x}'$$
+
+其中核函数为：
+$$K(\mathbf{x}, \mathbf{x}') = \lim_{w \to \infty} \frac{1}{w} \sum_{i=1}^w \frac{\partial f(\mathbf{x}; \Theta)}{\partial \Theta_i} \frac{\partial f(\mathbf{x}'; \Theta)}{\partial \Theta_i}$$
+
+对于ReLU网络，NTK具有特定的频谱特性：
+$$\hat{K}(\mathbf{k}, \mathbf{k}') = \mathcal{F}[K](\mathbf{k}, \mathbf{k}') \propto \exp(-c|\mathbf{k}|^\alpha)$$
+
+其中 $\alpha > 0$，表明高频成分被指数抑制。
+
+**学习动态的频率依赖性**：
+
+定义频率 $\mathbf{k}$ 的学习率为：
+$$\tau_\mathbf{k}^{-1} = \lambda_\mathbf{k} \cdot \eta$$
+
+其中 $\lambda_\mathbf{k}$ 是NTK在频率 $\mathbf{k}$ 处的特征值。对于标准初始化：
+$$\lambda_\mathbf{k} \propto |\mathbf{k}|^{-\beta}, \quad \beta > 0$$
+
+这导致高频成分的学习时间尺度：
+$$\tau_\mathbf{k} \propto |\mathbf{k}|^\beta$$
+
+因此，学习频率 $\mathbf{k}$ 所需的迭代次数随 $|\mathbf{k}|$ 多项式增长。
 
 #### 6.3.2 傅里叶特征映射
 
-为了克服频谱偏差，NeRF使用位置编码将输入映射到高维空间：
+为了克服频谱偏差，NeRF使用位置编码将输入映射到高维空间。这种技术基于随机傅里叶特征的理论，但使用确定性的频率选择。
 
-$$\gamma(\mathbf{x}) = \left[\sin(2^0\pi\mathbf{x}), \cos(2^0\pi\mathbf{x}), ..., \sin(2^{L-1}\pi\mathbf{x}), \cos(2^{L-1}\pi\mathbf{x})\right]^T$$
+**标准位置编码**：
 
-这等价于使用随机傅里叶特征的确定性版本。更一般地，我们可以写作：
+$$\gamma(\mathbf{x}) = \left[\mathbf{x}, \sin(2^0\pi\mathbf{x}), \cos(2^0\pi\mathbf{x}), ..., \sin(2^{L-1}\pi\mathbf{x}), \cos(2^{L-1}\pi\mathbf{x})\right]^T$$
 
+展开后，对于 $\mathbf{x} = (x, y, z)$：
+$$\gamma(\mathbf{x}) = [x, y, z, \sin(\pi x), \cos(\pi x), \sin(\pi y), \cos(\pi y), ..., \sin(2^{L-1}\pi z), \cos(2^{L-1}\pi z)]^T$$
+
+输出维度：$d_{\gamma} = 3 + 6L$（原始坐标 + 每个频率级别的正弦余弦对）。
+
+**一般化的傅里叶特征**：
+
+更一般的形式使用任意频率矩阵：
 $$\gamma(\mathbf{x}) = \left[\sin(\mathbf{B}\mathbf{x}), \cos(\mathbf{B}\mathbf{x})\right]^T$$
 
-其中 $\mathbf{B} \in \mathbb{R}^{m \times 3}$ 是频率矩阵。
+其中 $\mathbf{B} \in \mathbb{R}^{m \times 3}$ 是频率矩阵。不同的 $\mathbf{B}$ 选择导致不同的编码：
+
+1. **NeRF标准编码**：$\mathbf{B} = \text{diag}(2^0\pi, 2^1\pi, ..., 2^{L-1}\pi) \otimes \mathbf{I}_3$
+2. **随机傅里叶特征**：$\mathbf{B}_{ij} \sim \mathcal{N}(0, \sigma^2)$
+3. **学习的频率**：$\mathbf{B}$ 作为可训练参数
+
+**与核方法的联系**：
+
+位置编码等价于在特征空间中使用线性模型：
+$$f(\mathbf{x}) = \mathbf{w}^T \gamma(\mathbf{x})$$
+
+这对应于原始空间中的核函数：
+$$K(\mathbf{x}, \mathbf{x}') = \gamma(\mathbf{x})^T \gamma(\mathbf{x}')$$
+
+对于傅里叶特征：
+$$K(\mathbf{x}, \mathbf{x}') = \sum_{j=1}^m \cos(\mathbf{b}_j^T(\mathbf{x} - \mathbf{x}'))$$
+
+这是平稳核，其频谱由 $\mathbf{B}$ 的行向量 $\mathbf{b}_j$ 决定。
 
 #### 6.3.3 位置编码的数学分析
 
-位置编码的效果可以通过分析组合核来理解：
+位置编码从根本上改变了神经网络的逼近性质。让我们严格分析其数学效果。
 
-$$K_\gamma(\mathbf{x}, \mathbf{x}') = K(\gamma(\mathbf{x}), \gamma(\mathbf{x}'))$$
+**频谱扩展定理**：
 
-对于傅里叶特征，这产生：
+**定理 6.1**：设 $f: \mathbb{R}^3 \rightarrow \mathbb{R}$ 是带限函数，其傅里叶变换满足 $\text{supp}(\hat{f}) \subseteq \{\mathbf{k}: |\mathbf{k}|_\infty \leq K\}$。使用位置编码 $\gamma$ 且最大频率 $2^{L-1}\pi \geq K$ 的单层线性网络可以精确表示 $f$。
 
-$$K_\gamma(\mathbf{x}, \mathbf{x}') = \sum_{j=1}^m \cos(\mathbf{b}_j^T(\mathbf{x} - \mathbf{x}'))$$
+*证明概要*：由Nyquist-Shannon定理，$f$ 可以表示为：
+$$f(\mathbf{x}) = \sum_{\mathbf{n} \in \mathbb{Z}^3} f(\mathbf{n}/2K) \text{sinc}(2K\mathbf{x} - \mathbf{n})$$
 
-这是一个带限核，其频谱支持由 $\mathbf{B}$ 的行决定。
+使用傅里叶级数展开和位置编码的完备性，存在权重 $\mathbf{w}$ 使得：
+$$f(\mathbf{x}) = \mathbf{w}^T \gamma(\mathbf{x})$$
 
-**定理**：使用位置编码 $\gamma$ 的神经网络可以均匀逼近频带 $[-\|\mathbf{B}\|_\infty, \|\mathbf{B}\|_\infty]$ 内的任何连续函数。
+**组合核分析**：
+
+位置编码诱导的核函数：
+$$K_\gamma(\mathbf{x}, \mathbf{x}') = \gamma(\mathbf{x})^T \gamma(\mathbf{x}')$$
+
+对于NeRF的标准编码：
+$$K_\gamma(\mathbf{x}, \mathbf{x}') = \mathbf{x}^T\mathbf{x}' + \sum_{l=0}^{L-1} \sum_{i=1}^3 \cos(2^l\pi(x_i - x_i'))$$
+
+这个核的频谱具有离散支撑：
+$$\hat{K}_\gamma(\mathbf{k}) = \delta(\mathbf{k}) + \sum_{l=0}^{L-1} \sum_{\epsilon \in \{-1,1\}^3} \delta(\mathbf{k} - \epsilon 2^l\pi)$$
+
+**收敛速率分析**：
+
+**定理 6.2**：对于Lipschitz连续函数 $f$ 和使用位置编码的神经网络 $f_\Theta$，逼近误差满足：
+$$\|f - f_\Theta\|_{L^2} \leq C \cdot 2^{-L} \cdot \text{Lip}(f) + \mathcal{O}(n^{-1/2})$$
+
+其中 $n$ 是网络参数数量，$L$ 是编码的频率级别数。
+
+这表明：
+1. 第一项：由带限近似引起的误差，随 $L$ 指数衰减
+2. 第二项：由有限网络容量引起的误差，随参数数量多项式衰减
 
 #### 6.3.4 其他编码方案比较
 
