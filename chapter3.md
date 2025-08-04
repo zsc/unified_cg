@@ -22,9 +22,15 @@ Classical computer graphics traditionally separates surface and volume rendering
 
 where d(x,S) is the signed distance to the surface. This allows us to treat all rendering uniformly.
 
+To make this precise, consider a thin shell around surface S with thickness ε:
+
+σ_ε(x) = (1/ε)𝟙_{|d(x,S)| < ε/2}
+
+As ε → 0, σ_ε → δ_S in the distributional sense. This connects to level set methods where surfaces are zero-crossings of signed distance functions.
+
 ### 3.1.2 Derivation from Radiative Transfer
 
-The radiative transfer equation describes light propagation through participating media:
+The radiative transfer equation (RTE) describes light propagation through participating media:
 
 (ω·∇)L(x,ω) = -σ_t(x)L(x,ω) + σ_s(x)∫_Ω p(x,ω',ω)L(x,ω')dω' + σ_a(x)L_e(x,ω)
 
@@ -36,26 +42,70 @@ where:
 - p(x,ω',ω) is the phase function
 - L_e is emission
 
+The phase function satisfies normalization: ∫_Ω p(x,ω',ω)dω = 1, ensuring energy conservation. Common phase functions include:
+- Isotropic: p = 1/(4π)
+- Rayleigh: p ∝ 1 + cos²θ
+- Henyey-Greenstein: p = (1-g²)/(4π(1+g²-2g·cosθ)^(3/2))
+
 ### 3.1.3 Mathematical Formulation
 
-Integrating along a ray r(t) = o + tω from t=0 to t=T, we obtain the volume rendering equation:
+Integrating along a ray r(t) = o + tω from t=0 to t=T, we solve the RTE using the method of characteristics. Define optical depth:
+
+τ(s,t) = ∫_s^t σ_t(r(u))du
+
+The transmittance T(s,t) = exp(-τ(s,t)) represents the fraction of light surviving from s to t. Through the integrating factor method:
+
+L(o,ω) = ∫₀ᵀ T(0,t)σ_t(r(t))S(r(t),ω)dt + T(0,T)L_bg
+
+where source term S combines emission and in-scattering:
+
+S(x,ω) = σ_a(x)L_e(x,ω)/σ_t(x) + σ_s(x)/σ_t(x)∫_Ω p(x,ω',ω)L(x,ω')dω'
+
+For purely emissive media (no scattering), this simplifies to:
 
 L(o,ω) = ∫₀ᵀ T(t)σ(r(t))c(r(t),ω)dt + T(T)L_bg
 
 where:
-- T(t) = exp(-∫₀ᵗ σ(r(s))ds) is the transmittance
-- c(x,ω) combines emission and in-scattered radiance
+- T(t) = exp(-∫₀ᵗ σ(r(s))ds) is the transmittance from origin
+- c(x,ω) = L_e(x,ω) is the emitted radiance
 - L_bg is background radiance
 
 This equation unifies all rendering: surfaces have σ as delta functions, volumes have continuous σ.
 
 ### 3.1.4 Connection to Classical Rendering
 
-For a surface at distance t*, with σ(x) = δ(t-t*) along the ray:
+For a surface at distance t*, with σ(x) = δ(t-t*) along the ray, the transmittance becomes:
 
-L(o,ω) = c(r(t*),ω) + 0 · L_bg
+T(t) = {1 if t < t*, 0 if t > t*}
 
-This recovers the classical rendering equation evaluation at surface intersection points.
+This is a step function. The volume integral evaluates using the sifting property of delta functions:
+
+L(o,ω) = ∫₀ᵀ T(t)δ(t-t*)c(r(t),ω)dt + T(T)L_bg
+       = T(t*)c(r(t*),ω) + T(T)L_bg
+       = 1·c(r(t*),ω) + 0·L_bg
+       = c(r(t*),ω)
+
+This recovers the classical rendering equation evaluation at surface intersection points. The BRDF appears through c(r(t*),ω) = ∫f_r(x,ω_i,ω_o)L_i(x,ω_i)(n·ω_i)dω_i.
+
+### 3.1.5 Boundary Conditions and Well-Posedness
+
+The volume rendering equation requires boundary conditions for mathematical completeness:
+
+1. **Vacuum boundary**: L(x,ω) = L_bg for x on boundary, ω pointing inward
+2. **Emissive boundary**: L(x,ω) = L_e(x,ω) 
+3. **Reflective boundary**: L(x,ω) = ∫f_r(x,ω',ω)L(x,ω')(n·ω')dω'
+
+The equation is well-posed in L²(Ω×S²) under mild conditions on σ and c. Existence and uniqueness follow from the Fredholm alternative when σ_s/σ_t < 1 (sub-critical).
+
+### 3.1.6 Energy Conservation and Reciprocity
+
+The volume rendering equation preserves two fundamental physical principles:
+
+**Energy Conservation**: Total power in equals total power out
+∫_∂Ω∫_S² L(x,ω)(n·ω)dωdA = ∫_Ω∫_S² σ_a(x)L_e(x,ω)dωdV
+
+**Helmholtz Reciprocity**: For reciprocal media (p(x,ω',ω) = p(x,ω,ω')):
+If L₁ is the solution with source at x₁ pointing to x₂, and L₂ with source at x₂ pointing to x₁, then L₁(x₂,-ω) = L₂(x₁,-ω).
 
 ## 3.2 Point Clouds as Delta Function Distributions
 
@@ -68,13 +118,26 @@ c(x,ω) = Σᵢ₌₁ᴺ (wᵢδ(x - pᵢ))/(Σⱼwⱼδ(x - pⱼ)) · cᵢ(ω)
 
 where wᵢ are weights and cᵢ(ω) encodes the point's appearance.
 
+This representation is rigorous in the sense of distributions (generalized functions). For any test function φ ∈ C₀^∞(ℝ³):
+
+⟨σ, φ⟩ = ∫σ(x)φ(x)dx = Σᵢwᵢφ(pᵢ)
+
+The delta function satisfies the sifting property: ∫δ(x-a)f(x)dx = f(a).
+
 ### 3.2.2 Discrete Sampling of Continuous Fields
 
 Point clouds arise from sampling continuous fields. Given a continuous density σ_c(x) and sampling points {xᵢ}, the discrete approximation is:
 
 σ_d(x) = Σᵢ σ_c(xᵢ)V_i δ(x - xᵢ)
 
-where V_i is the volume associated with sample i (e.g., from Voronoi cells).
+where V_i is the volume associated with sample i. Common volume assignments:
+
+1. **Uniform sampling**: V_i = Δx³ for regular grids
+2. **Voronoi cells**: V_i = ∫_{V(xᵢ)} dx where V(xᵢ) = {x : |x-xᵢ| < |x-xⱼ| ∀j≠i}
+3. **Delaunay dual**: V_i = (1/3)Σ_{T∈D(i)} Vol(T) for tetrahedra containing i
+4. **Adaptive sampling**: V_i ∝ local feature size
+
+The sampling operator S maps continuous to discrete: S[σ_c] = Σᵢσ_c(xᵢ)V_iδ(x-xᵢ).
 
 ### 3.2.3 Reconstruction Theory
 
@@ -82,7 +145,16 @@ To render point clouds, we must reconstruct a continuous field from discrete sam
 
 σ_r(x) = (σ_d * h)(x) = Σᵢ wᵢh(x - pᵢ)
 
-The choice of h determines reconstruction quality and computational cost.
+The reconstruction operator R satisfies: R[σ_d] = σ_d * h. The combined sampling and reconstruction:
+
+σ_r = R[S[σ_c]] = Σᵢσ_c(xᵢ)V_ih(x - xᵢ)
+
+Perfect reconstruction requires RS = I (identity operator). This happens when:
+1. h is the ideal sinc kernel
+2. Sampling satisfies Nyquist criterion
+3. Signal is bandlimited
+
+In practice, we seek h minimizing ||σ_c - RS[σ_c]|| under constraints (compact support, smoothness).
 
 ### 3.2.4 Aliasing and Sampling Theorems
 
@@ -90,56 +162,198 @@ By the Nyquist-Shannon theorem, perfect reconstruction requires:
 1. Band-limited signal: σ̂_c(k) = 0 for |k| > k_max
 2. Sampling rate: Δx < π/k_max
 
-For non-bandlimited signals, we analyze aliasing error:
+For non-bandlimited signals, we analyze aliasing error through Fourier analysis. The sampled signal's spectrum:
+
+σ̂_d(k) = (1/V_s)Σₙ σ̂_c(k - 2πn/Δx)
+
+where V_s = Δx³ is the sampling volume. Aliasing occurs when spectra overlap:
 
 E_alias = ∫_{|k|>π/Δx} |σ̂_c(k)|² dk
+
+For signals with power-law spectra σ̂_c(k) ∼ |k|^(-α), the aliasing error scales as:
+E_alias ∼ Δx^(2α-6) for α > 3
+
+### 3.2.5 Irregular Sampling and Jittered Grids
+
+Regular sampling creates structured aliasing artifacts. Irregular sampling converts aliasing to noise:
+
+**Poisson Disk Sampling**: Points satisfy minimum distance constraint
+- No two points closer than r_min
+- Spectrum has "blue noise" characteristics: σ̂(k) ≈ 0 for |k| < k_min
+
+**Jittered Sampling**: Perturb regular grid
+xᵢⱼₖ = (i,j,k)Δx + ξᵢⱼₖ
+
+where ξᵢⱼₖ ∼ U[-Δx/2, Δx/2]³. This maintains coverage while breaking regularity.
+
+**Spectral Analysis**: For jittered sampling, expected spectrum:
+E[|σ̂_d(k)|²] = |σ̂_c(k)|² + (1-sinc²(kΔx/2))Σₙ≠₀|σ̂_c(k-2πn/Δx)|²
+
+The sinc² term suppresses aliasing compared to regular sampling.
+
+### 3.2.6 Connection to Measure Theory
+
+Point clouds define atomic measures on ℝ³:
+
+μ = Σᵢwᵢδ_{pᵢ}
+
+For any Borel set B ⊆ ℝ³:
+μ(B) = Σᵢ:pᵢ∈B wᵢ
+
+This measure-theoretic view connects to:
+- Optimal transport for point cloud matching
+- Wasserstein distances for shape comparison  
+- Gradient flows for point cloud evolution
+
+The total variation norm ||μ||_TV = Σᵢ|wᵢ| bounds the point cloud's "mass".
 
 ## 3.3 Splatting Kernels and Reconstruction Filters
 
 ### 3.3.1 Kernel Design Principles
 
-Ideal reconstruction kernels should:
-1. Have compact support (efficiency)
-2. Be smooth (visual quality)
-3. Satisfy partition of unity: Σᵢh(x - pᵢ) ≈ 1
-4. Preserve moments (accuracy)
+Ideal reconstruction kernels should satisfy multiple mathematical and practical constraints:
+
+1. **Compact support**: supp(h) ⊂ B_R(0) for efficiency
+2. **Smoothness**: h ∈ C^n for visual quality (n ≥ 2 preferred)
+3. **Partition of unity**: Σᵢh(x - pᵢ) ≈ 1 for all x
+4. **Moment preservation**: ∫x^αh(x)dx = δ_{|α|,0} for |α| ≤ m
+5. **Non-negativity**: h(x) ≥ 0 (prevents negative densities)
+6. **Normalization**: ∫h(x)dx = 1 (mass conservation)
+
+The partition of unity ensures constant reconstruction: if σ_c(x) = c, then σ_r(x) = c.
+
+**Theorem**: No compactly supported kernel can be C^∞ and have compact Fourier transform.
+
+This fundamental limitation forces trade-offs in kernel design.
 
 ### 3.3.2 Gaussian Kernels
 
-The Gaussian kernel is ubiquitous:
+The Gaussian kernel is ubiquitous in point-based rendering:
 
 h_G(x) = (2πσ²)^(-3/2) exp(-|x|²/2σ²)
 
 Advantages:
 - Smooth (C^∞)
 - Separable: h_G(x,y,z) = h_1D(x)h_1D(y)h_1D(z)
-- Closed under convolution
-- Optimal time-frequency localization
+- Closed under convolution: h_G^σ₁ * h_G^σ₂ = h_G^√(σ₁²+σ₂²)
+- Optimal time-frequency localization (minimizes Heisenberg uncertainty)
+- Rotation invariant: h_G(Rx) = h_G(x) for rotation R
 
 Fourier transform:
 ĥ_G(k) = exp(-|k|²σ²/2)
 
+The Gaussian satisfies the diffusion equation:
+∂h_G/∂t = ½Δh_G with h_G(x,0) = δ(x)
+
+This connects splatting to scale-space theory and diffusion processes.
+
+**Truncated Gaussian**: For efficiency, truncate at radius r = nσ (typically n = 3):
+
+h_T(x) = {C exp(-|x|²/2σ²) if |x| < nσ, 0 otherwise}
+
+where C ensures ∫h_T = 1. The truncation error is:
+
+E_trunc = 1 - erf(n/√2) ≈ 2.7×10^(-3) for n = 3
+
 ### 3.3.3 Anisotropic Kernels
 
-For oriented surfaces, use anisotropic Gaussians:
+For oriented surfaces, anisotropic Gaussians better capture local geometry:
 
 h_A(x) = (2π)^(-3/2)|Σ|^(-1/2) exp(-½xᵀΣ⁻¹x)
 
-where Σ is the covariance matrix. This allows elliptical splats aligned with surface orientation.
+where Σ is the 3×3 covariance matrix. Eigendecomposition reveals geometry:
+
+Σ = RSRᵀ = R diag(λ₁, λ₂, λ₃) Rᵀ
+
+- R: rotation matrix (principal axes)
+- λᵢ: eigenvalues (squared radii along axes)
+
+For surface splatting, typically λ₃ ≪ λ₁, λ₂, creating disk-like splats.
+
+**Covariance Estimation** from local point neighborhoods:
+
+Σ = (1/k)Σᵢ₌₁ᵏ (pᵢ - p̄)(pᵢ - p̄)ᵀ
+
+where p̄ is the neighborhood centroid. This is the empirical covariance.
+
+**Surface-Aligned Splats**: Given surface normal n, construct:
+
+Σ = σ_∥²(I - nnᵀ) + σ_⊥²nnᵀ
+
+with σ_∥ ≫ σ_⊥ for thin surfaces.
 
 ### 3.3.4 Frequency Domain Analysis
 
-Reconstruction quality depends on kernel frequency response:
+Reconstruction quality depends on kernel frequency response. The reconstructed spectrum:
 
-σ̂_r(k) = σ̂_d(k)ĥ(k)
+σ̂_r(k) = σ̂_d(k)ĥ(k) = [Σₙσ̂_c(k - 2πn/Δx)]ĥ(k)
 
-For ideal low-pass filtering:
-ĥ_ideal(k) = {1 if |k| < k_c, 0 otherwise}
+Ideal low-pass filter:
+ĥ_ideal(k) = 𝟙_{|k|<k_c}(k)
 
-But h_ideal(x) = sin(k_c|x|)/(π|x|) has infinite support. Practical kernels trade off between:
-- Frequency cutoff sharpness
-- Spatial localization
-- Computational cost
+Its spatial representation (sinc kernel):
+h_ideal(x) = (k_c/2π)³ · (sin(k_c|x|) - k_c|x|cos(k_c|x|))/(k_c|x|)³
+
+But sinc has infinite support and slow decay (O(|x|⁻¹)). Practical kernels approximate ideal response with compact support.
+
+**Filter Quality Metrics**:
+1. **Passband ripple**: max_{|k|<k_c} |1 - ĥ(k)|
+2. **Stopband attenuation**: max_{|k|>k_s} |ĥ(k)|
+3. **Transition width**: k_s - k_c
+
+### 3.3.5 Alternative Kernel Families
+
+**B-Splines**: Piecewise polynomial kernels
+
+B^n(x) = (B^(n-1) * B^0)(x)
+
+where B^0 = 𝟙_{[-1/2,1/2]} is the box function. The cubic B-spline:
+
+B³(x) = {
+  (2-|x|)³/6,             1 ≤ |x| ≤ 2
+  2/3 - |x|² + |x|³/2,    |x| < 1
+  0,                      |x| > 2
+}
+
+Properties:
+- Compact support: supp(B^n) = [-(n+1)/2, (n+1)/2]
+- Smoothness: B^n ∈ C^(n-1)
+- Exact polynomial reproduction up to degree n
+
+**Wendland Kernels**: Compactly supported RBFs
+
+ψ_ℓ,k(r) = {p_ℓ,k(r) if r ≤ 1, 0 otherwise}
+
+where p_ℓ,k are polynomials. Example (ψ₃,₁):
+
+ψ₃,₁(r) = (1-r)⁴₊(4r+1)
+
+These achieve optimal smoothness for given support.
+
+**Kaiser-Bessel Window**: Nearly optimal concentration
+
+h_KB(x) = {I₀(β√(1-(2x/w)²))/I₀(β) if |x| < w/2, 0 otherwise}
+
+where I₀ is the modified Bessel function. Parameter β controls the trade-off between mainlobe width and sidelobe suppression.
+
+### 3.3.6 Kernel Selection Guidelines
+
+Choose kernels based on application requirements:
+
+1. **Quality priority**: Gaussian or Kaiser-Bessel
+2. **Speed priority**: Truncated Gaussian or low-order B-spline
+3. **Exact interpolation**: Radial basis functions
+4. **Hardware splatting**: Screen-aligned ellipses
+5. **Thin surfaces**: Anisotropic Gaussian with σ_⊥ → 0
+
+The kernel bandwidth σ should relate to sampling density:
+- Dense sampling: σ ≈ 0.5 × mean neighbor distance
+- Sparse sampling: σ ≈ 1.5 × mean neighbor distance
+
+Adaptive bandwidth based on local density:
+σ(x) = σ₀(ρ(x)/ρ₀)^(-1/3)
+
+where ρ(x) is local point density.
 
 ## 3.4 Volume Rendering Equation for Discrete Samples
 
