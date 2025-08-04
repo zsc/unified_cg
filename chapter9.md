@@ -1,6 +1,6 @@
 # 第9章：显式神经表示
 
-在前面的章节中，我们探讨了将辐射场表示为连续函数的隐式神经表示（NeRF）。本章转向显式表示方法，这些方法直接在离散空间结构中存储场景信息。我们将展示如何将这些显式表示统一到体积渲染框架中，并分析它们相对于隐式方法的计算和存储权衡。
+在前面的章节中，我们探讨了将辐射场表示为连续函数的隐式神经表示（NeRF）。本章转向显式表示方法，这些方法直接在离散空间结构中存储场景信息。显式表示的核心优势在于查询效率和直观的空间组织，而主要挑战在于内存需求和离散化带来的伪影。我们将展示如何将这些显式表示统一到体积渲染框架中，并分析它们相对于隐式方法的计算和存储权衡。
 
 ## 9.1 体素网格与八叉树
 
@@ -13,150 +13,280 @@ $$\mathbf{x}_{ijk} = \mathbf{x}_{\min} + \left(\frac{i}{N}, \frac{j}{N}, \frac{k
 其中 $i,j,k \in \{0,1,...,N-1\}$，$\odot$ 表示逐元素乘积。
 
 每个体素存储局部体积属性：
-- 密度：$\sigma_{ijk}$
-- 辐射：$\mathbf{c}_{ijk}$ 或更一般的球谐系数
+- 密度：$\sigma_{ijk} \in \mathbb{R}^+$
+- 辐射：$\mathbf{c}_{ijk} \in \mathbb{R}^3$ 或更一般的球谐系数 $\mathbf{k}_{ijk} \in \mathbb{R}^{(L+1)^2 \times 3}$
+- 可选：法线 $\mathbf{n}_{ijk}$、材质属性等
 
-体积渲染方程在离散情况下变为：
+体积渲染方程在离散情况下变为黎曼和近似：
 
 $$C(\mathbf{r}) = \sum_{n=1}^{N_{\text{samples}}} T_n \alpha_n \mathbf{c}_n$$
 
 其中：
 - $T_n = \exp\left(-\sum_{m=1}^{n-1} \sigma_m \delta_m\right)$ 是透射率
-- $\alpha_n = 1 - \exp(-\sigma_n \delta_n)$ 是不透明度
+- $\alpha_n = 1 - \exp(-\sigma_n \delta_n)$ 是不透明度  
 - $\delta_n$ 是样本间距
+
+这个离散化引入了 $O(\delta^2)$ 的误差，根据中点法则：
+$$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}{24}\max_{t \in [a,b]}|f''(t)|$$
 
 ### 9.1.2 三线性插值
 
-为避免块状伪影，我们在体素中心之间进行三线性插值：
+为避免块状伪影，我们在体素中心之间进行三线性插值。给定查询点 $\mathbf{x}$，首先找到包含它的体素 $(i,j,k)$，然后计算局部坐标：
 
-$$f(\mathbf{x}) = \sum_{i=0}^{1}\sum_{j=0}^{1}\sum_{k=0}^{1} f_{ijk} \prod_{d \in \{x,y,z\}} (1-|x_d - x_{d,ijk}|)$$
+$$\mathbf{u} = \left(\frac{x - x_{i}}{x_{i+1} - x_i}, \frac{y - y_{j}}{y_{j+1} - y_j}, \frac{z - z_{k}}{z_{k+1} - z_k}\right)$$
 
-这保证了 $C^0$ 连续性但在体素边界处导数不连续。
+三线性插值公式为：
+
+$$f(\mathbf{x}) = \sum_{i'=0}^{1}\sum_{j'=0}^{1}\sum_{k'=0}^{1} f_{i+i',j+j',k+k'} \prod_{d \in \{x,y,z\}} \begin{cases}
+1-u_d & \text{if } d'=0 \\
+u_d & \text{if } d'=1
+\end{cases}$$
+
+这等价于三次线性插值的嵌套：
+$$f(\mathbf{x}) = \text{lerp}_z\left(\text{lerp}_y\left(\text{lerp}_x(f_{000}, f_{100}, u_x), \text{lerp}_x(f_{010}, f_{110}, u_x), u_y\right), \ldots, u_z\right)$$
+
+这保证了 $C^0$ 连续性但在体素边界处导数不连续，导致法线计算时出现阶跃。
 
 ### 9.1.3 稀疏八叉树
 
-对于大多数场景，空间是稀疏的。八叉树通过自适应细分提供了高效的表示：
+对于大多数场景，空间是稀疏的——大部分体积为空。八叉树通过自适应细分提供了高效的表示。每个节点代表一个立方体区域，可以是：
+- **叶节点**：存储实际数据 $(\sigma, \mathbf{c})$
+- **内部节点**：包含8个子节点的指针
 
+形式化定义：
 ```
-OctreeNode {
-    如果是叶子节点：存储 (σ, c)
-    否则：指向8个子节点的指针
+struct OctreeNode {
+    Vector3 center;     // 节点中心
+    float halfWidth;    // 半边长
+    union {
+        struct { float sigma; Vector3 color; } leaf;
+        OctreeNode* children[8];
+    };
+    bool isLeaf;
 }
 ```
 
-八叉树遍历的期望复杂度为 $O(\log N)$，其中 $N$ 是叶节点数。
+子节点索引通过位操作确定：
+$$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
 
-存储复杂度从密集网格的 $O(N^3)$ 降低到 $O(N_{\text{occupied}})$，其中 $N_{\text{occupied}}$ 是非空体素的数量。
+八叉树遍历算法：
+1. 从根节点开始
+2. 计算射线与当前节点的交点
+3. 如果是叶节点，采样并累积
+4. 否则递归访问相交的子节点
+
+遍历的期望复杂度为 $O(\log N)$，其中 $N$ 是叶节点数。证明基于平衡树的高度为 $\lceil \log_8 N \rceil$。
+
+存储复杂度从密集网格的 $O(N^3)$ 降低到 $O(N_{\text{occupied}})$，其中 $N_{\text{occupied}}$ 是非空体素的数量。实际压缩率取决于场景稀疏性。
 
 ## 9.2 Plenoxels：球谐函数体素
 
 ### 9.2.1 球谐函数回顾
 
-球谐函数 $Y_{\ell}^m(\theta, \phi)$ 形成了球面上平方可积函数的正交基：
+球谐函数 $Y_{\ell}^m(\theta, \phi)$ 形成了球面 $S^2$ 上平方可积函数的完备正交基。它们是拉普拉斯-贝尔特拉米算子在球面上的本征函数：
+
+$$\nabla^2_{S^2} Y_{\ell}^m = -\ell(\ell+1) Y_{\ell}^m$$
+
+复球谐函数定义为：
 
 $$Y_{\ell}^m(\theta, \phi) = \sqrt{\frac{2\ell+1}{4\pi}\frac{(\ell-m)!}{(\ell+m)!}} P_{\ell}^m(\cos\theta) e^{im\phi}$$
 
-其中 $P_{\ell}^m$ 是关联勒让德多项式。
+其中 $P_{\ell}^m$ 是关联勒让德多项式，满足：
+$$P_{\ell}^m(x) = (-1)^m (1-x^2)^{m/2} \frac{d^m}{dx^m} P_{\ell}(x)$$
 
-对于实值函数，我们使用实球谐函数：
-- $Y_{\ell m} = \sqrt{2} \Re(Y_{\ell}^m)$ 当 $m > 0$
-- $Y_{\ell 0} = Y_{\ell}^0$
-- $Y_{\ell m} = \sqrt{2} \Im(Y_{\ell}^{|m|})$ 当 $m < 0$
+对于计算机图形学中的实值函数，我们使用实球谐函数基：
+- $Y_{\ell m} = \sqrt{2} \Re(Y_{\ell}^m) = \sqrt{2} N_{\ell}^m P_{\ell}^m(\cos\theta) \cos(m\phi)$ 当 $m > 0$
+- $Y_{\ell 0} = N_{\ell}^0 P_{\ell}(\cos\theta)$ 当 $m = 0$
+- $Y_{\ell m} = \sqrt{2} \Im(Y_{\ell}^{|m|}) = \sqrt{2} N_{\ell}^{|m|} P_{\ell}^{|m|}(\cos\theta) \sin(|m|\phi)$ 当 $m < 0$
+
+前几阶的具体形式：
+- $Y_{00} = \frac{1}{2\sqrt{\pi}}$ （常数项）
+- $Y_{1,-1} = \sqrt{\frac{3}{4\pi}} y$，$Y_{10} = \sqrt{\frac{3}{4\pi}} z$，$Y_{11} = \sqrt{\frac{3}{4\pi}} x$
+- $Y_{2,-2} = \frac{1}{2}\sqrt{\frac{15}{\pi}} xy$，等等
 
 ### 9.2.2 Plenoxels 表示
 
-Plenoxels 在每个体素存储：
-1. 密度 $\sigma \in \mathbb{R}^+$
-2. 球谐系数 $\mathbf{k} \in \mathbb{R}^{(L+1)^2 \times 3}$ 用于 RGB 颜色
+Plenoxels（"Plenoptic Voxels"的缩写）是一种纯显式优化方法，完全避免了神经网络。在每个体素中存储：
+1. **体积密度** $\sigma \in \mathbb{R}^+$：控制不透明度
+2. **球谐系数** $\mathbf{k} \in \mathbb{R}^{(L+1)^2 \times 3}$：编码视角相关的RGB颜色
 
-视角相关的颜色通过球谐展开计算：
+视角相关的辐射通过球谐展开计算：
 
-$$\mathbf{c}(\mathbf{d}) = \text{sigmoid}\left(\sum_{\ell=0}^{L} \sum_{m=-\ell}^{\ell} \mathbf{k}_{\ell m} Y_{\ell m}(\mathbf{d})\right)$$
+$$\mathbf{c}(\mathbf{x}, \mathbf{d}) = \text{sigmoid}\left(\sum_{\ell=0}^{L} \sum_{m=-\ell}^{\ell} \mathbf{k}_{\ell m}(\mathbf{x}) Y_{\ell m}(\mathbf{d})\right)$$
 
-其中 $L$ 是最大阶数（通常 $L=2$ 对应9个系数）。
+其中：
+- $L$ 是最大阶数（$L=0$：1个系数，$L=1$：4个系数，$L=2$：9个系数）
+- sigmoid函数确保颜色值在 $[0,1]$ 范围内
+- 高阶项捕获高频视角变化（镜面反射等）
 
 ### 9.2.3 直接优化
 
-与NeRF不同，Plenoxels直接优化体素参数，无需神经网络：
+与NeRF不同，Plenoxels直接优化体素参数，无需神经网络。这导致了一个大规模但结构化的优化问题。损失函数包含数据项和正则化项：
 
-$$\mathcal{L} = \sum_{\mathbf{r} \in \mathcal{R}} \|\hat{C}(\mathbf{r}) - C(\mathbf{r})\|^2 + \lambda_{\text{TV}} \mathcal{L}_{\text{TV}} + \lambda_{\text{sparse}} \|\sigma\|_1$$
+$$\mathcal{L} = \mathcal{L}_{\text{data}} + \lambda_{\text{TV}} \mathcal{L}_{\text{TV}} + \lambda_{\text{sparse}} \mathcal{L}_{\text{sparse}}$$
 
-其中：
-- $\mathcal{L}_{\text{TV}}$ 是总变差正则化：$\sum_{i,j,k} \|\nabla \sigma_{ijk}\|_2$
-- 稀疏性项促进空体素
+**数据项**衡量渲染图像与真实图像的差异：
+$$\mathcal{L}_{\text{data}} = \sum_{\mathbf{r} \in \mathcal{R}} \|\hat{C}(\mathbf{r}) - C(\mathbf{r})\|^2$$
 
-优化使用标准梯度下降，梯度通过可微体积渲染反向传播。
+**总变差（TV）正则化**促进空间平滑性：
+$$\mathcal{L}_{\text{TV}} = \sum_{i,j,k} \left(\|\sigma_{i+1,j,k} - \sigma_{i,j,k}\|^2 + \|\sigma_{i,j+1,k} - \sigma_{i,j,k}\|^2 + \|\sigma_{i,j,k+1} - \sigma_{i,j,k}\|^2\right)$$
+
+这等价于各向异性TV范数，防止密度场出现噪声。
+
+**稀疏性正则化**鼓励空体素：
+$$\mathcal{L}_{\text{sparse}} = \sum_{i,j,k} \log(1 + \sigma_{ijk}^2/\epsilon^2)$$
+
+这是 $\ell_1$ 范数的平滑近似，避免了不可微点。
+
+优化使用Adam优化器，学习率调度遵循：
+$$\eta(t) = \eta_0 \cdot 0.1^{t/T}$$
+
+梯度通过可微体积渲染反向传播：
+$$\frac{\partial \mathcal{L}}{\partial \sigma_{ijk}} = \sum_{\mathbf{r} \text{ through } (i,j,k)} \frac{\partial \mathcal{L}}{\partial C(\mathbf{r})} \frac{\partial C(\mathbf{r})}{\partial \sigma_{ijk}}$$
 
 ## 9.3 TensoRF：张量分解辐射场
 
 ### 9.3.1 张量分解基础
 
-TensoRF 将 4D 辐射场张量 $\mathcal{T} \in \mathbb{R}^{X \times Y \times Z \times C}$ 分解为低秩分量。
+TensoRF的核心洞察是辐射场具有低秩结构——场景中的规律性（平面、对称性、重复纹理）导致信息冗余。通过张量分解，我们可以用紧凑的因子表示高维数据。
 
-**CP分解（CANDECOMP/PARAFAC）**：
-$$\mathcal{T} = \sum_{r=1}^{R} \mathbf{u}_r \otimes \mathbf{v}_r \otimes \mathbf{w}_r \otimes \mathbf{s}_r$$
+考虑4D辐射场张量 $\mathcal{T} \in \mathbb{R}^{X \times Y \times Z \times C}$，其中前三维是空间坐标，第四维是特征通道。
 
-其中 $\otimes$ 是外积，$R$ 是秩。
+**CP分解（CANDECOMP/PARAFAC）**将张量表示为秩-1张量的和：
+$$\mathcal{T} = \sum_{r=1}^{R} \lambda_r \cdot \mathbf{u}_r \otimes \mathbf{v}_r \otimes \mathbf{w}_r \otimes \mathbf{s}_r$$
 
-**向量-矩阵（VM）分解**：
-$$\mathcal{T} = \sum_{r=1}^{R} (\mathbf{M}_{r,1} \circ \mathbf{v}_{r,1}) \otimes \mathbf{b}_{r,1} + (\mathbf{M}_{r,2} \circ \mathbf{v}_{r,2}) \otimes \mathbf{b}_{r,2} + (\mathbf{M}_{r,3} \circ \mathbf{v}_{r,3}) \otimes \mathbf{b}_{r,3}$$
+其中：
+- $\lambda_r$ 是权重
+- $\mathbf{u}_r \in \mathbb{R}^X$，$\mathbf{v}_r \in \mathbb{R}^Y$，$\mathbf{w}_r \in \mathbb{R}^Z$，$\mathbf{s}_r \in \mathbb{R}^C$ 是因子向量
+- $\otimes$ 表示外积
 
-其中 $\mathbf{M}_{r,i} \in \mathbb{R}^{D_1 \times D_2}$ 是矩阵，$\mathbf{v}_{r,i} \in \mathbb{R}^{D_3}$ 是向量，$\circ$ 表示模式积。
+元素形式：
+$$\mathcal{T}_{ijkc} = \sum_{r=1}^{R} \lambda_r u_{ri} v_{rj} w_{rk} s_{rc}$$
+
+**向量-矩阵（VM）分解**是CP分解的推广，将某些模式组合成矩阵：
+$$\mathcal{T} = \sum_{r=1}^{R_1} \mathbf{M}_{r,xy} \otimes \mathbf{v}_{r,z} \otimes \mathbf{b}_{r,1} + \sum_{r=1}^{R_2} \mathbf{M}_{r,xz} \otimes \mathbf{v}_{r,y} \otimes \mathbf{b}_{r,2} + \sum_{r=1}^{R_3} \mathbf{M}_{r,yz} \otimes \mathbf{v}_{r,x} \otimes \mathbf{b}_{r,3}$$
+
+其中 $\mathbf{M}_{r,\cdot} \in \mathbb{R}^{D_1 \times D_2}$ 是矩阵因子。这种分解更灵活，可以捕获平面结构。
 
 ### 9.3.2 密度和外观分解
 
-TensoRF 分别建模密度和外观：
+TensoRF 分别建模密度和外观，利用它们的不同特性：
 
-**密度场**：
-$$\sigma(\mathbf{x}) = \sum_{r=1}^{R_\sigma} \prod_{d=1}^{3} f_d^{\sigma,r}(x_d)$$
+**密度场**使用VM分解：
+$$\sigma(\mathbf{x}) = \text{ReLU}\left(\sum_{r=1}^{R_\sigma} \left\langle \mathbf{A}_r^{\sigma}, \mathbf{x} \right\rangle + b_\sigma\right)$$
 
-**外观场**：
-$$\mathbf{c}(\mathbf{x}, \mathbf{d}) = \mathcal{F}_\theta\left(\sum_{r=1}^{R_c} \prod_{d=1}^{3} f_d^{c,r}(x_d), \mathbf{d}\right)$$
+其中 $\mathbf{A}_r^{\sigma}$ 是通过VM分解得到的：
+$$\mathbf{A}_r^{\sigma} = \sum_{i=1}^{3} \mathbf{M}_{r,i}^{\sigma} \otimes \mathbf{v}_{r,i}^{\sigma}$$
 
-其中 $\mathcal{F}_\theta$ 是小型MLP解码器。
+这种分解特别适合表示平面结构（墙壁、地板）和轴对齐的几何。
+
+**外观场**结合张量分解和小型神经网络：
+$$\mathbf{c}(\mathbf{x}, \mathbf{d}) = \mathcal{F}_\theta\left(\mathbf{f}_{\text{app}}(\mathbf{x}), \mathbf{d}\right)$$
+
+其中外观特征 $\mathbf{f}_{\text{app}}(\mathbf{x})$ 通过VM分解计算：
+$$\mathbf{f}_{\text{app}}(\mathbf{x}) = \sum_{r=1}^{R_c} \left\langle \mathbf{A}_r^{c}, \mathbf{x} \right\rangle$$
+
+解码器 $\mathcal{F}_\theta$ 是一个2层MLP，将空间特征和视角方向映射到RGB颜色：
+$$\mathcal{F}_\theta: \mathbb{R}^{R_c} \times S^2 \rightarrow [0,1]^3$$
+
+这种混合方法平衡了表达能力和计算效率。
 
 ### 9.3.3 存储和计算复杂度
 
-存储需求从 $O(N^3)$ 降低到 $O(RN)$：
-- CP分解：$3RN$ 参数
-- VM分解：$R(2N^2 + N)$ 参数
+**存储分析**：
 
-计算复杂度：
-- 查询：$O(R)$ 而非 $O(1)$
-- 但 $R \ll N$，因此实践中更高效
+对于分辨率 $N^3$ 的密集网格，原始存储需求为 $O(N^3C)$，其中 $C$ 是每个体素的通道数。
+
+TensoRF的存储需求：
+- **CP分解**：每个秩-1分量需要 $3N$ 个参数，总共 $3RN$ 参数
+- **VM分解**：每个平面 $N^2$ 参数，每个向量 $N$ 参数，总共 $R(N^2 + N) \approx RN^2$ 参数
+
+压缩率：
+$$\text{压缩率} = \frac{N^3C}{RN^2} = \frac{NC}{R}$$
+
+典型情况下，$N=300$，$C=4$，$R=16$，压缩率约为 75×。
+
+**计算复杂度**：
+
+查询单个点的值：
+- 密集网格：$O(1)$ 数组访问
+- CP分解：$O(R)$ 向量内积计算
+- VM分解：$O(R)$ 矩阵-向量乘法
+
+虽然单点查询更慢，但：
+1. $R \ll N$（通常 $R \sim 16-48$）
+2. 向量运算可以高效并行化
+3. 缓存局部性更好（因子向量可以驻留在缓存中）
 
 ## 9.4 低秩与稀疏表示
 
 ### 9.4.1 数学基础
 
-辐射场的低秩结构源于场景的内在规律性。考虑奇异值分解（SVD）：
+辐射场的低秩结构源于场景的内在规律性——平坦表面、重复纹理、对称性等。这些规律性在适当的基下表现为数据矩阵的低秩性。
 
-$$\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T$$
+**奇异值分解（SVD）**提供了最优低秩近似。对于矩阵 $\mathbf{A} \in \mathbb{R}^{m \times n}$：
 
-对于秩为 $r$ 的矩阵，最优 $k$ 秩近似（在Frobenius范数下）是：
+$$\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T = \sum_{i=1}^{r} \sigma_i \mathbf{u}_i \mathbf{v}_i^T$$
+
+其中：
+- $\mathbf{U} \in \mathbb{R}^{m \times r}$：左奇异向量
+- $\mathbf{\Sigma} = \text{diag}(\sigma_1, ..., \sigma_r)$：奇异值，$\sigma_1 \geq \sigma_2 \geq ... \geq \sigma_r > 0$
+- $\mathbf{V} \in \mathbb{R}^{n \times r}$：右奇异向量
+
+**Eckart-Young定理**：最优 $k$ 秩近似（在任何酉不变范数下）是：
 $$\mathbf{A}_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^T$$
 
-误差界：
+近似误差：
 $$\|\mathbf{A} - \mathbf{A}_k\|_F = \sqrt{\sum_{i=k+1}^{r} \sigma_i^2}$$
+$$\|\mathbf{A} - \mathbf{A}_k\|_2 = \sigma_{k+1}$$
+
+**有效秩**衡量矩阵的"近似秩"：
+$$r_{\text{eff}}(\mathbf{A}) = \frac{\|\mathbf{A}\|_F^2}{\|\mathbf{A}\|_2^2} = \frac{\sum_{i=1}^r \sigma_i^2}{\sigma_1^2}$$
+
+当奇异值快速衰减时，有效秩远小于真实秩，表明数据可压缩。
 
 ### 9.4.2 稀疏性诱导
 
-许多场景在变换域中是稀疏的。考虑小波变换 $\mathcal{W}$：
+许多场景在适当的变换域中是稀疏的。关键是找到使信号稀疏的基。
 
-$$\mathbf{f} = \mathcal{W}^{-1}(\mathbf{w})$$
+**稀疏表示问题**：给定过完备字典 $\mathbf{D} \in \mathbb{R}^{n \times p}$（$p > n$），寻找稀疏系数 $\mathbf{w}$：
+$$\mathbf{f} = \mathbf{D}\mathbf{w}, \quad \|\mathbf{w}\|_0 \ll p$$
 
-其中 $\mathbf{w}$ 是稀疏系数向量。
+其中 $\|\mathbf{w}\|_0$ 计算非零元素个数。
 
-通过 $\ell_1$ 正则化促进稀疏性：
-$$\min_{\mathbf{w}} \|\mathcal{Y} - \mathcal{A}\mathcal{W}^{-1}(\mathbf{w})\|_2^2 + \lambda\|\mathbf{w}\|_1$$
+由于 $\ell_0$ 优化是NP难的，我们使用 $\ell_1$ 松弛：
+$$\min_{\mathbf{w}} \frac{1}{2}\|\mathbf{y} - \mathbf{D}\mathbf{w}\|_2^2 + \lambda\|\mathbf{w}\|_1$$
 
-这是基追踪去噪问题，可通过迭代收缩阈值算法（ISTA）求解。
+这是LASSO问题，可通过多种算法求解：
+
+**迭代收缩阈值算法（ISTA）**：
+$$\mathbf{w}^{(k+1)} = \mathcal{S}_{\lambda/L}\left(\mathbf{w}^{(k)} + \frac{1}{L}\mathbf{D}^T(\mathbf{y} - \mathbf{D}\mathbf{w}^{(k)})\right)$$
+
+其中 $\mathcal{S}_\tau(x) = \text{sign}(x)\max(|x|-\tau, 0)$ 是软阈值算子，$L$ 是 $\mathbf{D}^T\mathbf{D}$ 的最大特征值。
+
+**快速ISTA（FISTA）**通过动量加速收敛：
+$$\mathbf{z}^{(k+1)} = \mathbf{w}^{(k)} + \frac{k-1}{k+2}(\mathbf{w}^{(k)} - \mathbf{w}^{(k-1)})$$
+
+收敛率从 $O(1/k)$ 提升到 $O(1/k^2)$。
 
 ### 9.4.3 压缩感知视角
 
-当测量矩阵 $\mathcal{A}$ 满足限制等距性质（RIP）时，我们可以从 $O(s\log N)$ 个测量中恢复 $s$-稀疏信号。
+压缩感知理论表明，稀疏信号可以从远少于奈奎斯特速率的测量中精确重建。
 
-对于辐射场，"测量"是渲染的像素，稀疏性在适当选择的基中实现。
+**限制等距性质（RIP）**：矩阵 $\mathbf{A}$ 满足阶为 $s$ 的RIP，如果存在 $\delta_s \in (0,1)$ 使得对所有 $s$-稀疏向量 $\mathbf{x}$：
+$$(1-\delta_s)\|\mathbf{x}\|_2^2 \leq \|\mathbf{A}\mathbf{x}\|_2^2 \leq (1+\delta_s)\|\mathbf{x}\|_2^2$$
+
+**重建保证**：如果 $\mathbf{A}$ 满足 $\delta_{2s} < \sqrt{2} - 1$，则 $\ell_1$ 最小化的解 $\mathbf{x}^*$ 满足：
+$$\|\mathbf{x}^* - \mathbf{x}\|_2 \leq \frac{C}{\sqrt{s}}\|\mathbf{x} - \mathbf{x}_s\|_1 + C'\epsilon$$
+
+其中 $\mathbf{x}_s$ 是 $\mathbf{x}$ 的最佳 $s$ 项近似，$\epsilon$ 是测量噪声。
+
+对于辐射场重建：
+- **测量**：多视角图像（每个像素是一个线性测量）
+- **信号**：体素化的场景表示
+- **稀疏基**：小波、DCT或学习的字典
+
+所需测量数：$M = O(s\log(N/s))$，其中 $s$ 是稀疏度，$N$ 是信号维度。
 
 ## 9.5 显式与隐式权衡
 
