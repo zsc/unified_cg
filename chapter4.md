@@ -2,6 +2,8 @@
 
 基于图像的渲染（Image-Based Rendering, IBR）代表了计算机图形学中的一个范式转变：从基于几何的渲染转向基于采样的渲染。本章将探讨如何使用预先捕获的图像来合成新视角，并将这些技术统一在体积渲染框架下。我们将深入研究光场的数学表示、视图合成的几何约束，以及采样理论在IBR中的应用。
 
+IBR的核心思想是将渲染问题转化为信号重建问题。与传统的基于几何的方法不同，IBR直接对光的分布进行采样和插值，避免了复杂的光照计算和材质建模。这种方法特别适合于捕获和重现真实世界的复杂场景，包括那些难以用传统方法建模的现象，如次表面散射、复杂反射和半透明材质。
+
 ## 学习目标
 
 完成本章后，您将能够：
@@ -22,6 +24,24 @@ $$L(s,t,u,v) = \int_{\lambda} L_{\lambda}(s,t,u,v) d\lambda$$
 
 其中 $(s,t)$ 和 $(u,v)$ 分别表示两个平行平面上的坐标。这种双平面参数化（Two-Plane Parameterization）避免了球面参数化的奇点问题。
 
+**参数化的几何意义**：考虑两个平行平面 $\Pi_1$ 和 $\Pi_2$，相距 $d$。任何不平行于这两个平面的光线都可以唯一地由其与两平面的交点确定：
+- $(s,t) \in \Pi_1$：光线与第一个平面的交点
+- $(u,v) \in \Pi_2$：光线与第二个平面的交点
+
+光线的参数方程为：
+$$\mathbf{r}(\tau) = (1-\tau)\begin{pmatrix}s\\t\\0\end{pmatrix} + \tau\begin{pmatrix}u\\v\\d\end{pmatrix}, \quad \tau \in [0,1]$$
+
+**参数化的选择准则**：
+1. **完备性**：能表示所有相关光线
+2. **唯一性**：每条光线有唯一表示
+3. **连续性**：相邻光线在参数空间中相邻
+4. **计算效率**：易于采样和插值
+
+除了双平面参数化，常见的还有：
+- **球面参数化**：$L(\mathbf{x}, \theta, \phi)$，适合全景捕获
+- **平面+方向参数化**：$L(s,t,\theta,\phi)$，适合相机阵列
+- **表面参数化**：$L(u,v,\theta,\phi)$，适合已知几何
+
 ### 4.1.2 离散采样与插值
 
 给定一组采样光线 $\{L_{ijkl}\}$，新视角的光线通过4D插值获得：
@@ -29,25 +49,54 @@ $$L(s,t,u,v) = \int_{\lambda} L_{\lambda}(s,t,u,v) d\lambda$$
 $$\hat{L}(s,t,u,v) = \sum_{i,j,k,l} L_{ijkl} \cdot K(s-s_i, t-t_j, u-u_k, v-v_l)$$
 
 其中 $K$ 是4D插值核。常见选择包括：
-- 最近邻：$K = \delta$
-- 三线性：$K = \prod_{d} (1-|x_d|)_+$
-- Lanczos：$K = \prod_{d} \text{sinc}(x_d)\text{sinc}(x_d/a)$
+- **最近邻**：$K = \delta$，计算最快但质量最差
+- **三线性**：$K = \prod_{d} (1-|x_d|)_+$，平衡了质量和效率
+- **Lanczos**：$K = \prod_{d} \text{sinc}(x_d)\text{sinc}(x_d/a)$，高质量但计算密集
+
+**插值核的数学性质**：
+理想的插值核应满足以下条件：
+1. **分离条件**：$K(0,0,0,0) = 1$，$K(i,j,k,l) = 0$ 对所有非零整数
+2. **归一化**：$\sum_{ijkl} K(s-s_i, t-t_j, u-u_k, v-v_l) = 1$
+3. **紧支撑**：$K(x) = 0$ 当 $|x| > r$ 对某个有限 $r$
+
+**频域分析**：
+插值核的频率响应决定了重建质量。理想低通滤波器：
+$$\hat{K}(\omega) = \begin{cases}
+1, & |\omega| < \omega_c \\
+0, & |\omega| \geq \omega_c
+\end{cases}$$
+
+实际核的频率响应：
+- 最近邻：$\hat{K}(\omega) = \text{sinc}^4(\omega/2\pi)$，有严重的频谱泄漏
+- 三线性：$\hat{K}(\omega) = \text{sinc}^8(\omega/2\pi)$，改进但仍有混叠
+- Lanczos：接近理想低通，但有Gibbs现象
 
 ### 4.1.3 体积渲染方程形式
 
 将光场渲染统一到体积渲染框架，定义隐式光场体：
 
-$$\sigma(x) = \sum_{ijkl} \sigma_{ijkl} \cdot \delta(x - x_{ijkl})$$
+$$\sigma(\mathbf{x}) = \sum_{ijkl} \sigma_{ijkl} \cdot \delta(\mathbf{x} - \mathbf{x}_{ijkl})$$
 
-$$c(x,\omega) = \sum_{ijkl} c_{ijkl} \cdot \delta(x - x_{ijkl}) \cdot \delta(\omega - \omega_{ijkl})$$
+$$c(\mathbf{x},\omega) = \sum_{ijkl} c_{ijkl} \cdot \delta(\mathbf{x} - \mathbf{x}_{ijkl}) \cdot \delta(\omega - \omega_{ijkl})$$
 
-其中 $x_{ijkl}$ 和 $\omega_{ijkl}$ 是从光线参数 $(s_i,t_j,u_k,v_l)$ 导出的3D位置和方向。
+其中 $\mathbf{x}_{ijkl}$ 和 $\omega_{ijkl}$ 是从光线参数 $(s_i,t_j,u_k,v_l)$ 导出的3D位置和方向。
+
+**从光线参数到3D坐标的映射**：
+给定光线参数 $(s,t,u,v)$，沿光线的3D点为：
+$$\mathbf{x}(\lambda) = \begin{pmatrix}
+s + \lambda(u-s)/d \\
+t + \lambda(v-t)/d \\
+\lambda
+\end{pmatrix}$$
 
 体积渲染方程变为：
 
-$$L(r) = \int_0^{\infty} T(t) \cdot \sigma(r(t)) \cdot c(r(t), -r'(t)) dt$$
+$$L(\mathbf{r}) = \int_0^{\infty} T(\tau) \cdot \sigma(\mathbf{r}(\tau)) \cdot c(\mathbf{r}(\tau), -\mathbf{r}'(\tau)) d\tau$$
 
-这种形式揭示了IBR与体积渲染的深层联系。
+其中透射率：
+$$T(\tau) = \exp\left(-\int_0^{\tau} \sigma(\mathbf{r}(t)) dt\right)$$
+
+这种形式揭示了IBR与体积渲染的深层联系：光场的每个采样可视为空间中的一个方向性点光源。
 
 ### 4.1.4 插值误差分析
 
@@ -55,9 +104,31 @@ $$L(r) = \int_0^{\infty} T(t) \cdot \sigma(r(t)) \cdot c(r(t), -r'(t)) dt$$
 
 $$\|L - \hat{L}\|_2 \leq C \cdot h^{p+1} \cdot \|D^{p+1}L\|_{\infty}$$
 
-其中 $h$ 是采样间隔，$p$ 是插值核的阶数。对于带限信号，频域分析给出更紧的界：
+其中 $h$ 是采样间隔，$p$ 是插值核的阶数。
+
+**误差的频域表征**：
+对于带限信号，频域分析给出更紧的界：
 
 $$\mathcal{E}(\omega) = |1 - \hat{K}(\omega)| \cdot |\tilde{L}(\omega)|$$
+
+总误差能量：
+$$E_{error} = \int_{\mathbb{R}^4} |\mathcal{E}(\omega)|^2 d\omega = \int_{\mathbb{R}^4} |1 - \hat{K}(\omega)|^2 |\tilde{L}(\omega)|^2 d\omega$$
+
+**局部误差估计**：
+使用多元Taylor展开，在点 $(s_0,t_0,u_0,v_0)$ 附近：
+
+$$L(s,t,u,v) = \sum_{|\alpha| \leq p} \frac{D^{\alpha}L(s_0,t_0,u_0,v_0)}{\alpha!}(s-s_0)^{\alpha_1}(t-t_0)^{\alpha_2}(u-u_0)^{\alpha_3}(v-v_0)^{\alpha_4} + R_p$$
+
+余项 $R_p$ 满足：
+$$|R_p| \leq \frac{M_{p+1}}{(p+1)!} \|(s-s_0, t-t_0, u-u_0, v-v_0)\|^{p+1}$$
+
+其中 $M_{p+1} = \sup |D^{p+1}L|$。
+
+**自适应采样策略**：
+基于局部误差估计，可设计自适应采样密度：
+$$\rho(s,t,u,v) \propto \left(\sum_{|\alpha|=2} |D^{\alpha}L(s,t,u,v)|^2\right)^{1/2}$$
+
+这确保高频区域获得更密集的采样。
 
 ## 4.2 视图合成与极线约束
 
@@ -65,52 +136,131 @@ $$\mathcal{E}(\omega) = |1 - \hat{K}(\omega)| \cdot |\tilde{L}(\omega)|$$
 
 给定两个相机矩阵 $P_1 = K_1[R_1|t_1]$ 和 $P_2 = K_2[R_2|t_2]$，基础矩阵 $F$ 满足：
 
-$$x_2^T F x_1 = 0$$
+$$\mathbf{x}_2^T F \mathbf{x}_1 = 0$$
 
-其中 $x_1$, $x_2$ 是对应点的齐次坐标。基础矩阵可分解为：
+其中 $\mathbf{x}_1$, $\mathbf{x}_2$ 是对应点的齐次坐标。
+
+**基础矩阵的导出**：
+从3D点 $\mathbf{X}$ 投影到两个视图：
+$$\mathbf{x}_1 = P_1\mathbf{X}, \quad \mathbf{x}_2 = P_2\mathbf{X}$$
+
+消去 $\mathbf{X}$ 得到极线约束。基础矩阵可分解为：
 
 $$F = K_2^{-T} [t_{21}]_{\times} R_{21} K_1^{-1}$$
 
-这里 $[t]_{\times}$ 是反对称矩阵，$R_{21} = R_2 R_1^T$，$t_{21} = t_2 - R_{21}t_1$。
+这里 $[t]_{\times}$ 是反对称矩阵：
+$$[t]_{\times} = \begin{pmatrix}
+0 & -t_z & t_y \\
+t_z & 0 & -t_x \\
+-t_y & t_x & 0
+\end{pmatrix}$$
+
+$R_{21} = R_2 R_1^T$，$t_{21} = t_2 - R_{21}t_1$。
+
+**基础矩阵的性质**：
+1. **秩为2**：$\det(F) = 0$，因为 $[t]_{\times}$ 是反对称矩阵
+2. **极点关系**：$F^T\mathbf{e}_2 = 0$，$F\mathbf{e}_1 = 0$，其中 $\mathbf{e}_1, \mathbf{e}_2$ 是极点
+3. **对应关系**：点 $\mathbf{x}_1$ 在第二幅图像中的极线为 $l_2 = F\mathbf{x}_1$
+
+**本质矩阵**：
+对于校准相机，本质矩阵 $E = [t_{21}]_{\times} R_{21}$ 满足：
+$$\hat{\mathbf{x}}_2^T E \hat{\mathbf{x}}_1 = 0$$
+
+其中 $\hat{\mathbf{x}}$ 是归一化坐标。本质矩阵有5个自由度（3个旋转+2个平移方向）。
 
 ### 4.2.2 深度引导的视图合成
 
-给定参考视图的深度图 $D(x_1)$，目标视图的像素可通过以下变换获得：
+给定参考视图的深度图 $D(\mathbf{x}_1)$，目标视图的像素可通过以下变换获得：
 
-$$x_2 = K_2 R_{21} K_1^{-1} x_1 + \frac{K_2 t_{21}}{D(x_1)}$$
+$$\mathbf{x}_2 = K_2 R_{21} K_1^{-1} \mathbf{x}_1 + \frac{K_2 \mathbf{t}_{21}}{D(\mathbf{x}_1)}$$
 
-这个公式可以改写为视差（disparity）形式：
+**推导过程**：
+设3D点 $\mathbf{X}$ 在相机1坐标系中为：
+$$\mathbf{X}_1 = D(\mathbf{x}_1) K_1^{-1} \mathbf{x}_1$$
 
-$$x_2 - x_1 = d(x_1) \cdot v_{21}$$
+转换到相机2坐标系：
+$$\mathbf{X}_2 = R_{21}\mathbf{X}_1 + \mathbf{t}_{21}$$
 
-其中 $d(x_1) = \frac{b}{D(x_1)}$ 是视差，$b$ 是基线长度。
+投影到图像平面：
+$$\mathbf{x}_2 = K_2\frac{\mathbf{X}_2}{Z_2} = K_2\left(R_{21}K_1^{-1}\mathbf{x}_1 + \frac{\mathbf{t}_{21}}{D(\mathbf{x}_1)}\right)$$
+
+**视差形式**：
+对于平行相机配置（纯水平平移），公式简化为：
+
+$$x_2 - x_1 = d(\mathbf{x}_1) = \frac{bf}{D(\mathbf{x}_1)}$$
+
+其中 $b$ 是基线长度，$f$ 是焦距，$d$ 是视差。
+
+**深度不确定性传播**：
+深度误差对重投影的影响：
+$$\frac{\partial \mathbf{x}_2}{\partial D} = -\frac{K_2 \mathbf{t}_{21}}{D^2}$$
+
+给定深度标准差 $\sigma_D$，重投影误差协方差：
+$$\Sigma_{\mathbf{x}_2} = \left(\frac{\partial \mathbf{x}_2}{\partial D}\right)\sigma_D^2\left(\frac{\partial \mathbf{x}_2}{\partial D}\right)^T$$
 
 ### 4.2.3 遮挡处理与体积积分
 
 遮挡可以通过体积渲染自然处理。定义遮挡感知的传输函数：
 
-$$T(x_1 \to x_2) = \exp\left(-\int_0^1 \sigma(\gamma(t)) dt\right)$$
+$$T(\mathbf{x}_1 \to \mathbf{x}_2) = \exp\left(-\int_0^1 \sigma(\gamma(t)) dt\right)$$
 
-其中 $\gamma(t)$ 是连接 $x_1$ 和 $x_2$ 的3D路径。
+其中 $\gamma(t)$ 是连接对应3D点的路径。
+
+**前向映射与后向映射**：
+- **前向映射**：从源视图到目标视图
+  $$I_2^{forward}(\mathbf{x}_2) = \sum_{\mathbf{x}_1 \to \mathbf{x}_2} T(\mathbf{x}_1 \to \mathbf{x}_2) \cdot I_1(\mathbf{x}_1)$$
+  
+- **后向映射**：从目标视图到源视图
+  $$I_2^{backward}(\mathbf{x}_2) = \sum_{\mathbf{x}_1} W(\mathbf{x}_1, \mathbf{x}_2) \cdot I_1(\mathbf{x}_1)$$
+
+**遮挡检测**：
+使用深度一致性检查：
+$$\mathcal{O}(\mathbf{x}_1, \mathbf{x}_2) = \begin{cases}
+1, & |D_2(\mathbf{x}_2) - D_{proj}(\mathbf{x}_1)| < \epsilon \\
+0, & \text{otherwise}
+\end{cases}$$
+
+其中 $D_{proj}$ 是从视图1投影到视图2的深度。
+
+**软遮挡模型**：
+使用sigmoid函数建模遮挡边界：
+$$W_{occ}(\mathbf{x}) = \frac{1}{1 + \exp(-k(D_{front} - D_{back}))}$$
 
 合成的像素值为：
 
-$$I_2(x_2) = \sum_{x_1} T(x_1 \to x_2) \cdot I_1(x_1) \cdot K(x_2 - \pi_2(\pi_1^{-1}(x_1)))$$
+$$I_2(\mathbf{x}_2) = \sum_{\mathbf{x}_1} T(\mathbf{x}_1 \to \mathbf{x}_2) \cdot I_1(\mathbf{x}_1) \cdot K(\mathbf{x}_2 - \pi_2(\pi_1^{-1}(\mathbf{x}_1)))$$
 
 ### 4.2.4 多视图约束
 
 对于 $N$ 个视图，约束系统变为：
 
-$$\begin{bmatrix}
-F_{12} & 0 & \cdots \\
-F_{13} & 0 & \cdots \\
-\vdots & \ddots & \\
-0 & \cdots & F_{(N-1)N}
+$$\mathcal{M}\mathbf{x} = \begin{bmatrix}
+F_{12} & -I & 0 & \cdots \\
+F_{13} & 0 & -I & \cdots \\
+\vdots & & \ddots & \\
+F_{1N} & 0 & \cdots & -I
 \end{bmatrix} \begin{bmatrix}
-x_1 \\ x_2 \\ \vdots \\ x_N
+\mathbf{x}_1 \\ \mathbf{x}_2 \\ \vdots \\ \mathbf{x}_N
 \end{bmatrix} = 0$$
 
-这个超定系统可通过最小二乘求解，提供鲁棒的对应关系。
+**三视图张量**：
+对于三个视图，存在三焦张量 $\mathcal{T}_{ijk}$ 满足：
+$$[\mathbf{x}_2]_{\times}^i [\mathbf{x}_3]_{\times}^j \mathcal{T}_{ijk} \mathbf{x}_1^k = 0$$
+
+三焦张量编码了三视图间的所有几何关系，包含27个元素但只有18个自由度。
+
+**鲁棒估计**：
+使用RANSAC算法估计多视图几何：
+1. 随机选择最小样本集
+2. 计算几何模型（F矩阵或三焦张量）
+3. 计算内点数：$|\{\mathbf{x} : d(\mathbf{x}, \mathcal{M}) < \tau\}|$
+4. 迭代直到找到足够好的模型
+
+**Bundle Adjustment**：
+联合优化所有相机参数和3D点：
+$$\min_{\{P_i\}, \{\mathbf{X}_j\}} \sum_{i,j} \rho\left(\|\mathbf{x}_{ij} - \pi(P_i\mathbf{X}_j)\|^2\right)$$
+
+其中 $\rho$ 是鲁棒核函数（如Huber函数），$\pi$ 是投影函数。
 
 ## 4.3 光图与表面光场
 
