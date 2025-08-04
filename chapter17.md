@@ -17,11 +17,34 @@ where the radial polynomials are:
 
 $$R_n^m(\rho) = \sum_{k=0}^{(n-m)/2} \frac{(-1)^k (n-k)!}{k! \left(\frac{n+m}{2}-k\right)! \left(\frac{n-m}{2}-k\right)!} \rho^{n-2k}$$
 
+The indices follow constraints:
+- n ≥ 0 (radial order)
+- -n ≤ m ≤ n (azimuthal frequency)
+- n - |m| is even
+
+For normalization, we include the factor:
+$$N_n^m = \sqrt{\frac{2(n+1)}{1 + \delta_{m0}}}$$
+
+making the normalized polynomials:
+$$\tilde{Z}_n^m(\rho, \theta) = N_n^m Z_n^m(\rho, \theta)$$
+
 ### 17.1.2 Orthogonality Properties
 
 The orthogonality relation over the unit disk:
 
 $$\int_0^{2\pi} \int_0^1 Z_n^m(\rho, \theta) Z_{n'}^{m'}(\rho, \theta) \rho d\rho d\theta = \frac{\pi}{2n+2} \delta_{nn'} \delta_{mm'}$$
+
+This orthogonality arises from two separate integrations:
+
+**Angular orthogonality:**
+$$\int_0^{2\pi} \cos(m\theta)\cos(m'\theta) d\theta = \pi\delta_{mm'} \quad (m, m' > 0)$$
+$$\int_0^{2\pi} \sin(m\theta)\sin(m'\theta) d\theta = \pi\delta_{mm'} \quad (m, m' > 0)$$
+$$\int_0^{2\pi} \cos(m\theta)\sin(m'\theta) d\theta = 0$$
+
+**Radial orthogonality:**
+$$\int_0^1 R_n^m(\rho) R_{n'}^m(\rho) \rho d\rho = \frac{1}{2(n+1)} \delta_{nn'}$$
+
+The weight function ρ in the integral arises from the Jacobian in polar coordinates and ensures proper orthogonality over the circular domain.
 
 ### 17.1.3 Wavefront Expansion
 
@@ -35,29 +58,91 @@ $$a_n^m = \frac{2n+2}{\pi \epsilon_m} \int_0^{2\pi} \int_0^1 W(\rho, \theta) Z_n
 
 where εₘ = 2 for m = 0 and εₘ = 1 otherwise.
 
+In practice, we truncate the expansion at some maximum order N:
+$$W(\rho, \theta) \approx \sum_{n=0}^{N} \sum_{m=-n}^n a_n^m Z_n^m(\rho, \theta)$$
+
+The number of terms up to order N is:
+$$J = \frac{(N+1)(N+2)}{2}$$
+
+For example:
+- N = 3: J = 10 terms (up to coma)
+- N = 4: J = 15 terms (includes spherical aberration)
+- N = 8: J = 45 terms (high-order aberrations)
+
+### 17.1.4 Conversion Between Indices
+
+Several indexing schemes exist for Zernike polynomials:
+
+**Noll notation (single index j):**
+$$j = \frac{n(n+1)}{2} + |m| + \begin{cases}
+0 & \text{if } m \leq 0 \text{ and } n \bmod 4 \in \{0,1\} \\
+0 & \text{if } m > 0 \text{ and } n \bmod 4 \in \{2,3\} \\
+1 & \text{otherwise}
+\end{cases}$$
+
+**OSA/ANSI standard:**
+$$j = \frac{n(n+2) + m}{2}$$
+
+**Wyant ordering:**
+Groups terms by polynomial order, then by azimuthal frequency.
+
+The choice of ordering affects coefficient interpretation but not the mathematical properties.
+
 ### 17.1.4 Common Aberrations
 
 The first few Zernike terms correspond to familiar optical aberrations:
 
-- $Z_0^0 = 1$: Piston (constant phase)
-- $Z_1^{-1} = 2\rho\sin\theta$: Vertical tilt
-- $Z_1^1 = 2\rho\cos\theta$: Horizontal tilt
-- $Z_2^{-2} = \sqrt{6}\rho^2\sin(2\theta)$: Oblique astigmatism
+**Low-order terms (n ≤ 2):**
+- $Z_0^0 = 1$: Piston (constant phase offset)
+- $Z_1^{-1} = 2\rho\sin\theta$: Vertical tilt (y-tilt)
+- $Z_1^1 = 2\rho\cos\theta$: Horizontal tilt (x-tilt)
+- $Z_2^{-2} = \sqrt{6}\rho^2\sin(2\theta)$: Oblique astigmatism (45°)
 - $Z_2^0 = \sqrt{3}(2\rho^2 - 1)$: Defocus
-- $Z_2^2 = \sqrt{6}\rho^2\cos(2\theta)$: Vertical astigmatism
+- $Z_2^2 = \sqrt{6}\rho^2\cos(2\theta)$: Vertical astigmatism (0°/90°)
+
+**Third-order terms (n = 3):**
+- $Z_3^{-3} = \sqrt{8}\rho^3\sin(3\theta)$: Trefoil
 - $Z_3^{-1} = \sqrt{8}(3\rho^3 - 2\rho)\sin\theta$: Vertical coma
 - $Z_3^1 = \sqrt{8}(3\rho^3 - 2\rho)\cos\theta$: Horizontal coma
-- $Z_4^0 = \sqrt{5}(6\rho^4 - 6\rho^2 + 1)$: Primary spherical aberration
+- $Z_3^3 = \sqrt{8}\rho^3\cos(3\theta)$: Trefoil
 
-### 17.1.5 RMS Wavefront Error
+**Fourth-order terms (n = 4):**
+- $Z_4^{-4} = \sqrt{10}\rho^4\sin(4\theta)$: Tetrafoil
+- $Z_4^{-2} = \sqrt{10}(4\rho^4 - 3\rho^2)\sin(2\theta)$: Secondary astigmatism
+- $Z_4^0 = \sqrt{5}(6\rho^4 - 6\rho^2 + 1)$: Primary spherical aberration
+- $Z_4^2 = \sqrt{10}(4\rho^4 - 3\rho^2)\cos(2\theta)$: Secondary astigmatism
+- $Z_4^4 = \sqrt{10}\rho^4\cos(4\theta)$: Tetrafoil
+
+### 17.1.5 Physical Interpretation and Seidel Connection
+
+The Zernike polynomials relate to classical Seidel aberrations through coordinate transformation. For a point at field angle α and pupil coordinates (ρ, θ):
+
+**Seidel to Zernike mapping:**
+- Spherical aberration: $W_{040} = a_4^0 Z_4^0$
+- Coma: $W_{131} = a_3^1 Z_3^1 \cos\alpha + a_3^{-1} Z_3^{-1} \sin\alpha$
+- Astigmatism: $W_{222} = a_2^2 Z_2^2 \cos(2\alpha) + a_2^{-2} Z_2^{-2} \sin(2\alpha)$
+- Field curvature: $W_{220} = a_2^0 Z_2^0$
+- Distortion: $W_{311} = a_1^1 Z_1^1 \cos\alpha + a_1^{-1} Z_1^{-1} \sin\alpha$
+
+The wavefront variance contribution from each aberration:
+$$\sigma_n^2 = \sum_{m=-n}^n (a_n^m)^2$$
+
+### 17.1.6 RMS Wavefront Error
 
 The root-mean-square wavefront error is elegantly expressed in the Zernike basis:
 
 $$\sigma_{RMS} = \sqrt{\sum_{n,m} (a_n^m)^2}$$
 
-This orthogonality property makes Zernike coefficients ideal for optimization algorithms.
+This orthogonality property makes Zernike coefficients ideal for optimization algorithms. The variance can be decomposed by order:
 
-### 17.1.6 Strehl Ratio Approximation
+$$\sigma_{RMS}^2 = \sum_{n=0}^{\infty} \sigma_n^2 = \sum_{n=0}^{\infty} \sum_{m=-n}^n (a_n^m)^2$$
+
+For atmospheric turbulence following Kolmogorov statistics:
+$$\langle (a_n^m)^2 \rangle \propto (n + 1)^{-\alpha}$$
+
+where α ≈ 11/3 for fully developed turbulence. This power-law decay justifies truncating the expansion at finite order.
+
+### 17.1.7 Strehl Ratio and Performance Metrics
 
 For small aberrations, the Strehl ratio (peak intensity ratio) approximates to:
 
@@ -65,11 +150,49 @@ $$S \approx \exp(-\sigma_{RMS}^2) \approx 1 - \sigma_{RMS}^2$$
 
 where σ_RMS is in radians. This provides a direct connection between wavefront quality and imaging performance.
 
+**Extended Maréchal approximation:**
+$$S \approx \exp\left[-\sigma_{RMS}^2 + \frac{1}{2}\sigma_{RMS}^4(\kappa_4 - 1)\right]$$
+
+where κ₄ is the normalized fourth moment of the phase distribution. For Gaussian statistics, κ₄ = 3.
+
+**Diffraction-limited criterion:**
+- Rayleigh criterion: λ/4 peak-to-valley → S ≈ 0.80
+- Maréchal criterion: λ/14 RMS → S ≈ 0.80
+- Practical limit: σ_RMS < λ/20 → S > 0.94
+
+The point spread function (PSF) with aberrations:
+$$\text{PSF}(x,y) = \left|\mathcal{F}\left\{P(\xi,\eta)\exp\left[i\frac{2\pi}{\lambda}W(\xi,\eta)\right]\right\}\right|^2$$
+
+where P is the pupil function and W is the wavefront error.
+
+### 17.1.8 Adaptive Optics Performance
+
+The residual wavefront error after correction:
+$$\sigma_{residual}^2 = \sigma_{fitting}^2 + \sigma_{temporal}^2 + \sigma_{measurement}^2 + \sigma_{calibration}^2$$
+
+**Fitting error (finite actuators):**
+$$\sigma_{fitting}^2 \approx 0.28\left(\frac{d}{r_0}\right)^{5/3}$$
+
+where d is actuator spacing and r₀ is the Fried parameter.
+
+**Temporal error (finite bandwidth):**
+$$\sigma_{temporal}^2 \approx \left(\frac{f_G}{f_0}\right)^{5/3}$$
+
+where f_G is the Greenwood frequency and f₀ is the control loop bandwidth.
+
+**Measurement noise propagation:**
+$$\sigma_{measurement}^2 = \left(\frac{\partial W}{\partial s}\right)^2 \sigma_s^2$$
+
+where s represents sensor measurements.
+
 ## 17.2 Spatial Light Modulator (SLM) Principles
 
 ### 17.2.1 Phase Modulation Mechanisms
 
-Spatial light modulators enable pixel-wise control of optical phase, amplitude, or polarization. For liquid crystal on silicon (LCoS) devices, the phase modulation depth δ depends on:
+Spatial light modulators enable pixel-wise control of optical phase, amplitude, or polarization. Several technologies exist, each with distinct characteristics:
+
+**Liquid Crystal on Silicon (LCoS):**
+The most common SLM technology uses electrically controlled birefringence. For nematic liquid crystals, the phase modulation depth δ depends on:
 
 $$\delta = \frac{2\pi}{\lambda} \Delta n \cdot d$$
 
@@ -77,32 +200,102 @@ where Δn is the birefringence change and d is the cell thickness. The voltage-d
 
 $$n(V) = n_o + \frac{n_e - n_o}{1 + (V_{th}/V)^2}$$
 
+where n_o and n_e are ordinary and extraordinary refractive indices, and V_{th} is the threshold voltage.
+
+**Director Orientation Model:**
+The liquid crystal director angle θ(z) through the cell thickness satisfies:
+$$K\frac{d^2\theta}{dz^2} = \epsilon_0\Delta\epsilon E^2\sin\theta\cos\theta$$
+
+where K is the elastic constant. The resulting phase shift:
+$$\phi = \frac{2\pi}{\lambda}\int_0^d n_{eff}(\theta(z))dz$$
+
+with effective index:
+$$n_{eff}(\theta) = \frac{n_o n_e}{\sqrt{n_o^2\sin^2\theta + n_e^2\cos^2\theta}}$$
+
+**Response Dynamics:**
 The response time scales as:
+$$\tau_{rise} = \frac{\gamma d^2}{K\epsilon_0\Delta\epsilon(V^2 - V_{th}^2)}$$
+$$\tau_{fall} = \frac{\gamma d^2}{K\pi^2}$$
 
-$$\tau \propto \frac{\gamma d^2}{K \Delta\epsilon V^2}$$
+where γ is the rotational viscosity. Note the asymmetry: relaxation is typically slower than activation.
 
-where γ is viscosity, K is the elastic constant, and Δε is the dielectric anisotropy.
+**Temperature Dependence:**
+Both birefringence and response time vary with temperature:
+$$\Delta n(T) = \Delta n_0(1 - T/T_c)^\beta$$
+$$\gamma(T) = \gamma_0\exp(E_a/k_BT)$$
+
+where T_c is the clearing temperature, β ≈ 0.2, and E_a is the activation energy.
+
+**Digital Micromirror Devices (DMD):**
+Binary amplitude modulation via tilting mirrors:
+- Tilt angles: ±12° (typically)
+- Switching time: ~10 μs
+- Diffraction efficiency: ~88% (into desired order)
+- Contrast ratio: >5000:1
+
+**Deformable Mirrors:**
+Continuous surface deformation for phase control:
+- Actuator types: Piezoelectric, electrostatic, magnetic
+- Stroke: 1-10 μm typical
+- Bandwidth: 1-10 kHz
+- Inter-actuator coupling via influence functions
 
 ### 17.2.2 Complex Amplitude Modulation
 
-Phase-only SLMs can achieve complex amplitude modulation through:
+Phase-only SLMs can achieve complex amplitude modulation through several encoding schemes:
 
-**1. Lee Hologram Method:**
+**1. Off-axis Computer Generated Hologram (Lee Method):**
+Encode complex field U = A exp(iψ) as:
 $$\phi(x,y) = \arg[A(x,y)e^{i\psi(x,y)}] + 2\pi f_c x$$
 
 where f_c is a carrier frequency. The first diffraction order approximates the desired complex field.
 
-**2. Double-Phase Method:**
+The carrier frequency must satisfy:
+$$f_c > f_{max} + \frac{W}{2\lambda z}$$
+
+where f_max is the maximum spatial frequency in U and W is the beam width. This ensures separation of diffraction orders.
+
+**Efficiency analysis:**
+- First-order efficiency: η₁ ≈ |⟨U⟩|²/⟨|U|²⟩
+- Zero-order leakage: η₀ = |⟨exp(iφ)⟩|²
+- Signal-to-noise ratio: SNR ∝ A²/(1-A²)
+
+**2. Double-Phase Amplitude Encoding:**
 Using two phase masks φ₁ and φ₂ separated by distance z:
 
 $$U_{out} = \mathcal{F}^{-1}\{\mathcal{F}\{e^{i\phi_1}\} \cdot H(z) \cdot \mathcal{F}\{e^{i\phi_2}\}\}$$
 
-where H(z) is the Fresnel propagation kernel.
+where H(z) is the Fresnel propagation kernel:
+$$H(k_x, k_y; z) = \exp\left[iz\sqrt{k^2 - k_x^2 - k_y^2}\right]$$
 
-**3. Gerchberg-Saxton Algorithm:**
-Iterative phase retrieval between SLM and target planes:
+Phase masks derived from:
+$$\phi_1 = \arg[U] + \arg[\mathcal{F}^{-1}\{|U|^{1/2}\}]$$
+$$\phi_2 = -\arg[\mathcal{F}^{-1}\{|U|^{1/2}\}]$$
 
-$$\phi_{n+1} = \arg[\mathcal{F}^{-1}\{|A_{target}|e^{i\arg[\mathcal{F}\{e^{i\phi_n}\}]}\}]$$
+**3. Iterative Fourier Transform Algorithms:**
+
+**Gerchberg-Saxton (GS):**
+$$\phi_{n+1} = \arg[\mathcal{F}^{-1}\{|A_{target}|e^{i\arg[\mathcal{F}\{|A_{input}|e^{i\phi_n}\}]}\}]$$
+
+**Weighted GS with feedback:**
+$$\phi_{n+1} = \phi_n + \alpha \arg[\mathcal{F}^{-1}\{(A_{target} - A_n)e^{i\psi_n}\}]$$
+
+where α ∈ (0,2) is the feedback strength.
+
+**Error reduction metrics:**
+$$\epsilon = \frac{\sum|I_{target} - I_{measured}|^2}{\sum I_{target}^2}$$
+
+Typical convergence: ε < 0.01 within 20-50 iterations.
+
+**4. Superpixel Method:**
+Group N×N pixels to encode both amplitude and phase:
+- Central pixels: Encode phase
+- Border pixels: Control amplitude via blazed gratings
+
+Amplitude control via diffraction efficiency:
+$$A_{effective} = \eta(\theta_{blaze}) = \text{sinc}^2\left(\frac{N\pi\sin\theta_{blaze}}{\lambda/p}\right)$$
+
+where p is the pixel pitch.
 
 ### 17.2.3 Diffraction Efficiency and Limitations
 
