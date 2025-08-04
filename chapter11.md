@@ -2,6 +2,10 @@
 
 逆向渲染将计算机图形学的前向问题颠倒过来：给定观测图像，我们寻求恢复场景的底层参数——几何、材质和光照。这一逆问题在计算机视觉、机器学习和物理模拟的交叉点上，形成了可微渲染和神经渲染等现代技术的数学基础。本章建立了解决这些逆问题的严格数学框架，从基本的不适定性分析到实用的优化策略。
 
+逆向渲染的核心挑战在于其本质的不适定性：多种场景配置可能产生相同的图像。例如，明亮的材质在弱光下与暗材质在强光下可能看起来相同。这种歧义性要求我们引入额外的约束和先验知识。同时，渲染过程的非线性和不连续性（如阴影边界）使得优化变得复杂。本章将系统地分析这些挑战，并提供数学工具来应对它们。
+
+从应用角度看，逆向渲染支撑着许多重要技术：从传统的形状重建和材质估计，到现代的神经辐射场优化和可微路径追踪。理解其数学基础不仅有助于改进现有方法，更能指导新算法的设计。
+
 ## 学习目标
 
 完成本章后，您将能够：
@@ -28,11 +32,25 @@ $$L_o(\mathbf{x}, \boldsymbol{\omega}_o) = L_e(\mathbf{x}, \boldsymbol{\omega}_o
 - $L_i$：入射辐射度
 - $\Omega$：半球立体角
 
+这个积分方程可以通过Neumann级数展开为路径积分形式：
+
+$$L_o = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + \cdots = \sum_{k=0}^{\infty} \mathcal{T}^k L_e$$
+
+其中传输算子 $\mathcal{T}$ 定义为：
+
+$$(\mathcal{T}L)(\mathbf{x}, \boldsymbol{\omega}_o) = \int_{\Omega} f_r(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L(\mathbf{x}_i, -\boldsymbol{\omega}_i) V(\mathbf{x}, \mathbf{x}_i) (\boldsymbol{\omega}_i \cdot \mathbf{n}) \, d\boldsymbol{\omega}_i$$
+
 对于体积渲染，我们有：
 
 $$L(\mathbf{r}, \boldsymbol{\omega}) = \int_0^t T(s) \sigma_s(\mathbf{r}(s)) L_s(\mathbf{r}(s), \boldsymbol{\omega}) \, ds + T(t) L_{\text{bg}}$$
 
 其中透射率 $T(s) = \exp\left(-\int_0^s \sigma_t(\mathbf{r}(u)) \, du\right)$。
+
+体积渲染方程同样可以写成算子形式：
+
+$$L = \mathcal{V}[L_s, \sigma_s, \sigma_t]$$
+
+这种算子视角为理解逆问题提供了数学框架。
 
 ### 逆问题形式化
 
@@ -45,6 +63,8 @@ $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \mathcal{L}(\mathcal{R}
 - $\mathcal{L}$：损失函数（如 $L^2$ 或感知损失）
 - $\mathcal{R}_{\text{reg}}$：正则化项
 
+从函数分析角度，渲染算子 $\mathcal{R}: \Theta \rightarrow \mathcal{I}$ 映射参数空间到图像空间。逆问题寻求逆映射 $\mathcal{R}^{-1}$，但这个逆映射通常不存在或不唯一。
+
 ### 参数空间分解
 
 我们通常将 $\boldsymbol{\theta}$ 分解为：
@@ -55,6 +75,11 @@ $$\boldsymbol{\theta} = (\boldsymbol{\theta}_g, \boldsymbol{\theta}_m, \boldsymb
 - **材质参数** $\boldsymbol{\theta}_m$：反照率、粗糙度、折射率
 - **光照参数** $\boldsymbol{\theta}_l$：环境贴图、点光源位置/强度
 
+每个参数空间有其特定的流形结构：
+- 几何空间：可能受限于可制造性或物理约束
+- 材质空间：受物理定律约束（如能量守恒）
+- 光照空间：通常为正值函数空间
+
 ### 观测模型
 
 实际观测包含噪声：
@@ -62,6 +87,11 @@ $$\boldsymbol{\theta} = (\boldsymbol{\theta}_g, \boldsymbol{\theta}_m, \boldsymb
 $$\mathbf{I}_{\text{obs}} = \mathcal{R}(\boldsymbol{\theta}_{\text{true}}) + \boldsymbol{\epsilon}$$
 
 其中 $\boldsymbol{\epsilon}$ 表示传感器噪声、量化误差等。
+
+噪声模型的选择影响优化目标：
+- 高斯噪声 $\boldsymbol{\epsilon} \sim \mathcal{N}(0, \sigma^2\mathbf{I})$ 导致 $L^2$ 损失
+- 泊松噪声（光子计数）需要不同的似然函数
+- 混合噪声模型更贴近实际传感器
 
 ### 不唯一性示例
 
@@ -72,24 +102,44 @@ $$\mathbf{I}_{\text{obs}} = \mathcal{R}(\boldsymbol{\theta}_{\text{true}}) + \bo
 - 暗材质 + 强光照：$\rho_1 L_1 = B$，其中 $\rho_1 = 0.2, L_1 = 5$
 - 亮材质 + 弱光照：$\rho_2 L_2 = B$，其中 $\rho_2 = 1.0, L_2 = 1$
 
+数学上，这对应于零空间的存在：
+$$\mathcal{N}(\mathcal{R}) = \{\Delta\boldsymbol{\theta} : \mathcal{R}(\boldsymbol{\theta} + \Delta\boldsymbol{\theta}) = \mathcal{R}(\boldsymbol{\theta})\}$$
+
 **示例2：凹凸贴图vs几何细节**
 表面法线扰动可由以下产生：
-- 真实几何位移
-- 法线贴图
+- 真实几何位移：$\mathbf{p}' = \mathbf{p} + h(\mathbf{p})\mathbf{n}$
+- 法线贴图：$\mathbf{n}' = \text{normalize}(\mathbf{n} + \nabla h)$
 - 位移贴图
 
 这些在单视角下可能产生相同的着色。
+
+**示例3：形状-BRDF歧义**
+镜面球和漫反射椭球在特定视角和光照下可能产生相同图像。设球面参数化为 $\mathbf{x}(\theta, \phi)$，BRDF为 $f_r$，则存在椭球参数化 $\mathbf{y}(\theta, \phi)$ 和 BRDF $g_r$ 使得：
+
+$$\int_{\Omega} f_r(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L_i \cos\theta_i \, d\boldsymbol{\omega}_i = \int_{\Omega} g_r(\mathbf{y}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L_i \cos\theta_i' \, d\boldsymbol{\omega}_i$$
+
+**示例4：全局光照中的路径等价**
+多次反射可通过不同路径达到相同结果：
+- 直接光照 + 强环境光
+- 弱直接光 + 多次反射
+
+这在渲染方程的Neumann级数展开中表现为不同截断阶数的等价性。
 
 ## 11.2 不适定性与正则化
 
 ### Hadamard不适定性
 
 问题称为良态（well-posed）需满足：
-1. 解存在
-2. 解唯一
-3. 解连续依赖于数据
+1. 解存在（存在性）
+2. 解唯一（唯一性）
+3. 解连续依赖于数据（稳定性）
 
 逆向渲染通常违反条件2和3，使其成为不适定问题。
+
+形式化地，对于算子方程 $\mathcal{R}(\boldsymbol{\theta}) = \mathbf{I}$：
+- **存在性**：$\mathbf{I} \in \text{Range}(\mathcal{R})$ 可能不满足（如物理不可实现的图像）
+- **唯一性**：$\text{dim}(\mathcal{N}(\mathcal{R})) > 0$ （零空间非平凡）
+- **稳定性**：小扰动 $\|\Delta\mathbf{I}\| = \epsilon$ 可能导致大变化 $\|\Delta\boldsymbol{\theta}\| \gg \epsilon$
 
 ### 条件数分析
 
@@ -97,7 +147,16 @@ $$\mathbf{I}_{\text{obs}} = \mathcal{R}(\boldsymbol{\theta}_{\text{true}}) + \bo
 
 $$\kappa(\mathbf{J}) = \frac{\sigma_{\max}(\mathbf{J})}{\sigma_{\min}(\mathbf{J})}$$
 
-大条件数表示数值不稳定性。
+大条件数表示数值不稳定性。对于典型渲染问题：
+- 几何参数：$\kappa \sim 10^2 - 10^3$（中等病态）
+- 材质参数：$\kappa \sim 10^3 - 10^5$（严重病态）
+- 光照参数：$\kappa \sim 10^4 - 10^6$（极度病态）
+
+**奇异值分解视角**：
+设 $\mathbf{J} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^T$，则：
+$$\Delta\boldsymbol{\theta} = \sum_{i=1}^r \frac{\mathbf{u}_i^T \Delta\mathbf{I}}{\sigma_i} \mathbf{v}_i$$
+
+小奇异值 $\sigma_i$ 放大噪声，导致解的不稳定。
 
 ### Tikhonov正则化
 
@@ -107,11 +166,30 @@ $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \|\mathcal{R}(\boldsymb
 
 其中 $\boldsymbol{\theta}_0$ 是先验估计，$\lambda$ 控制正则化强度。
 
+**正则化的几何解释**：
+在参数空间中，正则化项定义了一个"信任区域"：
+$$\{\boldsymbol{\theta} : \|\boldsymbol{\theta} - \boldsymbol{\theta}_0\|^2 \leq \delta\}$$
+
+解是数据拟合和正则化约束的平衡点。
+
+**广义Tikhonov正则化**：
+$$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \|\mathcal{R}(\boldsymbol{\theta}) - \mathbf{I}_{\text{obs}}\|^2 + \lambda \|\mathbf{L}(\boldsymbol{\theta} - \boldsymbol{\theta}_0)\|^2$$
+
+其中 $\mathbf{L}$ 是正则化算子，如：
+- $\mathbf{L} = \mathbf{I}$：标准Tikhonov
+- $\mathbf{L} = \nabla$：梯度正则化（平滑性）
+- $\mathbf{L} = \nabla^2$：曲率正则化
+
 ### 稀疏性先验
 
 **L1正则化**促进稀疏解：
 
 $$\mathcal{R}_{\text{L1}}(\boldsymbol{\theta}) = \lambda_1 \|\boldsymbol{\theta}\|_1$$
+
+稀疏性在渲染中的应用：
+- 环境光的球谐系数
+- 纹理的小波系数
+- 几何的特征点
 
 **总变分（TV）正则化**保持边缘：
 
@@ -121,20 +199,40 @@ $$\mathcal{R}_{\text{TV}}(\mathbf{u}) = \lambda_{\text{TV}} \int_{\Omega} |\nabl
 
 $$\mathcal{R}_{\text{TV}}(\mathbf{u}) = \lambda_{\text{TV}} \sum_{i,j} \sqrt{(u_{i+1,j} - u_{i,j})^2 + (u_{i,j+1} - u_{i,j})^2 + \epsilon}$$
 
+**各向异性TV**：
+$$\mathcal{R}_{\text{ATV}}(\mathbf{u}) = \lambda_{\text{TV}} \sum_{i,j} |u_{i+1,j} - u_{i,j}| + |u_{i,j+1} - u_{i,j}|$$
+
+计算更简单但可能产生阶梯效应。
+
 ### 物理约束
 
 **能量守恒**：
 $$\int_{\Omega} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_i \cdot \mathbf{n}) \, d\boldsymbol{\omega}_i \leq 1$$
 
+实际实现中，通过反照率上界约束：
+$$\rho(\lambda) \leq 1, \quad \forall \lambda \in [380\text{nm}, 780\text{nm}]$$
+
 **互易性**：
 $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = f_r(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$$
+
+对于参数化BRDF，这要求参数满足特定对称性。例如，对于微表面模型：
+$$D(\mathbf{h}) G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{h}) = D(\mathbf{h}) G(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i, \mathbf{h})$$
 
 **正定性**：
 $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \geq 0$$
 
-这些可作为硬约束或软惩罚项。
+这些可作为硬约束或软惩罚项：
+- 硬约束：投影到可行集 $\mathcal{C} = \{\boldsymbol{\theta} : g(\boldsymbol{\theta}) \leq 0\}$
+- 软约束：惩罚项 $\lambda \sum_i \max(0, g_i(\boldsymbol{\theta}))^2$
+
+**几何约束**：
+- 表面法线单位化：$\|\mathbf{n}\|^2 = 1$
+- 凸性约束：$\nabla^2 f(\mathbf{x}) \succeq 0$
+- 体积保持：$\int_V dV = V_0$
 
 ## 11.3 梯度计算：伴随法与自动微分
+
+高效的梯度计算是逆向渲染的核心。对于复杂的渲染系统，手动推导梯度既繁琐又容易出错。本节介绍三种主要方法：解析推导、伴随状态方法和自动微分。
 
 ### 解析梯度推导
 
@@ -147,6 +245,18 @@ $$\frac{\partial I}{\partial \rho} = \mathbf{n} \cdot \mathbf{l}$$
 
 对法线的梯度（需要投影到切平面）：
 $$\frac{\partial I}{\partial \mathbf{n}} = (\mathbf{I} - \mathbf{n}\mathbf{n}^T)(\mathbf{l} \cdot \rho)$$
+
+投影矩阵 $\mathbf{P} = \mathbf{I} - \mathbf{n}\mathbf{n}^T$ 确保梯度在切平面内，保持 $\|\mathbf{n}\| = 1$。
+
+**Phong模型的梯度**：
+$$I = k_d(\mathbf{n} \cdot \mathbf{l}) + k_s(\mathbf{r} \cdot \mathbf{v})^n$$
+
+其中反射向量 $\mathbf{r} = 2(\mathbf{n} \cdot \mathbf{l})\mathbf{n} - \mathbf{l}$。
+
+对镜面指数的梯度：
+$$\frac{\partial I}{\partial n} = k_s (\mathbf{r} \cdot \mathbf{v})^n \ln(\mathbf{r} \cdot \mathbf{v})$$
+
+注意当 $\mathbf{r} \cdot \mathbf{v} \approx 0$ 时的数值稳定性问题。
 
 ### 伴随状态方法
 
@@ -164,6 +274,18 @@ $$\left(\frac{\partial F}{\partial \mathbf{u}}\right)^T \boldsymbol{\lambda} = -
 
 参数梯度：
 $$\frac{dJ}{d\boldsymbol{\theta}} = \frac{\partial J}{\partial \boldsymbol{\theta}} + \boldsymbol{\lambda}^T \frac{\partial F}{\partial \boldsymbol{\theta}}$$
+
+**渲染方程的伴随**：
+对于渲染方程 $L = L_e + \mathcal{T}L$，伴随辐射度 $L^*$ 满足：
+$$L^* = \frac{\partial J}{\partial L} + \mathcal{T}^* L^*$$
+
+其中 $\mathcal{T}^*$ 是伴随传输算子。
+
+**计算优势**：
+- 前向求解：$O(N_{\text{params}} \times N_{\text{pixels}})$
+- 伴随方法：$O(N_{\text{pixels}})$，与参数数量无关
+
+对于高维参数空间（如纹理、环境光），伴随法显著提高效率。
 
 ### 自动微分原理
 
