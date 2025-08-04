@@ -10,21 +10,35 @@ Temporal coherence describes the correlation of a light wave with itself at diff
 
 where ⟨·⟩ denotes time averaging and * indicates complex conjugation.
 
+For a stationary random process, this can be written more explicitly as:
+
+**Γ(τ) = lim_{T→∞} (1/T) ∫_{-T/2}^{T/2} E*(t)E(t+τ) dt**
+
+The physical interpretation is straightforward: Γ(τ) measures how similar the field is to a time-delayed version of itself. For τ = 0, we have Γ(0) = ⟨|E(t)|²⟩, which is the time-averaged intensity.
+
 ### 16.1.1 Coherence Time and Length
 
 The normalized degree of temporal coherence is:
 
 **γ(τ) = Γ(τ)/Γ(0)**
 
-The coherence time τ_c is typically defined as the time delay at which |γ(τ)| falls to 1/e or 1/2:
+This complex-valued function satisfies several important properties:
+- **γ(0) = 1** (perfect self-correlation at zero delay)
+- **|γ(τ)| ≤ 1** (Schwarz inequality)
+- **γ(-τ) = γ*(τ)** (Hermitian symmetry)
+- **γ(τ) → 0** as **τ → ∞** for finite bandwidth sources
 
-**τ_c = ∫₀^∞ |γ(τ)|² dτ**
+The coherence time τ_c can be defined in several equivalent ways:
 
-The coherence length is then:
+1. **1/e definition**: Time at which |γ(τ)| = 1/e
+2. **FWHM definition**: Full width at half maximum of |γ(τ)|²
+3. **Integral definition**: **τ_c = ∫₀^∞ |γ(τ)|² dτ**
+
+The integral definition is most fundamental as it represents the effective duration over which the field maintains correlation. The coherence length is then:
 
 **l_c = c·τ_c**
 
-where c is the speed of light.
+where c is the speed of light in the medium (c = c₀/n for refractive index n).
 
 ### 16.1.2 Spectral Width Relationship
 
@@ -32,26 +46,110 @@ By the Wiener-Khinchin theorem (detailed in Section 16.3), the temporal coherenc
 
 **Γ(τ) = ∫_{-∞}^∞ S(ω)e^{iωτ} dω**
 
-For a Gaussian spectrum with FWHM Δν:
+**S(ω) = (1/2π) ∫_{-∞}^∞ Γ(τ)e^{-iωτ} dτ**
 
+This Fourier transform relationship implies a fundamental uncertainty principle:
+
+**Δω·Δτ ≥ K**
+
+where K is a constant of order unity depending on how the widths are defined.
+
+For specific spectral shapes:
+
+**1. Gaussian Spectrum:**
 **S(ω) = S₀ exp[-(ω-ω₀)²/(2σ²)]**
 
-where σ = 2πΔν/(2√(2ln2)), the coherence time is:
+where σ = 2πΔν/(2√(2ln2)) for FWHM Δν, yielding:
 
-**τ_c ≈ 0.44/Δν**
+**γ(τ) = exp(iω₀τ) exp(-σ²τ²/2)**
 
-This fundamental relationship shows that narrow spectral lines produce long coherence times.
+**τ_c = ∫₀^∞ exp(-σ²τ²) dτ = √π/(2σ) ≈ 0.44/Δν**
+
+**2. Lorentzian Spectrum:**
+**S(ω) = S₀Γ₀/π/[(ω-ω₀)² + Γ₀²]**
+
+This gives:
+**γ(τ) = exp(iω₀τ) exp(-Γ₀|τ|)**
+
+**τ_c = 1/(2Γ₀) = 1/(2πΔν)**
+
+**3. Rectangular Spectrum:**
+**S(ω) = S₀ for |ω-ω₀| < πΔν, 0 otherwise**
+
+**γ(τ) = exp(iω₀τ) sinc(πΔντ)**
+
+**τ_c ≈ 1/Δν**
+
+The Gaussian gives the minimum time-bandwidth product, while the rectangular spectrum produces the longest coherence time for a given bandwidth.
 
 ### 16.1.3 Examples of Coherence Times
 
-- Laser (single mode): τ_c ~ 10⁻³ s, l_c ~ 300 km
-- LED: τ_c ~ 10⁻¹⁴ s, l_c ~ 3 μm  
-- Sunlight: τ_c ~ 10⁻¹⁵ s, l_c ~ 0.3 μm
-- Sodium lamp: τ_c ~ 10⁻¹² s, l_c ~ 0.3 mm
+Different light sources exhibit vastly different coherence properties:
+
+**1. Stabilized He-Ne Laser (single mode):**
+- Δν ~ 1 kHz - 1 MHz
+- τ_c ~ 10⁻³ - 1 s
+- l_c ~ 300 km - 300,000 km
+- Applications: Interferometry, holography
+
+**2. Semiconductor Laser Diode:**
+- Δν ~ 1-10 MHz (single mode)
+- τ_c ~ 10⁻⁷ - 10⁻⁸ s
+- l_c ~ 30 - 300 m
+- Applications: Fiber optic communications, CD/DVD readers
+
+**3. Light Emitting Diode (LED):**
+- Δν ~ 10 THz (Δλ ~ 30 nm for visible)
+- τ_c ~ 10⁻¹⁴ s
+- l_c ~ 3 μm
+- Applications: Display technology, illumination
+
+**4. Filtered Sunlight (1 nm filter):**
+- Δν ~ 1 THz
+- τ_c ~ 10⁻¹² s  
+- l_c ~ 0.3 mm
+- Natural illumination reference
+
+**5. White Light (unfiltered):**
+- Δν ~ 300 THz (400-700 nm range)
+- τ_c ~ 10⁻¹⁵ s
+- l_c ~ 0.3 μm
+- Essentially incoherent for most applications
+
+**6. Sodium D-line (low pressure lamp):**
+- Δν ~ 500 MHz (Doppler broadened)
+- τ_c ~ 10⁻⁹ s
+- l_c ~ 0.3 m
+- Classic atomic spectral line
+
+### 16.1.4 Measurement of Coherence Time
+
+Coherence time can be measured through several methods:
+
+**1. Michelson Interferometry:**
+Measure fringe visibility V as function of path difference Δ:
+**V(Δ) = |γ(Δ/c)|**
+
+The coherence length l_c is where V drops to 1/e or 1/2.
+
+**2. Spectral Analysis:**
+Measure power spectrum S(ω) directly using spectrometer, then calculate:
+**τ_c = 2π/Δω_eff**
+
+where Δω_eff is effective spectral width.
+
+**3. Intensity Correlation:**
+For thermal light, measure intensity correlation function:
+**g⁽²⁾(τ) = ⟨I(t)I(t+τ)⟩/⟨I(t)⟩²**
+
+Related to field correlation by:
+**g⁽²⁾(τ) = 1 + |γ(τ)|²**
 
 ## 16.2 Spatial Coherence and Young's Experiment
 
 Spatial coherence describes the correlation between light fields at different spatial points at the same time. Young's double-slit experiment provides the canonical framework for understanding spatial coherence.
+
+The fundamental question of spatial coherence is: given two points P₁ and P₂ in space, how correlated are the optical fields at these points? This correlation determines whether interference fringes can be observed when light from these two points is combined.
 
 ### 16.2.1 Mutual Intensity and Visibility
 
@@ -59,44 +157,138 @@ Consider two points P₁ and P₂ illuminated by a source. The mutual intensity 
 
 **J₁₂ = ⟨E*(P₁,t)E(P₂,t)⟩**
 
-In Young's experiment, the intensity at observation point P is:
+This complex quantity contains both amplitude and phase information about the correlation.
 
-**I(P) = I₁ + I₂ + 2Re[J₁₂ exp(ikΔ)]**
+#### Young's Double Slit Analysis
 
-where Δ is the path difference. The visibility of fringes is:
+In Young's experiment with slits at positions r₁ and r₂, the field at observation point P is:
+
+**E(P,t) = K₁E(r₁,t-t₁) + K₂E(r₂,t-t₂)**
+
+where Kᵢ are propagation factors and tᵢ = |P-rᵢ|/c are propagation times.
+
+The intensity becomes:
+
+**I(P) = |K₁|²I₁ + |K₂|²I₂ + 2Re[K₁*K₂J₁₂ exp(ikΔ)]**
+
+where Δ = |P-r₂| - |P-r₁| is the path difference.
+
+For the paraxial case with equal propagation factors:
+
+**I(P) = I₁ + I₂ + 2√(I₁I₂)|J₁₂|cos(kΔ + φ₁₂)**
+
+where φ₁₂ = arg(J₁₂) is the phase of mutual intensity.
+
+#### Fringe Visibility
+
+The intensity varies between:
+- **I_max = I₁ + I₂ + 2√(I₁I₂)|γ₁₂|**
+- **I_min = I₁ + I₂ - 2√(I₁I₂)|γ₁₂|**
+
+The visibility is defined as:
 
 **V = (I_max - I_min)/(I_max + I_min) = 2√(I₁I₂)|γ₁₂|/(I₁ + I₂)**
 
-For equal intensities (I₁ = I₂), V = |γ₁₂|.
+Special cases:
+1. **Equal intensities** (I₁ = I₂ = I₀): **V = |γ₁₂|**
+2. **Fully coherent light**: |γ₁₂| = 1, **V = 2√(I₁I₂)/(I₁ + I₂) ≤ 1**
+3. **Incoherent light**: γ₁₂ = 0, **V = 0** (no fringes)
 
 ### 16.2.2 Complex Degree of Coherence
 
 The complex degree of coherence is defined as:
 
-**γ₁₂ = J₁₂/√(J₁₁J₂₂)**
+**γ₁₂ = J₁₂/√(J₁₁J₂₂) = J₁₂/√(I₁I₂)**
 
-where J₁₁ = I₁ and J₂₂ = I₂ are the intensities at points 1 and 2.
+#### Mathematical Properties
 
-Properties:
-- |γ₁₂| ≤ 1 (equality for fully coherent light)
-- γ₁₁ = γ₂₂ = 1
-- γ₁₂ = γ₂₁*
+1. **Schwarz Inequality**: |γ₁₂| ≤ 1
+   Proof: By Cauchy-Schwarz, |⟨E₁*E₂⟩|² ≤ ⟨|E₁|²⟩⟨|E₂|²⟩
+
+2. **Hermitian Symmetry**: γ₁₂ = γ₂₁*
+   Since J₁₂ = ⟨E₁*E₂⟩ = ⟨E₂*E₁⟩* = J₂₁*
+
+3. **Self-coherence**: γ₁₁ = γ₂₂ = 1
+   Every point is perfectly coherent with itself
+
+4. **Phase Information**: γ₁₂ = |γ₁₂|exp(iφ₁₂)
+   The phase φ₁₂ affects fringe position, not visibility
+
+#### Physical Interpretation
+
+- **|γ₁₂| = 1**: Fully coherent - perfect correlation
+- **0 < |γ₁₂| < 1**: Partially coherent - reduced fringe visibility  
+- **|γ₁₂| = 0**: Incoherent - no correlation, no fringes
+
+#### Connection to Classical Correlation
+
+The degree of coherence is analogous to the correlation coefficient in statistics:
+
+**γ₁₂ = Cov(E₁,E₂)/(σ₁σ₂)**
+
+where Cov is covariance and σᵢ are standard deviations.
 
 ### 16.2.3 Extended Sources
 
-For an extended incoherent source, the degree of coherence depends on the source size and observation geometry. For a uniformly illuminated circular source of diameter D at distance z, observing points separated by d:
+For extended sources, each point on the source contributes independently (for incoherent sources), and the total mutual intensity is the sum of contributions.
 
-**|γ₁₂| ≈ |2J₁(πDd/λz)/(πDd/λz)|**
+#### Circular Source Analysis
 
-where J₁ is the first-order Bessel function. The first zero occurs at:
+Consider a uniformly illuminated circular incoherent source of diameter D at distance z from the observation plane. For two observation points P₁ and P₂ separated by distance d:
 
-**d_coh ≈ 1.22λz/D**
+**J₁₂ = ∬_source I_s(ξ,η) exp[ik(r₂-r₁)·r_s/z] dξ dη**
 
-This defines the transverse coherence length.
+In the paraxial approximation with r₂-r₁ = (d,0,0):
+
+**γ₁₂ = (2/πa²) ∬_{|ρ|<a} exp(ikdξ/z) dξ dη / 1**
+
+Converting to polar coordinates and integrating:
+
+**|γ₁₂| = |2J₁(πDd/λz)/(πDd/λz)|**
+
+where J₁ is the first-order Bessel function of the first kind.
+
+#### Coherence Radius
+
+The transverse coherence radius ρ_c is defined where |γ₁₂| first reaches zero:
+
+**πDd_coh/λz = 3.832** (first zero of J₁)
+
+**d_coh = ρ_c ≈ 1.22λz/D = 0.61λz/a**
+
+This is identical to the Airy disk radius in diffraction!
+
+#### Other Source Geometries
+
+**1. Rectangular Source (L_x × L_y):**
+**γ₁₂ = sinc(πL_xΔx/λz) × sinc(πL_yΔy/λz)**
+
+Coherence lengths: ρ_x = λz/L_x, ρ_y = λz/L_y
+
+**2. Double Star (two point sources, separation θ):**
+**γ₁₂ = [exp(iπθd/λ) + exp(-iπθd/λ)]/2 = cos(πθd/λ)**
+
+First zero at d = λ/(2θ) - basis of Michelson stellar interferometry
+
+**3. Gaussian Source (1/e radius w_s):**
+**γ₁₂ = exp(-π²w_s²d²/λ²z²)**
+
+Coherence radius (1/e): ρ_c = λz/(πw_s)
+
+#### Angular Diameter and Coherence
+
+For a source subtending angle θ_s = D/z:
+
+**ρ_c ≈ λ/θ_s**
+
+This fundamental relationship shows:
+- Smaller angular sources → larger coherence areas
+- Stars (microarcseconds) produce meter-scale coherence
+- The Sun (θ_s ≈ 0.5°) gives ρ_c ≈ 0.07 mm at 500 nm
 
 ## 16.3 Mutual Coherence Function and Wiener-Khinchin Theorem
 
-The mutual coherence function provides a complete statistical description of partially coherent fields.
+The mutual coherence function provides a complete second-order statistical description of partially coherent fields. This section develops the mathematical framework connecting coherence in time domain to spectral properties in frequency domain.
 
 ### 16.3.1 General Definition
 
@@ -104,39 +296,136 @@ For a scalar field U(r,t), the mutual coherence function is:
 
 **Γ(r₁,r₂,τ) = ⟨U*(r₁,t)U(r₂,t+τ)⟩**
 
+This four-point function (two spatial, one temporal, one ensemble) captures all second-order coherence properties.
+
+#### Properties of Mutual Coherence Function
+
+1. **Hermitian Symmetry**: Γ(r₁,r₂,τ) = Γ*(r₂,r₁,-τ)
+
+2. **Positive Semi-definiteness**: For any functions f₁(r), f₂(r):
+   ∬∬ f₁*(r₁)Γ(r₁,r₂,0)f₂(r₂) dr₁dr₂ ≥ 0
+
+3. **Boundary Values**:
+   - Γ(r,r,0) = I(r) (intensity)
+   - |Γ(r₁,r₂,τ)| ≤ √[Γ(r₁,r₁,0)Γ(r₂,r₂,0)]
+
+4. **Stationarity**: For stationary fields:
+   Γ(r₁,r₂,τ) depends only on τ, not absolute time
+
 The equal-time mutual coherence function (mutual intensity) is:
 
-**J(r₁,r₂) = Γ(r₁,r₂,0)**
+**J(r₁,r₂) = Γ(r₁,r₂,0) = ⟨U*(r₁,t)U(r₂,t)⟩**
+
+The normalized mutual coherence function:
+
+**γ(r₁,r₂,τ) = Γ(r₁,r₂,τ)/√[Γ(r₁,r₁,0)Γ(r₂,r₂,0)]**
 
 ### 16.3.2 Cross-Spectral Density
 
-Taking the Fourier transform with respect to τ:
+The cross-spectral density is the Fourier transform of mutual coherence with respect to time delay:
 
 **W(r₁,r₂,ω) = ∫_{-∞}^∞ Γ(r₁,r₂,τ)e^{-iωτ} dτ**
 
-This cross-spectral density function satisfies:
+**Γ(r₁,r₂,τ) = (1/2π) ∫_{-∞}^∞ W(r₁,r₂,ω)e^{iωτ} dω**
 
-**Γ(r₁,r₂,τ) = ∫_{-∞}^∞ W(r₁,r₂,ω)e^{iωτ} dω/(2π)**
+#### Physical Meaning
+
+W(r₁,r₂,ω) represents the correlation between spectral components at frequency ω at points r₁ and r₂. It can be written as:
+
+**W(r₁,r₂,ω) = ⟨Û*(r₁,ω)Û(r₂,ω)⟩**
+
+where Û(r,ω) is the Fourier transform of U(r,t).
+
+#### Properties of Cross-Spectral Density
+
+1. **Hermitian**: W(r₁,r₂,ω) = W*(r₂,r₁,ω)
+
+2. **Non-negative on diagonal**: W(r,r,ω) ≥ 0 (power spectrum)
+
+3. **Spectral degree of coherence**:
+   **μ(r₁,r₂,ω) = W(r₁,r₂,ω)/√[W(r₁,r₁,ω)W(r₂,r₂,ω)]**
+   
+   with |μ(r₁,r₂,ω)| ≤ 1
+
+4. **Total intensity**: 
+   **I(r) = (1/2π) ∫_{-∞}^∞ W(r,r,ω) dω**
 
 ### 16.3.3 Wiener-Khinchin Theorem
 
-For stationary fields, when r₁ = r₂ = r:
+The Wiener-Khinchin theorem establishes the fundamental connection between autocorrelation and power spectrum.
 
-**W(r,r,ω) = S(r,ω)**
+#### Statement of the Theorem
 
-is the power spectral density. The theorem states:
+For a stationary field at position r:
 
-**⟨|U(r,t)|²⟩ = ∫_{-∞}^∞ S(r,ω) dω/(2π)**
+**Γ(r,r,τ) = ⟨U*(r,t)U(r,t+τ)⟩ = ∫_{-∞}^∞ S(r,ω)e^{iωτ} dω**
 
-This connects the time-averaged intensity to the integral of the spectrum.
+**S(r,ω) = (1/2π) ∫_{-∞}^∞ Γ(r,r,τ)e^{-iωτ} dτ**
+
+where S(r,ω) = W(r,r,ω)/(2π) is the power spectral density.
+
+#### Implications
+
+1. **Energy Conservation**:
+   **I(r) = ⟨|U(r,t)|²⟩ = Γ(r,r,0) = ∫_{-∞}^∞ S(r,ω) dω**
+
+2. **Coherence-Bandwidth Product**:
+   The theorem implies Δω·τ_c ~ 2π, a form of uncertainty principle
+
+3. **White Light Limit**:
+   For S(ω) = S₀ (constant), Γ(τ) = 2πS₀δ(τ) - perfect incoherence
+
+#### Generalized Wiener-Khinchin
+
+For non-stationary fields, we use the Wigner distribution:
+
+**W_U(t,ω) = ∫ U*(t-τ/2)U(t+τ/2)e^{-iωτ} dτ**
+
+The ensemble average gives:
+**⟨W_U(t,ω)⟩ = ∫ Γ(t-τ/2,t+τ/2,τ)e^{-iωτ} dτ**
 
 ### 16.3.4 Quasi-Monochromatic Approximation
 
+Many practical sources have narrow spectral width compared to center frequency: Δω/ω₀ << 1.
+
+#### Mathematical Formulation
+
 For narrow-band light centered at ω₀:
 
-**Γ(r₁,r₂,τ) ≈ J(r₁,r₂)e^{iω₀τ}g(τ)**
+**U(r,t) = A(r,t)e^{-iω₀t}**
 
-where g(τ) is a slowly varying envelope function. This simplifies many calculations while retaining essential physics.
+where A(r,t) is a slowly varying complex amplitude.
+
+The mutual coherence function becomes:
+
+**Γ(r₁,r₂,τ) = ⟨A*(r₁,t)A(r₂,t+τ)⟩e^{iω₀τ}**
+
+**= J(r₁,r₂)e^{iω₀τ}g(τ)**
+
+where:
+- J(r₁,r₂) = ⟨A*(r₁,t)A(r₂,t)⟩ is the mutual intensity
+- g(τ) is a slowly varying envelope with g(0) = 1
+
+#### Validity Conditions
+
+1. **Spectral condition**: Δω/ω₀ << 1
+2. **Temporal condition**: Changes in A(t) occur on timescale >> 1/ω₀
+3. **Propagation condition**: Δk·L << 2π (L is propagation distance)
+
+#### Cross-Spectral Density
+
+Under quasi-monochromatic approximation:
+
+**W(r₁,r₂,ω) ≈ J(r₁,r₂)G(ω-ω₀)**
+
+where G(ω) is the Fourier transform of g(τ), centered at ω = 0.
+
+#### Applications
+
+1. **Interference**: Phase differences kΔ ≈ k₀Δ use center wavenumber
+2. **Diffraction**: Single frequency calculation suffices
+3. **Coherence propagation**: Simplifies to monochromatic case
+4. **Spectroscopy**: Natural linewidths of atomic transitions
 
 ## 16.4 van Cittert-Zernike Theorem
 
