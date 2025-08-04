@@ -1,0 +1,602 @@
+# 第6章：神经辐射场基础（NeRF）
+
+神经辐射场（Neural Radiance Fields, NeRF）代表了计算机图形学中场景表示的范式转变。通过使用神经网络对连续体积密度和颜色场进行编码，NeRF统一了几何和外观建模，同时提供了前所未有的视图合成质量。本章探讨NeRF的数学基础，将其置于我们统一体积渲染框架内，并建立与后续章节中更高级神经表示方法的联系。
+
+## 学习目标
+
+完成本章后，您将能够：
+1. 推导神经网络如何表示连续辐射场
+2. 分析位置编码在克服频谱偏差中的作用
+3. 将体积渲染方程表述为函数逼近问题
+4. 理解NeRF优化的梯度流动态
+5. 设计适当的正则化策略以提高泛化能力
+
+## 章节大纲
+
+### 6.1 引言与动机
+
+传统的场景表示方法，如体素网格、点云或网格，本质上是离散的。它们在固定分辨率下采样3D空间，导致内存需求与分辨率立方成正比的问题。神经辐射场通过使用神经网络作为连续函数逼近器来解决这一限制。
+
+关键洞察是：我们可以将场景表示为从3D位置和视角方向到体积密度和颜色的连续映射：
+
+$$F_\Theta: (\mathbf{x}, \mathbf{d}) \mapsto (\sigma, \mathbf{c})$$
+
+其中 $\mathbf{x} \in \mathbb{R}^3$ 是空间位置，$\mathbf{d} \in \mathbb{S}^2$ 是视角方向，$\sigma \in \mathbb{R}_+$ 是体积密度，$\mathbf{c} \in [0,1]^3$ 是RGB颜色，$\Theta$ 是神经网络参数。
+
+这种表示与我们在第3章中建立的统一体积渲染方程自然契合：
+
+$$L(\mathbf{r}) = \int_0^\infty T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+
+其中 $T(t) = \exp\left(-\int_0^t \sigma(\mathbf{r}(s)) ds\right)$ 是透射率。
+
+### 6.2 连续体积表示
+
+#### 6.2.1 神经隐式表示基础
+
+隐式表示将几何编码为水平集函数或占用场。对于NeRF，我们扩展这一概念以包含外观信息。核心思想是学习一个函数 $F_\Theta$，它隐式地编码场景的几何和外观属性。
+
+考虑传统的有符号距离函数（SDF）表示：
+$$\phi: \mathbb{R}^3 \rightarrow \mathbb{R}$$
+
+NeRF将此扩展为：
+$$F_\Theta: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}_+ \times [0,1]^3$$
+
+这种表示的优势包括：
+- **内存效率**：存储需求与场景复杂度无关
+- **连续性**：可在任意分辨率下查询
+- **可微性**：支持基于梯度的优化
+
+#### 6.2.2 从体素到连续函数
+
+考虑离散体素表示与连续神经表示之间的关系。离散体素网格可以视为：
+
+$$\sigma_{\text{voxel}}(\mathbf{x}) = \sum_{i,j,k} \sigma_{ijk} \cdot \mathbb{1}_{V_{ijk}}(\mathbf{x})$$
+
+其中 $\mathbb{1}_{V_{ijk}}$ 是体素 $(i,j,k)$ 的指示函数。
+
+神经网络表示可以理解为使用平滑基函数的推广：
+
+$$\sigma_{\text{neural}}(\mathbf{x}) = \sum_{l=1}^L w_l \cdot \phi_l(W_l \mathbf{x} + b_l)$$
+
+其中 $\phi_l$ 是激活函数，$W_l, b_l, w_l$ 是可学习参数。这种表示通过神经网络的组合性质实现了更高效的场景编码。
+
+#### 6.2.3 MLP作为辐射场编码器
+
+标准的NeRF架构使用多层感知器（MLP）：
+
+$$\mathbf{h}_0 = \gamma(\mathbf{x})$$
+$$\mathbf{h}_{l+1} = \phi(W_l \mathbf{h}_l + \mathbf{b}_l), \quad l = 0, ..., L-1$$
+$$\sigma = \text{softplus}(w_\sigma^T \mathbf{h}_L + b_\sigma)$$
+$$\mathbf{c} = \text{sigmoid}(W_c [\mathbf{h}_L, \gamma(\mathbf{d})] + \mathbf{b}_c)$$
+
+其中 $\gamma$ 是位置编码函数（下一节详述），$\phi$ 是ReLU激活函数。
+
+注意架构的关键设计选择：
+- 密度 $\sigma$ 仅依赖于位置 $\mathbf{x}$
+- 颜色 $\mathbf{c}$ 依赖于位置和方向 $(\mathbf{x}, \mathbf{d})$
+- 使用跳跃连接以改善梯度流
+
+#### 6.2.4 密度与颜色的联合建模
+
+密度和颜色的耦合通过共享的特征表示实现：
+
+$$\mathbf{f} = F_{\text{backbone}}(\gamma(\mathbf{x}))$$
+$$\sigma = F_{\text{density}}(\mathbf{f})$$
+$$\mathbf{c} = F_{\text{color}}(\mathbf{f}, \gamma(\mathbf{d}))$$
+
+这种分解确保了物理合理性：
+- 几何（密度）与视角无关
+- 外观（颜色）可以建模视角相关效果（如镜面反射）
+
+### 6.3 位置编码与频谱偏差
+
+#### 6.3.1 神经网络的频谱偏差问题
+
+标准神经网络表现出强烈的频谱偏差，倾向于学习低频函数。这可以通过神经切线核（NTK）理论来理解。
+
+考虑简单的单层网络：
+$$f(\mathbf{x}) = \mathbf{w}^T \phi(\mathbf{V}\mathbf{x})$$
+
+其NTK为：
+$$K(\mathbf{x}, \mathbf{x}') = \langle \nabla_\theta f(\mathbf{x}), \nabla_\theta f(\mathbf{x}') \rangle$$
+
+对于ReLU网络，这个核主要集中在低频成分上。实际上，标准MLP学习的函数可以近似表示为：
+
+$$f(\mathbf{x}) \approx \sum_{|\mathbf{k}| < k_c} \hat{f}_\mathbf{k} e^{i\mathbf{k} \cdot \mathbf{x}}$$
+
+其中截止频率 $k_c$ 相对较小。
+
+#### 6.3.2 傅里叶特征映射
+
+为了克服频谱偏差，NeRF使用位置编码将输入映射到高维空间：
+
+$$\gamma(\mathbf{x}) = \left[\sin(2^0\pi\mathbf{x}), \cos(2^0\pi\mathbf{x}), ..., \sin(2^{L-1}\pi\mathbf{x}), \cos(2^{L-1}\pi\mathbf{x})\right]^T$$
+
+这等价于使用随机傅里叶特征的确定性版本。更一般地，我们可以写作：
+
+$$\gamma(\mathbf{x}) = \left[\sin(\mathbf{B}\mathbf{x}), \cos(\mathbf{B}\mathbf{x})\right]^T$$
+
+其中 $\mathbf{B} \in \mathbb{R}^{m \times 3}$ 是频率矩阵。
+
+#### 6.3.3 位置编码的数学分析
+
+位置编码的效果可以通过分析组合核来理解：
+
+$$K_\gamma(\mathbf{x}, \mathbf{x}') = K(\gamma(\mathbf{x}), \gamma(\mathbf{x}'))$$
+
+对于傅里叶特征，这产生：
+
+$$K_\gamma(\mathbf{x}, \mathbf{x}') = \sum_{j=1}^m \cos(\mathbf{b}_j^T(\mathbf{x} - \mathbf{x}'))$$
+
+这是一个带限核，其频谱支持由 $\mathbf{B}$ 的行决定。
+
+**定理**：使用位置编码 $\gamma$ 的神经网络可以均匀逼近频带 $[-\|\mathbf{B}\|_\infty, \|\mathbf{B}\|_\infty]$ 内的任何连续函数。
+
+#### 6.3.4 其他编码方案比较
+
+除了傅里叶编码，还有其他方案：
+
+1. **学习的编码**：
+   $$\gamma(\mathbf{x}) = \text{MLP}_\text{small}(\mathbf{x})$$
+
+2. **球谐函数编码**（用于方向）：
+   $$\gamma(\mathbf{d}) = [Y_l^m(\theta, \phi)]_{l=0}^{L_\text{max}}$$
+
+3. **哈希编码**（用于加速）：
+   $$\gamma(\mathbf{x}) = \bigoplus_{l=1}^L \text{hash}_l(\lfloor 2^l \mathbf{x} \rfloor)$$
+
+每种编码在表达能力、计算效率和内存需求之间有不同权衡。
+
+### 6.4 作为函数逼近的体积渲染
+
+#### 6.4.1 离散积分的连续化
+
+体积渲染方程需要评估积分：
+
+$$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+
+实际中，我们使用数值积分：
+
+$$\hat{C}(\mathbf{r}) = \sum_{i=1}^N T_i (1 - \exp(-\sigma_i \delta_i)) \mathbf{c}_i$$
+
+其中：
+- $T_i = \exp\left(-\sum_{j=1}^{i-1} \sigma_j \delta_j\right)$ 是离散透射率
+- $\delta_i = t_{i+1} - t_i$ 是采样间隔
+
+这种离散化引入了两种误差：
+1. **积分误差**：$\mathcal{O}(\max_i \delta_i)$
+2. **函数逼近误差**：神经网络逼近真实场景的误差
+
+#### 6.4.2 神经网络的万能逼近性质
+
+**定理（万能逼近）**：对于任意连续函数 $f: K \rightarrow \mathbb{R}$（$K$ 是紧集）和 $\epsilon > 0$，存在一个神经网络 $F_\Theta$ 使得：
+
+$$\sup_{\mathbf{x} \in K} |f(\mathbf{x}) - F_\Theta(\mathbf{x})| < \epsilon$$
+
+对于NeRF，这意味着存在网络参数 $\Theta^*$ 使得：
+
+$$\sup_{\mathbf{x}, \mathbf{d}} |(\sigma^*(\mathbf{x}), \mathbf{c}^*(\mathbf{x}, \mathbf{d})) - F_{\Theta^*}(\mathbf{x}, \mathbf{d})| < \epsilon$$
+
+然而，找到这样的 $\Theta^*$ 是非凸优化问题。
+
+#### 6.4.3 采样策略与积分精度
+
+采样点的选择显著影响渲染质量。考虑误差界：
+
+$$|C(\mathbf{r}) - \hat{C}(\mathbf{r})| \leq \frac{(t_f - t_n)^2}{8N} \max_{t \in [t_n, t_f]} \left|\frac{d^2}{dt^2}[T(t)\sigma(t)\mathbf{c}(t)]\right|$$
+
+这表明：
+- 均匀采样的误差为 $\mathcal{O}(1/N)$
+- 在高频区域需要更密集的采样
+
+#### 6.4.4 层次采样与重要性采样
+
+NeRF使用两阶段采样策略：
+
+**粗采样**：
+$$t_i^c \sim \text{Uniform}[t_n, t_f], \quad i = 1, ..., N_c$$
+
+**细采样**：基于粗采样的权重分布
+$$w_i = T_i(1 - \exp(-\sigma_i \delta_i))$$
+$$\hat{w}_i = w_i / \sum_j w_j$$
+$$t^f \sim \sum_{i=1}^{N_c} \hat{w}_i \cdot \text{Uniform}[t_i^c, t_{i+1}^c]$$
+
+这种重要性采样减少了方差：
+
+$$\text{Var}[\hat{C}_{\text{hierarchical}}] \leq \text{Var}[\hat{C}_{\text{uniform}}]$$
+
+### 6.5 基于梯度的优化
+
+#### 6.5.1 损失函数设计
+
+NeRF的基本损失函数是渲染图像与真实图像之间的光度误差：
+
+$$\mathcal{L}_{\text{photo}} = \sum_{\mathbf{r} \in \mathcal{R}} \|\hat{C}(\mathbf{r}) - C_{\text{gt}}(\mathbf{r})\|_2^2$$
+
+其中 $\mathcal{R}$ 是训练射线集合。这可以扩展为：
+
+$$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{photo}} + \lambda_{\text{reg}} \mathcal{L}_{\text{reg}}$$
+
+常见的正则化项包括：
+- **密度稀疏性**：$\mathcal{L}_{\text{sparse}} = \sum_{\mathbf{x}} \sigma(\mathbf{x})$
+- **TV正则化**：$\mathcal{L}_{\text{TV}} = \sum_{\mathbf{x}} \|\nabla \sigma(\mathbf{x})\|_1$
+
+#### 6.5.2 梯度流分析
+
+考虑单个采样点的梯度：
+
+$$\frac{\partial \mathcal{L}}{\partial \sigma_i} = 2(\hat{C} - C_{\text{gt}})^T \frac{\partial \hat{C}}{\partial \sigma_i}$$
+
+其中：
+$$\frac{\partial \hat{C}}{\partial \sigma_i} = T_i \delta_i \mathbf{c}_i - \sum_{j>i} \frac{\partial \hat{C}}{\partial T_j} \delta_i$$
+
+这显示了梯度通过透射率的传播，创建了长程依赖关系。
+
+**梯度消失问题**：当 $T_i \approx 0$（被遮挡的点），梯度 $\frac{\partial \mathcal{L}}{\partial \sigma_i} \approx 0$。这可能导致遮挡区域的学习困难。
+
+#### 6.5.3 优化器选择与超参数
+
+标准选择是Adam优化器，具有以下考虑：
+
+$$\mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1) \mathbf{g}_t$$
+$$\mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2) \mathbf{g}_t^2$$
+$$\Theta_{t+1} = \Theta_t - \alpha \frac{\mathbf{m}_t}{\sqrt{\mathbf{v}_t} + \epsilon}$$
+
+典型超参数：
+- 学习率：$\alpha = 5 \times 10^{-4}$，带指数衰减
+- $\beta_1 = 0.9$，$\beta_2 = 0.999$
+- 批大小：1024-4096条射线
+
+#### 6.5.4 收敛性分析
+
+在理想条件下，NeRF优化可以视为随机梯度下降。收敛速率取决于：
+
+1. **Lipschitz常数**：$L = \sup_{\Theta} \|\nabla^2 \mathcal{L}(\Theta)\|$
+2. **方差界**：$\mathbb{E}[\|\nabla \mathcal{L}_i - \nabla \mathcal{L}\|^2] \leq \sigma^2$
+
+在凸情况下，收敛速率为：
+$$\mathbb{E}[\mathcal{L}(\Theta_T)] - \mathcal{L}^* \leq \mathcal{O}\left(\frac{L}{\sqrt{T}} + \frac{\sigma^2}{T}\right)$$
+
+然而，NeRF优化是高度非凸的，实际收敛依赖于：
+- 良好的初始化（如SIREN初始化）
+- 适当的学习率调度
+- 充分的网络容量
+
+### 6.6 正则化与先验
+
+#### 6.6.1 过拟合与泛化
+
+NeRF容易过拟合训练视图，特别是在稀疏视图设置下。考虑经验风险最小化：
+
+$$\hat{\Theta} = \arg\min_\Theta \frac{1}{|\mathcal{D}|} \sum_{(\mathbf{r}, C) \in \mathcal{D}} \|\hat{C}(\mathbf{r}; \Theta) - C\|^2$$
+
+泛化误差界可以通过Rademacher复杂度分析：
+
+$$\mathbb{E}[\mathcal{L}_{\text{test}}] \leq \mathcal{L}_{\text{train}} + 2\mathcal{R}_n(\mathcal{F}) + \mathcal{O}\left(\sqrt{\frac{\log(1/\delta)}{n}}\right)$$
+
+其中 $\mathcal{R}_n(\mathcal{F})$ 是函数类 $\mathcal{F}$ 的Rademacher复杂度。
+
+#### 6.6.2 几何正则化
+
+几何正则化鼓励物理合理的密度场：
+
+1. **深度先验**：
+   $$\mathcal{L}_{\text{depth}} = \sum_{\mathbf{r}} |\hat{d}(\mathbf{r}) - d_{\text{sensor}}(\mathbf{r})|$$
+   其中 $\hat{d}(\mathbf{r}) = \sum_i t_i w_i$ 是期望深度
+
+2. **表面法线一致性**：
+   $$\mathcal{L}_{\text{normal}} = \sum_{\mathbf{x}} \left\|\nabla_{\mathbf{x}} \sigma(\mathbf{x}) - \mathbf{n}_{\text{gt}}(\mathbf{x})\right\|^2$$
+
+3. **Eikonal正则化**（用于SDF变体）：
+   $$\mathcal{L}_{\text{eikonal}} = \sum_{\mathbf{x}} (|\nabla_{\mathbf{x}} f(\mathbf{x})| - 1)^2$$
+
+#### 6.6.3 外观正则化
+
+外观正则化改善颜色预测：
+
+1. **视角一致性**：
+   $$\mathcal{L}_{\text{view}} = \sum_{\mathbf{x}, \mathbf{d}_1, \mathbf{d}_2} w(\mathbf{d}_1, \mathbf{d}_2) \|\mathbf{c}(\mathbf{x}, \mathbf{d}_1) - \mathbf{c}(\mathbf{x}, \mathbf{d}_2)\|^2$$
+   其中 $w(\mathbf{d}_1, \mathbf{d}_2)$ 根据材质属性加权
+
+2. **语义一致性**：
+   $$\mathcal{L}_{\text{semantic}} = -\sum_{\mathbf{r}, k} s_k(\mathbf{r}) \log \hat{s}_k(\mathbf{r})$$
+   其中 $\hat{s}_k$ 是渲染的语义标签
+
+#### 6.6.4 稀疏性与平滑性先验
+
+1. **密度稀疏性**：
+   $$\mathcal{L}_{\text{sparse}} = \sum_{\mathbf{x}} \rho(\sigma(\mathbf{x}))$$
+   
+   常用的 $\rho$ 函数：
+   - L1：$\rho(x) = |x|$
+   - 熵：$\rho(x) = -x\log(x + \epsilon)$
+   - Cauchy：$\rho(x) = \log(1 + x^2/\epsilon^2)$
+
+2. **空间平滑性**：
+   $$\mathcal{L}_{\text{smooth}} = \sum_{\mathbf{x}} \|\nabla^2 \sigma(\mathbf{x})\|_F^2$$
+   
+   这促进了二阶平滑性，减少了高频噪声。
+
+3. **信息瓶颈正则化**：
+   $$\mathcal{L}_{\text{IB}} = \beta I(Z; X) - I(Z; Y)$$
+   
+   其中 $Z$ 是潜在表示，平衡压缩与保真度。
+
+### 6.7 本章小结
+
+本章介绍了神经辐射场（NeRF）的数学基础，展示了如何使用神经网络表示连续的体积密度和颜色场。关键概念包括：
+
+1. **连续表示**：神经网络作为从3D位置和视角方向到体积属性的连续映射
+2. **位置编码**：通过傅里叶特征克服神经网络的频谱偏差
+3. **体积渲染**：将积分方程离散化并通过层次采样提高效率
+4. **优化**：理解梯度流、收敛性和非凸优化挑战
+5. **正则化**：几何和外观先验以改善泛化
+
+核心方程汇总：
+- 神经辐射场：$F_\Theta: (\mathbf{x}, \mathbf{d}) \mapsto (\sigma, \mathbf{c})$
+- 体积渲染：$C(\mathbf{r}) = \int_0^\infty T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$
+- 位置编码：$\gamma(\mathbf{x}) = [\sin(2^0\pi\mathbf{x}), \cos(2^0\pi\mathbf{x}), ..., \sin(2^{L-1}\pi\mathbf{x}), \cos(2^{L-1}\pi\mathbf{x})]^T$
+- 损失函数：$\mathcal{L} = \sum_{\mathbf{r}} \|\hat{C}(\mathbf{r}) - C_{\text{gt}}(\mathbf{r})\|^2 + \lambda \mathcal{L}_{\text{reg}}$
+
+### 6.8 练习题
+
+#### 基础题
+
+**练习 6.1**：推导透射率的离散近似误差界。给定连续透射率 $T(t) = \exp(-\int_0^t \sigma(s)ds)$ 和离散近似 $\hat{T}_i = \exp(-\sum_{j=1}^{i-1} \sigma_j \delta_j)$，证明：
+$$|T(t_i) - \hat{T}_i| \leq T(t_i) \cdot \mathcal{O}(\max_j \delta_j^2)$$
+
+<details>
+<summary>提示</summary>
+使用泰勒展开和误差累积分析。考虑 $\exp(x) \approx 1 + x + x^2/2$ 的近似。
+</details>
+
+<details>
+<summary>答案</summary>
+
+从连续到离散的误差来源于黎曼和近似：
+$$\int_{t_j}^{t_{j+1}} \sigma(s)ds \approx \sigma_j \delta_j$$
+
+使用中值定理，存在 $\xi_j \in [t_j, t_{j+1}]$ 使得：
+$$\int_{t_j}^{t_{j+1}} \sigma(s)ds = \sigma(\xi_j) \delta_j$$
+
+因此误差为：
+$$e_j = |\sigma(\xi_j) - \sigma_j| \delta_j \leq \sup_s |\sigma'(s)| \cdot \delta_j^2 / 2$$
+
+累积误差通过指数函数传播：
+$$|T(t_i) - \hat{T}_i| = T(t_i) |1 - \exp(\sum_{j<i} e_j)| \leq T(t_i) \cdot \sum_{j<i} e_j \leq T(t_i) \cdot \mathcal{O}(i \cdot \max_j \delta_j^2)$$
+</details>
+
+**练习 6.2**：分析位置编码对神经网络表达能力的影响。证明使用 $L$ 个频率级别的位置编码可以精确表示频率最高为 $2^{L-1}\pi$ 的带限函数。
+
+<details>
+<summary>提示</summary>
+考虑傅里叶级数展开和奈奎斯特采样定理。
+</details>
+
+<details>
+<summary>答案</summary>
+
+任何带限函数 $f$ 可以表示为：
+$$f(\mathbf{x}) = \sum_{|\mathbf{k}|_\infty \leq k_{\max}} \hat{f}_\mathbf{k} e^{i\mathbf{k} \cdot \mathbf{x}}$$
+
+使用位置编码 $\gamma(\mathbf{x})$ 包含频率 $\{2^0\pi, 2^1\pi, ..., 2^{L-1}\pi\}$。
+
+通过欧拉公式：
+$$e^{i\mathbf{k} \cdot \mathbf{x}} = \cos(\mathbf{k} \cdot \mathbf{x}) + i\sin(\mathbf{k} \cdot \mathbf{x})$$
+
+对于 $|\mathbf{k}|_\infty \leq 2^{L-1}\pi$，存在系数使得：
+$$\cos(\mathbf{k} \cdot \mathbf{x}) = \sum_{l} a_l \cos(2^l\pi \mathbf{x}) + b_l \sin(2^l\pi \mathbf{x})$$
+
+因此，配备位置编码的线性层可以精确表示所有频率不超过 $2^{L-1}\pi$ 的函数。
+</details>
+
+**练习 6.3**：推导层次采样的方差减少。设均匀采样的估计量方差为 $\text{Var}[\hat{C}_{\text{uniform}}]$，证明层次采样满足：
+$$\text{Var}[\hat{C}_{\text{hierarchical}}] \leq \text{Var}[\hat{C}_{\text{uniform}}]$$
+
+<details>
+<summary>提示</summary>
+使用条件期望的性质和方差分解定理。
+</details>
+
+<details>
+<summary>答案</summary>
+
+设 $\hat{C}_c$ 为粗采样估计，$\hat{C}_f$ 为基于粗采样的细采样估计。
+
+通过方差分解：
+$$\text{Var}[\hat{C}_f] = \mathbb{E}[\text{Var}[\hat{C}_f | \hat{C}_c]] + \text{Var}[\mathbb{E}[\hat{C}_f | \hat{C}_c]]$$
+
+由于细采样基于粗采样的重要性分布：
+$$\mathbb{E}[\hat{C}_f | \hat{C}_c] = \hat{C}_c$$
+
+因此：
+$$\text{Var}[\hat{C}_f] = \mathbb{E}[\text{Var}[\hat{C}_f | \hat{C}_c]] \leq \mathbb{E}[\text{Var}[\hat{C}_{\text{uniform}}]] = \text{Var}[\hat{C}_{\text{uniform}}]$$
+
+等号成立当且仅当重要性采样完美匹配目标分布。
+</details>
+
+#### 挑战题
+
+**练习 6.4**：设计一个自适应位置编码方案，根据局部场景复杂度调整频率。推导选择最优频率的准则。
+
+<details>
+<summary>提示</summary>
+考虑局部傅里叶分析和信号的局部带宽。
+</details>
+
+<details>
+<summary>答案</summary>
+
+定义局部复杂度度量：
+$$\mathcal{C}(\mathbf{x}) = \|\nabla \sigma(\mathbf{x})\|^2 + \|\nabla \mathbf{c}(\mathbf{x})\|^2$$
+
+自适应频率选择：
+$$\mathbf{B}(\mathbf{x}) = \mathbf{B}_0 \cdot (1 + \alpha \mathcal{C}(\mathbf{x}))$$
+
+其中 $\mathbf{B}_0$ 是基础频率矩阵，$\alpha$ 控制自适应强度。
+
+最优准则通过最小化重构误差导出：
+$$\min_{\mathbf{B}} \mathbb{E}_{\mathbf{x}} \left[\|f(\mathbf{x}) - \hat{f}_{\mathbf{B}}(\mathbf{x})\|^2\right]$$
+
+使用变分法，最优 $\mathbf{B}(\mathbf{x})$ 满足：
+$$\mathbf{B}(\mathbf{x}) \propto \text{diag}(\lambda_1(\mathbf{x}), \lambda_2(\mathbf{x}), \lambda_3(\mathbf{x}))$$
+
+其中 $\lambda_i$ 是局部Hessian矩阵 $\nabla^2 f(\mathbf{x})$ 的特征值。
+</details>
+
+**练习 6.5**：分析NeRF中的模糊-锐利权衡。给定有限数量的训练视图，推导重建质量与细节保留之间的理论界限。
+
+<details>
+<summary>提示</summary>
+使用信息论和采样理论的工具。
+</details>
+
+<details>
+<summary>答案</summary>
+
+设场景的信息内容为 $I(S)$，$N$ 个视图提供的信息为 $I(V_1, ..., V_N)$。
+
+通过数据处理不等式：
+$$I(\hat{S}; S) \leq I(V_1, ..., V_N; S)$$
+
+对于bandlimited场景，每个视图的信息量受限于：
+$$I(V_i; S) \leq W \times H \times \log(1 + \text{SNR})$$
+
+总信息界限：
+$$I(\hat{S}; S) \leq N \cdot W \times H \times \log(1 + \text{SNR})$$
+
+细节级别 $L$ 需要的信息：
+$$I_L = \mathcal{O}(L^3 \log L)$$（对于3D场景）
+
+因此可恢复的最大细节级别：
+$$L_{\max} = \mathcal{O}\left((N \cdot W \times H / \log L)^{1/3}\right)$$
+
+这建立了视图数量、分辨率和可达到细节之间的基本权衡。
+</details>
+
+**练习 6.6**：提出一种结合物理约束的NeRF变体。推导如何将能量守恒和互易性纳入损失函数。
+
+<details>
+<summary>提示</summary>
+从渲染方程的物理约束开始。
+</details>
+
+<details>
+<summary>答案</summary>
+
+能量守恒约束：
+$$\int_{\mathbb{S}^2} \mathbf{c}(\mathbf{x}, \mathbf{d}_{\text{out}}) \cos\theta_{\text{out}} d\mathbf{d}_{\text{out}} \leq \int_{\mathbb{S}^2} L_i(\mathbf{x}, \mathbf{d}_{\text{in}}) \cos\theta_{\text{in}} d\mathbf{d}_{\text{in}}$$
+
+互易性约束（对于BRDF）：
+$$f_r(\mathbf{x}, \mathbf{d}_i \rightarrow \mathbf{d}_o) = f_r(\mathbf{x}, \mathbf{d}_o \rightarrow \mathbf{d}_i)$$
+
+将这些约束编码为损失项：
+
+1. 能量守恒损失：
+$$\mathcal{L}_{\text{energy}} = \sum_{\mathbf{x}} \max\left(0, \int_{\mathbb{S}^2} \mathbf{c}(\mathbf{x}, \mathbf{d}) d\mathbf{d} - 1\right)^2$$
+
+2. 互易性损失：
+$$\mathcal{L}_{\text{reciprocity}} = \sum_{\mathbf{x}, \mathbf{d}_i, \mathbf{d}_o} \|\mathbf{c}(\mathbf{x}, \mathbf{d}_i \rightarrow \mathbf{d}_o) - \mathbf{c}(\mathbf{x}, \mathbf{d}_o \rightarrow \mathbf{d}_i)\|^2$$
+
+总损失：
+$$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{photo}} + \lambda_1 \mathcal{L}_{\text{energy}} + \lambda_2 \mathcal{L}_{\text{reciprocity}}$$
+
+这确保学习的表示遵守物理定律，提高泛化能力。
+</details>
+
+**练习 6.7**：开放性问题：如何将NeRF扩展到处理波动光学效应（如衍射和干涉）？概述所需的数学框架修改。
+
+<details>
+<summary>提示</summary>
+考虑从标量场到复值场的转变。
+</details>
+
+<details>
+<summary>答案</summary>
+
+扩展到波动光学需要几个关键修改：
+
+1. **复值场表示**：
+   $$F_\Theta: (\mathbf{x}, \mathbf{d}, \lambda) \mapsto (A(\mathbf{x}), \phi(\mathbf{x})) \in \mathbb{C}$$
+   其中 $A$ 是振幅，$\phi$ 是相位，$\lambda$ 是波长。
+
+2. **波传播积分**：
+   替换射线积分为Huygens-Fresnel积分：
+   $$U(\mathbf{x}) = \frac{1}{i\lambda} \int_\Sigma U(\mathbf{x}') \frac{\exp(ikr)}{r} \cos\theta d\Sigma$$
+
+3. **相干叠加**：
+   $$I(\mathbf{x}) = |U(\mathbf{x})|^2 = |\sum_i A_i \exp(i\phi_i)|^2$$
+
+4. **修改的神经架构**：
+   - 输出复数值（实部和虚部）
+   - 保持相位连续性
+   - 编码波长依赖性
+
+5. **新的损失函数**：
+   $$\mathcal{L}_{\text{wave}} = \sum_{\mathbf{x}} |I_{\text{predicted}}(\mathbf{x}) - I_{\text{observed}}(\mathbf{x})|^2$$
+   
+   加上相位正则化：
+   $$\mathcal{L}_{\text{phase}} = \sum_{\mathbf{x}} \|\nabla \phi(\mathbf{x})\|^2$$
+
+这种方法可以捕捉衍射图案、薄膜干涉和其他波动效应，但计算成本显著增加。
+</details>
+
+### 6.9 常见陷阱与错误
+
+1. **位置编码频率选择不当**
+   - **错误**：使用过高的频率导致训练不稳定
+   - **正确**：根据场景尺度选择合适的最大频率，通常 $L = 10$ 对于米级场景
+
+2. **采样点数量不足**
+   - **错误**：使用过少的采样点（如 $N < 64$）导致积分误差
+   - **正确**：使用层次采样，粗采样64点+细采样128点
+
+3. **忽视梯度消失**
+   - **错误**：不使用跳跃连接导致深层梯度消失
+   - **正确**：在中间层注入位置编码，使用残差连接
+
+4. **过度正则化**
+   - **错误**：过强的稀疏性约束导致几何细节丢失
+   - **正确**：逐步增加正则化权重，监控验证集性能
+
+5. **视角采样偏差**
+   - **错误**：训练时未均匀采样视角方向
+   - **正确**：确保训练射线覆盖所有视角范围
+
+### 6.10 最佳实践检查清单
+
+#### 架构设计
+- [ ] 使用8层或更深的MLP以获得足够容量
+- [ ] 在第4层后注入视角方向
+- [ ] 使用跳跃连接改善梯度流
+- [ ] 密度输出使用softplus激活
+- [ ] 颜色输出使用sigmoid激活
+
+#### 位置编码
+- [ ] 根据场景尺度选择合适的频率级别
+- [ ] 对位置和方向使用不同的编码策略
+- [ ] 考虑使用学习的或自适应的编码
+
+#### 采样策略
+- [ ] 实现层次采样以提高效率
+- [ ] 使用重要性采样聚焦于表面附近
+- [ ] 添加随机偏移以避免混叠
+- [ ] 验证采样密度足以捕捉细节
+
+#### 训练过程
+- [ ] 使用指数衰减的学习率调度
+- [ ] 批量采样射线而非图像块
+- [ ] 监控训练和验证PSNR
+- [ ] 定期可视化深度图和法线图
+
+#### 正则化
+- [ ] 从低正则化开始，逐步增加
+- [ ] 使用多种正则化的组合
+- [ ] 根据具体应用调整权重
+- [ ] 验证正则化未过度平滑细节
+
+#### 评估
+- [ ] 在保留的测试视图上评估
+- [ ] 报告PSNR、SSIM和LPIPS指标
+- [ ] 检查新视角的泛化能力
+- [ ] 分析失败案例和边缘情况
