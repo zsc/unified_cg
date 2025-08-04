@@ -2,55 +2,121 @@
 
 In this chapter, we transition from geometric optics and volume rendering to wave optics, establishing the mathematical foundation for understanding light as an electromagnetic wave. We'll derive the scalar wave approximation from Maxwell's equations and explore fundamental diffraction phenomena that become crucial when wavelength-scale effects matter. This bridge from ray-based to wave-based descriptions enriches our understanding of light transport and sets the stage for advanced optical phenomena in computer graphics.
 
+The transition from rays to waves fundamentally changes how we model light transport. Where geometric optics treats light as infinitesimal rays following straight paths, wave optics reveals that light spreads, diffracts around edges, and interferes with itself. These effects become essential when:
+- Feature sizes approach the wavelength of light (~400-700nm)
+- Coherent illumination is present (lasers, some LEDs)
+- High-fidelity rendering of optical phenomena is required
+- Microscale surface structures create visual effects
+
+We'll see how the volume rendering equation naturally extends to include wave phenomena through the Green's function formalism, providing a unified framework that encompasses both ray and wave regimes.
+
 ## 15.1 From Maxwell's Equations to the Helmholtz Equation
 
 ### Vector Wave Equation
 
 We begin with Maxwell's equations in a source-free, homogeneous medium:
 
-∇ × **E** = -∂**B**/∂t
-∇ × **H** = ∂**D**/∂t
-∇ · **D** = 0
-∇ · **B** = 0
+∇ × **E** = -∂**B**/∂t  (Faraday's law)
+∇ × **H** = ∂**D**/∂t   (Ampère-Maxwell law)
+∇ · **D** = 0           (No free charges)
+∇ · **B** = 0           (No magnetic monopoles)
 
 For linear, isotropic media: **D** = ε**E** and **B** = μ**H**, where ε = ε₀εᵣ and μ = μ₀μᵣ.
 
-Taking the curl of the first equation and using the vector identity ∇ × (∇ × **E**) = ∇(∇ · **E**) - ∇²**E**:
+Taking the curl of Faraday's law:
+∇ × (∇ × **E**) = -∇ × (∂**B**/∂t) = -∂(∇ × **B**)/∂t = -μ∂(∇ × **H**)/∂t
+
+Using the vector identity ∇ × (∇ × **E**) = ∇(∇ · **E**) - ∇²**E** and noting that ∇ · **E** = 0 in source-free regions:
+
+-∇²**E** = -μ∂(∇ × **H**)/∂t = -μ∂(∂**D**/∂t)/∂t = -με∂²**E**/∂t²
+
+This yields the vector wave equation:
 
 ∇²**E** - με(∂²**E**/∂t²) = 0
 
-This is the vector wave equation with wave velocity v = 1/√(με) = c/n, where n = √(εᵣμᵣ) is the refractive index.
+The wave velocity is v = 1/√(με) = c/n, where:
+- c = 1/√(μ₀ε₀) ≈ 3×10⁸ m/s is the speed of light in vacuum
+- n = √(εᵣμᵣ) ≈ √εᵣ is the refractive index (since μᵣ ≈ 1 for most optical materials)
+
+An identical equation holds for the magnetic field **H**. These vector equations couple the three spatial components of the fields through boundary conditions.
 
 ### Scalar Wave Approximation
 
-For many optical phenomena, we can approximate the vector field with a scalar field U(r,t). This is valid when:
-- The medium is homogeneous over wavelength scales
-- Polarization effects are negligible
-- The field varies slowly compared to wavelength
+For many optical phenomena, we can approximate the vector field with a scalar field U(r,t). This approximation is valid when:
+- The medium is homogeneous over wavelength scales (∇n·λ << n)
+- Polarization effects are negligible (unpolarized or fixed polarization)
+- The field varies slowly compared to wavelength (paraxial approximation)
+- We're far from material interfaces where boundary conditions couple components
 
-Assuming harmonic time dependence U(r,t) = u(r)e^(-iωt), we obtain:
+To derive the scalar approximation, we note that each Cartesian component of **E** satisfies:
+∇²Eᵢ - (1/v²)(∂²Eᵢ/∂t²) = 0
+
+For monochromatic fields with angular frequency ω:
+Eᵢ(r,t) = Re[eᵢ(r)e^(-iωt)]
+
+Substituting and using ∂²/∂t² → -ω²:
+∇²eᵢ + (ω²/v²)eᵢ = 0
+
+Defining the wavenumber k = ω/v = 2πn/λ, we get:
 
 ∇²u + k²u = 0
 
-where k = ω/v = 2πn/λ is the wavenumber. This is the **Helmholtz equation**.
+This is the **Helmholtz equation**, where u represents any scalar component of the field. The full vector nature manifests only through:
+1. Boundary conditions at interfaces
+2. Near-field of sources
+3. Strong focusing or high numerical aperture systems
 
 ### Physical Interpretation
 
 The Helmholtz equation describes monochromatic wave propagation where:
-- k² represents the spatial frequency content
-- Solutions include plane waves: u = A e^(i**k**·**r**)
-- And spherical waves: u = (A/r)e^(ikr)
+- k = 2πn/λ represents the spatial frequency (rad/m)
+- The equation balances spatial curvature (∇²u) against phase accumulation (k²u)
+- Solutions form a complete basis for arbitrary fields
+
+Fundamental solutions include:
+
+1. **Plane waves**: u = A exp(i**k**·**r**)
+   - Wavevector **k** with |**k**| = k
+   - Constant amplitude surfaces perpendicular to **k**
+   - Basis for angular spectrum representation
+
+2. **Spherical waves**: u = (A/r)exp(±ikr)
+   - Point source at origin
+   - ± for outgoing/incoming waves
+   - Amplitude decays as 1/r (energy conservation)
+
+3. **Gaussian beams**: u = (A/w(z))exp[ikz - kr²/2R(z) - iζ(z)]
+   - Finite beam width w(z)
+   - Wavefront curvature R(z)
+   - Gouy phase ζ(z)
 
 ### Connection to Volume Rendering
 
-The Helmholtz equation relates to our unified volume rendering framework through:
+The Helmholtz equation naturally connects to our volume rendering framework. Consider the frequency-domain rendering equation:
 
-L(x,ω) = ∫ σₛ(x')G(x,x')L(x',ω')dV'
+L(x,ω) = L₀(x,ω) + ∫ σₛ(x')p(x',ω'→ω)G(x,x')L(x',ω')dV'
 
-where the Green's function G satisfies:
+where the Green's function G(x,x') represents propagation from x' to x and satisfies:
+
 (∇² + k²)G(x,x') = -δ(x-x')
 
-In the geometric optics limit (k→∞), this reduces to ray propagation. For finite k, we capture wave effects.
+The Green's function solution:
+G(x,x') = exp(ik|x-x'|)/(4π|x-x'|)
+
+In the geometric optics limit (k→∞):
+- Phase varies rapidly: exp(ik|x-x'|) oscillates
+- Stationary phase approximation → ray paths
+- G reduces to delta function along rays
+
+For finite k:
+- Captures diffraction and interference
+- Describes spreading of light beams
+- Includes near-field effects
+
+This provides a scale-dependent transition:
+- k⁻¹ << scene scale: Ray optics
+- k⁻¹ ~ feature scale: Wave effects dominate
+- Unified through Green's function formalism
 
 ## 15.2 Huygens-Fresnel Principle
 
@@ -77,6 +143,17 @@ Fresnel originally proposed K(χ) = (1 + cos χ)/2, which:
 - Equals 0 for backward propagation (χ = π)
 - Provides smooth angular dependence
 
+The physical meaning:
+- cos χ term: projection of wavelet onto observation direction
+- Constant term: isotropic contribution
+- Together: cardioid radiation pattern
+
+This obliquity factor ensures:
+1. No backward propagating waves (causality)
+2. Maximum contribution in forward direction
+3. Smooth variation preventing discontinuities
+4. Energy conservation in the far field
+
 ### Kirchhoff's Rigorous Formulation
 
 Gustav Kirchhoff (1882) derived the Huygens-Fresnel principle from the Helmholtz equation using Green's theorem:
@@ -94,29 +171,61 @@ u(P) = (1/iλ) ∫∫_aperture u_inc(Q) (e^(ikr))/r (1 + cos χ)/2 dS
 ### Connection to Rendering
 
 The Huygens-Fresnel principle parallels importance sampling in rendering:
-- Secondary sources ↔ Sample points
-- Wavelet superposition ↔ Monte Carlo integration
-- Obliquity factor ↔ Cosine weighting
+
+| Wave Optics | Rendering |
+|-------------|----------|
+| Secondary sources | Sample points |
+| Wavelet superposition | Monte Carlo integration |
+| Obliquity factor K(χ) | Cosine weighting (N·L) |
+| Coherent addition | Complex phasor sum |
+| Intensity = |∑ fields|² | Radiance accumulation |
+
+Key differences:
+- Wave optics: Complex amplitudes with phase
+- Rendering: Real-valued intensities
+- Coherence introduces interference not present in incoherent rendering
+
+This suggests extensions to rendering:
+1. Complex-valued path tracing for coherent sources
+2. Phase-aware importance sampling
+3. Interference effects in material models
 
 ## 15.3 Fresnel Diffraction Integral
 
 ### Near-Field Geometry
 
-Consider a planar aperture in the z=0 plane illuminated by a field u₀(x₀,y₀). The field at observation point P(x,y,z) is given by the Kirchhoff integral. For near-field diffraction, we expand the distance r in the phase term.
+Consider a planar aperture in the z=0 plane illuminated by a field u₀(x₀,y₀). The field at observation point P(x,y,z) is given by the Kirchhoff integral. For near-field diffraction, we must carefully expand the distance r that appears in both the amplitude and phase terms.
 
-Let **r** = (x,y,z) and **r₀** = (x₀,y₀,0), then:
+Let **r** = (x,y,z) be the observation point and **r₀** = (x₀,y₀,0) be a point in the aperture, then:
 
 r = |**r** - **r₀**| = √[(x-x₀)² + (y-y₀)² + z²]
 
+The key insight is that phase varies much more rapidly than amplitude:
+- Phase variation: kr ~ 10⁶ rad/m for visible light
+- Amplitude variation: 1/r changes slowly over wavelength scales
+
+This allows different approximation orders for phase and amplitude terms.
+
 ### Fresnel Approximation
 
-For z >> (x-x₀), (y-y₀), we expand r using the binomial theorem:
+For z >> (x-x₀), (y-y₀), we use the binomial expansion:
 
-r ≈ z[1 + (x-x₀)²/2z² + (y-y₀)²/2z²]
+r = z√[1 + ((x-x₀)² + (y-y₀)²)/z²]
 
-Keeping terms up to quadratic order in the phase (but only zeroth order in amplitude):
+Let ρ² = (x-x₀)² + (y-y₀)². Using (1+ε)¹/² ≈ 1 + ε/2 - ε²/8 + ... for ε << 1:
 
-e^(ikr)/r ≈ (e^(ikz)/z) exp[ik/2z((x-x₀)² + (y-y₀)²)]
+r ≈ z[1 + ρ²/2z² - ρ⁴/8z⁴ + ...]
+
+For the phase term kr, we keep terms that contribute phase errors < π/2:
+- First order: kz
+- Second order: kρ²/2z (Fresnel term)
+- Third order: -kρ⁴/8z³ (usually neglected)
+
+For the amplitude term 1/r, we keep only the leading term:
+1/r ≈ 1/z
+
+This yields:
+e^(ikr)/r ≈ (e^(ikz)/z) exp[ikρ²/2z] = (e^(ikz)/z) exp[ik/2z((x-x₀)² + (y-y₀)²)]
 
 ### Fresnel Diffraction Formula
 
@@ -131,27 +240,81 @@ u(x,y,z) = (e^(ikz)/iλz) exp[ik/2z(x² + y²)] ×
 
 ### Validity Conditions
 
-The Fresnel approximation is valid when:
+The Fresnel approximation validity depends on the phase error from neglected terms. The quartic term contributes a phase:
 
-z³ >> (π/4λ)[(x-x₀)² + (y-y₀)²]²_max
+Φ₄ = -kρ₄/8z³
 
-This ensures the quartic phase error is less than π/2. Define the Fresnel number:
+Requiring |Φ₄|_max < π/2:
 
-F = a²/λz
+kρ₄_max/8z³ < π/2
 
-where a is the aperture dimension. The approximation holds for F ≳ 1.
+Substituting k = 2π/λ and solving:
+
+z³ > ρ₄_max/4λ = [(x-x₀)² + (y-y₀)²]²_max/(4λ)
+
+Define the **Fresnel number**:
+
+F = a²/(λz)
+
+where a is the characteristic aperture dimension. The approximation regimes:
+
+1. **F >> 1**: Geometric shadow (ray optics)
+2. **F ~ 1**: Fresnel diffraction (near field)
+3. **F << 1**: Fraunhofer diffraction (far field)
+
+Physical interpretation:
+- F compares aperture area (a²) to diffraction area (λz)
+- Large F: Many Fresnel zones visible, geometric limit
+- Small F: Single Fresnel zone, pure diffraction
 
 ### Computational Methods
 
-1. **Direct Integration**: Numerical quadrature of the Fresnel integral
-2. **FFT Method**: Using the convolution property with chirp functions
-3. **Angular Spectrum**: Propagation in Fourier domain (most efficient)
+#### 1. Direct Integration
+Numerical quadrature of the Fresnel integral:
 
-The angular spectrum method expresses:
+u(x,y,z) = (e^(ikz)/iλz) ∬ u₀(x₀,y₀) exp[ik/2z((x-x₀)² + (y-y₀)²)] dx₀dy₀
 
-u(x,y,z) = ℱ⁻¹{ℱ{u₀(x₀,y₀)} × exp[ikz√(1-(λfₓ)²-(λfᵧ)²)]}
+- Complexity: O(N⁴) for N×N grids
+- Accurate but computationally prohibitive
+- Useful for irregular apertures or sparse sampling
 
-where fₓ, fᵧ are spatial frequencies.
+#### 2. FFT Convolution Method
+Rewrite the Fresnel integral as a convolution:
+
+u(x,y,z) = C × [u₀(x,y)exp(ik(x²+y²)/2z)] ⊗ exp(ik(x²+y²)/2z)
+
+where C = exp(ikz)/(iλz) and ⊗ denotes convolution.
+
+Implementation:
+1. Multiply input by quadratic phase (chirp)
+2. FFT to frequency domain
+3. Multiply by transfer function
+4. Inverse FFT
+5. Multiply by output chirp
+
+- Complexity: O(N²log N)
+- Requires careful sampling to avoid aliasing
+- Zero-padding needed for accuracy
+
+#### 3. Angular Spectrum Method
+Propagate the field in the spatial frequency domain:
+
+u(x,y,z) = ℱ⁻¹{ℱ{u₀(x₀,y₀)} × H(fₓ,fᵧ,z)}
+
+where the transfer function:
+H(fₓ,fᵧ,z) = exp[ikz√(1-(λfₓ)²-(λfᵧ)²)]
+
+For (λfₓ)² + (λfᵧ)² < 1: Propagating waves
+For (λfₓ)² + (λfᵧ)² > 1: Evanescent waves (exponential decay)
+
+Advantages:
+- Most efficient: O(N²log N)
+- Exact within sampling limits
+- Handles arbitrary propagation distances
+- Natural treatment of evanescent waves
+
+Sampling requirement:
+Δx < λz/(2X) where X is the field extent
 
 ## 15.4 Fraunhofer Diffraction and Fourier Optics
 
@@ -192,28 +355,102 @@ u(x,y,z) ∝ ℱ{A(x₀,y₀)}
 
 ### Angular Spectrum Representation
 
-Any field can be decomposed into plane waves:
+Any field can be decomposed into plane waves propagating in different directions:
 
 u(x,y,z) = ∫∫ A(kₓ,kᵧ) exp[i(kₓx + kᵧy + kᵣz)] dkₓdkᵧ
 
-where kᵣ = √(k² - kₓ² - kᵧ²) for propagating waves (kₓ² + kᵧ² < k²).
+where the z-component of the wavevector:
+kᵣ = √(k² - kₓ² - kᵧ²)
 
-The angular spectrum A(kₓ,kᵧ) = ℱ{u(x,y,0)} represents the field as a superposition of plane waves traveling in different directions.
+Two cases arise:
+
+1. **Propagating waves** (kₓ² + kᵧ² < k²):
+   - kᵣ is real
+   - Plane waves propagate without decay
+   - Direction cosines: (α,β,γ) = (kₓ/k, kᵧ/k, kᵣ/k)
+   - Physical angles: θₓ = arcsin(kₓ/k), θᵧ = arcsin(kᵧ/k)
+
+2. **Evanescent waves** (kₓ² + kᵧ² > k²):
+   - kᵣ = iκ where κ = √(kₓ² + kᵧ² - k²)
+   - Exponential decay: exp(-κz)
+   - Confined to near-field (z ~ 1/κ ~ λ)
+   - Carry sub-wavelength information
+
+The angular spectrum at z = 0:
+A(kₓ,kᵧ) = (1/2π)² ∫∫ u(x,y,0) exp[-i(kₓx + kᵧy)] dxdy = ℱ{u(x,y,0)}
+
+This representation provides:
+- Complete description of the field
+- Natural propagation: multiply by exp(ikᵣz)
+- Direct connection to Fourier optics
+- Basis for understanding resolution limits
 
 ### Connection to Rendering
 
-The Fourier optics framework relates to rendering through:
+The Fourier optics framework provides deep insights for rendering:
 
-1. **Frequency Analysis**: BRDF ↔ Angular spectrum
-2. **Sampling Theory**: Nyquist criterion for alias-free rendering
-3. **Filtering**: Anti-aliasing ↔ Low-pass filtering in Fourier domain
-4. **Light Field**: 4D Fourier analysis of radiance
+#### 1. Frequency Analysis of Materials
+The BRDF acts as a transfer function in angular frequency space:
 
-The rendering equation in Fourier space:
+- **Spatial BRDF**: ρ(x,ω₀,ωᵢ)
+- **Angular spectrum**: ρ̃(k,ω₀,ωᵢ) = ℱ_x{ρ(x,ω₀,ωᵢ)}
+- **Bandwidth**: Determines required sampling rate
 
-L̃(ω) = ρ̃(ω) ⊗ L̃ᵢ(ω)
+Mirror: ρ̃ ~ δ(k) (all frequencies)
+Diffuse: ρ̃ ~ sinc(k) (low-pass)
+Glossy: Intermediate bandwidth
 
-where ⊗ denotes convolution, showing how material properties filter incident illumination.
+#### 2. Sampling Theory Applications
+
+**Nyquist-Shannon theorem** in rendering context:
+- Spatial: Δx < 1/(2f_max) where f_max is highest spatial frequency
+- Angular: Δω < π/k_max for BRDF sampling
+- Temporal: Δt < 1/(2f_motion) for motion blur
+
+**Practical implications**:
+- Texture filtering: mipmap levels based on frequency content
+- Shadow map resolution: determined by light frequency
+- Importance sampling: concentrate samples where |ρ̃| is large
+
+#### 3. Anti-aliasing as Filtering
+
+Rendering pipeline in frequency domain:
+
+1. **Scene spectrum**: S̃(k) = ℱ{scene geometry/materials}
+2. **Sampling**: Multiplication by comb function
+3. **Reconstruction**: Convolution with filter kernel
+4. **Display**: Band-limited by pixel grid
+
+Optimal anti-aliasing:
+- Pre-filter to remove frequencies > Nyquist
+- Common filters: Box (sinc), Gaussian (Gaussian), Lanczos (windowed sinc)
+- Trade-off: Sharpness vs. aliasing
+
+#### 4. Light Field Analysis
+
+4D light field L(x,y,u,v) has 4D Fourier transform:
+L̃(k_x,k_y,k_u,k_v)
+
+Key insights:
+- Lambertian surfaces: Energy concentrated at k_u = k_v = 0
+- Specular surfaces: Energy along k_x = λk_u, k_y = λk_v
+- Depth creates shearing in frequency domain
+- Enables optimal sampling strategies
+
+#### 5. Coherent Rendering Effects
+
+Extending rendering equation for coherence:
+
+L(x,ω) = L₀(x,ω) + ∫ ρ(x,ω'→ω)L(x,ω')V(x,x')G(x,x')dx'
+
+where V(x,x') is the mutual coherence function:
+V(x,x') = 〈E*(x)E(x')〉 / √(I(x)I(x'))
+
+This enables:
+- Laser speckle simulation
+- Holographic displays
+- Interference in thin films
+- Coherent subsurface scattering
 
 ## 15.5 Diffraction-Limited Imaging Systems
 
@@ -230,14 +467,28 @@ where P(x,y) is the pupil function (1 inside aperture, 0 outside).
 ### Airy Disk and Resolution
 
 The PSF for a circular aperture forms the **Airy pattern**:
-- Central bright disk (Airy disk) containing 84% of energy
-- Surrounded by concentric rings of decreasing intensity
 
-The radius of the first zero (Airy disk radius):
+h(r) = [2J₁(πDr/λf)/(πDr/λf)]²
+
+Characteristics:
+- Central bright disk (Airy disk) contains 83.8% of total energy
+- First dark ring at r₁ = 1.22λf/D
+- First bright ring: 7.2% of energy
+- Second bright ring: 2.8% of energy
+- Ring radii: r_n ≈ (n + 0.22)λf/D for n ≥ 1
+
+The Airy disk radius (first zero):
 
 r₀ = 1.22λf/D = 1.22λF#
 
 where F# = f/D is the f-number.
+
+**Energy distribution**:
+- Within r₀: 83.8%
+- Within 2r₀: 91.0%
+- Within 3r₀: 93.8%
+
+This concentration of energy in the central disk is why the Airy disk radius serves as a practical measure of resolution.
 
 ### Rayleigh Criterion
 
@@ -276,21 +527,86 @@ where ν = λf·f_spatial/D is the normalized spatial frequency.
 
 ### Implications for Computer Graphics
 
-1. **Depth of Field**: Diffraction sets the fundamental limit on DOF
-   - Circle of confusion cannot be smaller than Airy disk
-   - Hyperfocal distance affected by diffraction
+#### 1. Depth of Field and Diffraction Limits
 
-2. **Bokeh Rendering**: Physical bokeh shapes from PSF
-   - Aperture shape determines PSF pattern
-   - Diffraction softens geometric bokeh
+The circle of confusion (CoC) has two contributions:
+- **Geometric**: C_geom = D|z - z_f|/z_f (defocus)
+- **Diffraction**: C_diff = 2.44λF# (Airy disk diameter)
 
-3. **Glints and Highlights**: Wave optics predicts sparkle patterns
-   - Interference creates structured highlights
-   - Important for realistic material appearance
+Total CoC: C_total = √(C_geom² + C_diff²)
 
-4. **Camera Models**: Beyond pinhole approximation
-   - Finite aperture effects
-   - Wavelength-dependent resolution
+Consequences:
+- Minimum CoC at optimal aperture: F# = √(|z - z_f|λ/(2.44z_f))
+- Diffraction-limited for F# > 8-11 in visible light
+- Hyperfocal distance: H = f²/(F#c) + f, where c includes diffraction
+
+#### 2. Physically-Based Bokeh
+
+Bokeh shape depends on:
+
+**Geometric limit** (F# < 5.6):
+- Shape matches aperture geometry
+- Sharp edges from aperture blades
+- Uniform intensity distribution
+
+**Transition regime** (F# ~ 5.6-11):
+- Diffraction softens edges
+- Brightness varies: brighter center
+- Convolution: Bokeh = Aperture ⊗ Airy
+
+**Diffraction limit** (F# > 11):
+- Circular regardless of aperture shape
+- Airy pattern dominates
+- Rings may be visible in high contrast
+
+Implementation approach:
+1. Compute geometric bokeh kernel
+2. Convolve with wavelength-dependent Airy function
+3. Sum over visible spectrum for color effects
+
+#### 3. Wave-Optical Material Effects
+
+**Glints and Sparkles**:
+- Caused by coherent reflection from rough surfaces
+- Each microfacet creates diffraction pattern
+- Interference between nearby facets
+- Statistics: I = |E₁ + E₂ + ...|u00b2 follows speckle statistics
+
+Modeling approach:
+- Heightfield h(x,y) with correlation length ξ
+- Phase variation: φ = 2kh cosθ
+- Speckle size: Δx ~ λz/ξ
+- Implement as normal-mapped diffraction
+
+**Iridescence**:
+- Thin-film interference
+- Structural color from periodic nanostructures
+- Wavelength-dependent reflection
+- Requires wave-based BRDF models
+
+#### 4. Advanced Camera Models
+
+**Beyond thin lens**:
+1. **Wavefront aberrations**: Φ(x,y) = ∑ Z_n(x,y)
+   - Zernike polynomials Z_n describe aberrations
+   - PSF = |ℱ{P(x,y)exp(ikΦ(x,y))}|²
+   - Spatially-varying blur kernels
+
+2. **Chromatic effects**:
+   - Longitudinal: focal length f(λ)
+   - Lateral: magnification m(λ)
+   - PSF varies with wavelength
+   - Natural chromatic aberration
+
+3. **Polarization**:
+   - Fresnel coefficients depend on polarization
+   - Polarizing filters in lens systems
+   - Sky models with polarization
+
+4. **Coherence effects**:
+   - Partial coherence from extended sources
+   - Coherence area: A_c ~ λ²R²/A_s
+   - Affects contrast and resolution
 
 ## Summary
 
