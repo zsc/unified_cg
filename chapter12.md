@@ -8,135 +8,408 @@
 
 $$I(\boldsymbol{\theta}) = \int_{\Omega} f(\boldsymbol{x}, \boldsymbol{\theta}) \, d\boldsymbol{x}$$
 
-其中 $\boldsymbol{\theta}$ 是场景参数。可微渲染的核心问题是计算 $\frac{\partial I}{\partial \boldsymbol{\theta}}$。
+其中 $\boldsymbol{\theta} \in \mathbb{R}^n$ 是场景参数，$\Omega$ 是积分域（如光线空间、路径空间），$f$ 是被积函数。可微渲染的核心问题是计算梯度 $\nabla_{\theta} I = \frac{\partial I}{\partial \boldsymbol{\theta}}$。
+
+从更一般的角度，渲染可以视为一个映射：
+
+$$\mathcal{R}: \Theta \times \mathcal{S} \rightarrow \mathcal{I}$$
+
+其中 $\Theta$ 是参数空间，$\mathcal{S}$ 是场景描述空间，$\mathcal{I}$ 是图像空间。可微渲染要求这个映射关于 $\theta$ 是可微的，即存在 Fréchet 导数：
+
+$$\lim_{\|\delta\theta\| \to 0} \frac{\|\mathcal{R}(\theta + \delta\theta) - \mathcal{R}(\theta) - D\mathcal{R}(\theta)[\delta\theta]\|}{\|\delta\theta\|} = 0$$
 
 ### 12.1.1 可微性的挑战
 
-主要挑战来自两个方面：
+主要挑战来自三个层面：
 
-1. **可见性不连续**：当物体边缘移动时，积分域 $\Omega$ 随参数变化
-2. **高维积分**：路径追踪涉及高维积分，直接微分计算代价高昂
+1. **几何层面 - 可见性不连续**：当物体边缘移动时，积分域 $\Omega$ 随参数变化，导致分段连续性
+2. **计算层面 - 高维积分**：路径追踪涉及高维积分（典型地 $d > 100$），直接微分计算代价为 $\mathcal{O}(d^2)$
+3. **数值层面 - 稀有事件**：某些重要贡献（如焦散）概率密度极低，梯度估计方差高
 
-对于连续被积函数，Leibniz积分规则给出：
+对于参数依赖的积分域，广义 Leibniz 积分规则给出：
 
 $$\frac{\partial}{\partial \theta} \int_{\Omega(\theta)} f(x, \theta) \, dx = \int_{\Omega(\theta)} \frac{\partial f}{\partial \theta} \, dx + \int_{\partial \Omega(\theta)} f \cdot v_n \, ds$$
 
-第二项是边界项，处理积分域的变化。
+其中 $v_n = \frac{\partial \boldsymbol{x}_{\text{boundary}}}{\partial \theta} \cdot \boldsymbol{n}$ 是边界的法向速度。第二项（边界项）在渲染中对应物体轮廓、阴影边界等几何不连续处的贡献。
 
-### 12.1.2 可微渲染的应用
+更精确地，使用分布理论，可见性函数 $V$ 的导数包含 Dirac delta：
+
+$$\frac{\partial V}{\partial \theta} = \sum_{i \in \text{silhouettes}} \delta(\boldsymbol{x} - \boldsymbol{x}_i(\theta)) \cdot v_{\perp,i}$$
+
+这解释了为什么朴素的点采样方法会遗漏边缘梯度——采样到零测集的概率为零。
+
+### 12.1.2 数学框架
+
+可微渲染的数学基础建立在以下框架上：
+
+**1. 路径积分表述**
+
+渲染方程的路径空间形式：
+
+$$I_j = \int_{\mathcal{P}} f_j(\bar{x}) d\mu(\bar{x})$$
+
+其中 $\bar{x} = (\boldsymbol{x}_0, \boldsymbol{x}_1, ..., \boldsymbol{x}_k)$ 是长度为 $k$ 的路径，$\mu$ 是路径测度。梯度计算需要：
+
+$$\nabla_\theta I_j = \int_{\mathcal{P}} \nabla_\theta f_j(\bar{x}) d\mu(\bar{x}) + \int_{\mathcal{P}} f_j(\bar{x}) \nabla_\theta \log p(\bar{x}|\theta) d\mu(\bar{x})$$
+
+第二项来自测度的参数依赖性（重参数化梯度）。
+
+**2. 伴随方法**
+
+对于复杂系统，伴随方法提供高效的梯度计算。定义拉格朗日量：
+
+$$\mathcal{L} = I(u, \theta) + \langle \lambda, G(u, \theta) \rangle$$
+
+其中 $G(u, \theta) = 0$ 是约束（如渲染方程），$\lambda$ 是伴随变量。最优性条件给出：
+
+$$\frac{dI}{d\theta} = -\left\langle \lambda, \frac{\partial G}{\partial \theta} \right\rangle$$
+
+其中 $\lambda$ 满足伴随方程：$(\partial G/\partial u)^T \lambda = -\partial I/\partial u$。
+
+**3. 变分原理**
+
+渲染可以表述为变分问题：
+
+$$I = \min_L \mathcal{F}[L]$$
+
+其中 $\mathcal{F}$ 是某个泛函。参数变化引起的一阶变分：
+
+$$\delta I = \int \frac{\delta \mathcal{F}}{\delta L} \delta L \, d\Omega$$
+
+这提供了另一种计算梯度的视角。
+
+### 12.1.3 可微渲染的应用
 
 可微渲染在以下领域有重要应用：
 
-- **3D重建**：从2D图像恢复3D几何和材质
-- **场景理解**：推断光照、材质分解
-- **内容创作**：通过优化生成满足约束的3D内容
-- **机器人视觉**：主动感知和场景操作
+- **3D重建**：从2D图像恢复3D几何和材质，解决逆问题 $\theta^* = \arg\min_\theta \|I_{\text{obs}} - I(\theta)\|^2$
+- **场景理解**：推断光照、材质分解，通常表述为贝叶斯推断 $p(\theta|I) \propto p(I|\theta)p(\theta)$
+- **内容创作**：通过优化生成满足约束的3D内容，如 $\min_\theta \mathcal{L}_{\text{style}}(I(\theta)) + \lambda \mathcal{R}(\theta)$
+- **机器人视觉**：主动感知和场景操作，需要实时梯度计算
+- **计算成像**：联合优化光学系统和计算管线
 
 ## 12.2 可微光线追踪
 
-可微光线追踪是可微渲染的基础。我们需要计算光线-物体交点及相关量对场景参数的导数。
+可微光线追踪是可微渲染的基础。我们需要计算光线-物体交点及相关量对场景参数的导数。这涉及到隐函数定理、微分几何和数值稳定性等核心数学工具。
 
 ### 12.2.1 光线-表面交点的导数
 
-考虑参数化光线 $\boldsymbol{r}(t) = \boldsymbol{o} + t\boldsymbol{d}$，其中 $\boldsymbol{o}$ 是原点，$\boldsymbol{d}$ 是方向。对于隐式表面 $F(\boldsymbol{x}, \boldsymbol{\theta}) = 0$，交点满足：
+考虑参数化光线 $\boldsymbol{r}(t) = \boldsymbol{o} + t\boldsymbol{d}$，其中 $\boldsymbol{o} \in \mathbb{R}^3$ 是原点，$\boldsymbol{d} \in \mathbb{S}^2$ 是单位方向。对于隐式表面 $F: \mathbb{R}^3 \times \mathbb{R}^n \rightarrow \mathbb{R}$，其中 $F(\boldsymbol{x}, \boldsymbol{\theta}) = 0$ 定义了表面，交点满足：
 
 $$F(\boldsymbol{o} + t^*\boldsymbol{d}, \boldsymbol{\theta}) = 0$$
 
-使用隐函数定理，交点参数 $t^*$ 对 $\boldsymbol{\theta}$ 的导数为：
+**隐函数定理的应用**
 
-$$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\boldsymbol{d} \cdot \nabla F}$$
+假设 $F$ 是 $C^1$ 级且 $\boldsymbol{d} \cdot \nabla_x F \neq 0$（光线不与表面相切），则存在隐函数 $t^*(\boldsymbol{\theta})$ 使得：
 
-交点位置的导数：
+$$G(\boldsymbol{\theta}, t) \equiv F(\boldsymbol{o} + t\boldsymbol{d}, \boldsymbol{\theta}) = 0$$
+
+对 $\boldsymbol{\theta}$ 求全微分：
+
+$$\frac{\partial G}{\partial \boldsymbol{\theta}} + \frac{\partial G}{\partial t}\frac{\partial t^*}{\partial \boldsymbol{\theta}} = 0$$
+
+解得：
+
+$$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\boldsymbol{d} \cdot \nabla_x F} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\partial F/\partial t}$$
+
+**交点位置的全导数**
+
+交点 $\boldsymbol{x}^* = \boldsymbol{o} + t^*\boldsymbol{d}$ 的导数使用链式法则：
 
 $$\frac{\partial \boldsymbol{x}^*}{\partial \boldsymbol{\theta}} = \frac{\partial t^*}{\partial \boldsymbol{\theta}} \boldsymbol{d} + \frac{\partial \boldsymbol{o}}{\partial \boldsymbol{\theta}} + t^* \frac{\partial \boldsymbol{d}}{\partial \boldsymbol{\theta}}$$
 
+对于不同的参数化方式：
+- 若 $\boldsymbol{\theta}$ 仅影响表面：$\frac{\partial \boldsymbol{o}}{\partial \boldsymbol{\theta}} = \frac{\partial \boldsymbol{d}}{\partial \boldsymbol{\theta}} = 0$
+- 若 $\boldsymbol{\theta}$ 包含相机参数：需要考虑光线的变化
+
+**数值稳定性考虑**
+
+当 $\boldsymbol{d} \cdot \nabla F \approx 0$（掠射角度）时，导数计算不稳定。实际实现中使用：
+
+$$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\max(\boldsymbol{d} \cdot \nabla F, \epsilon)}$$
+
+其中 $\epsilon \sim 10^{-6}$ 避免除零。
+
 ### 12.2.2 表面法线的微分
 
-表面法线 $\boldsymbol{n} = \nabla F / |\nabla F|$ 的导数需要考虑归一化：
+表面法线 $\boldsymbol{n} = \nabla F / |\nabla F|$ 的导数涉及归一化操作的微分。
 
-$$\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} = \frac{1}{|\nabla F|} \left( \frac{\partial \nabla F}{\partial \boldsymbol{\theta}} - \boldsymbol{n} \otimes \boldsymbol{n} \cdot \frac{\partial \nabla F}{\partial \boldsymbol{\theta}} \right)$$
+**直接计算方法**
 
-其中 $\otimes$ 表示外积。Hessian矩阵 $\frac{\partial \nabla F}{\partial \boldsymbol{\theta}}$ 包含二阶导数信息。
+设 $\boldsymbol{g} = \nabla_x F$，则 $\boldsymbol{n} = \boldsymbol{g}/|\boldsymbol{g}|$。使用链式法则：
+
+$$\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} = \frac{\partial}{\partial \boldsymbol{\theta}}\left(\frac{\boldsymbol{g}}{|\boldsymbol{g}|}\right) = \frac{1}{|\boldsymbol{g}|}\frac{\partial \boldsymbol{g}}{\partial \boldsymbol{\theta}} - \frac{\boldsymbol{g}}{|\boldsymbol{g}|^3}\boldsymbol{g}^T\frac{\partial \boldsymbol{g}}{\partial \boldsymbol{\theta}}$$
+
+整理后：
+
+$$\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} = \frac{1}{|\nabla F|}\left(\boldsymbol{I} - \boldsymbol{n} \otimes \boldsymbol{n}\right)\frac{\partial \nabla F}{\partial \boldsymbol{\theta}}$$
+
+其中 $(\boldsymbol{I} - \boldsymbol{n} \otimes \boldsymbol{n})$ 是到切平面的投影算子。
+
+**Hessian 矩阵的计算**
+
+混合偏导数 $\frac{\partial \nabla_x F}{\partial \boldsymbol{\theta}}$ 是一个 $3 \times n$ 矩阵：
+
+$$\left[\frac{\partial \nabla_x F}{\partial \boldsymbol{\theta}}\right]_{ij} = \frac{\partial^2 F}{\partial x_i \partial \theta_j}$$
+
+对于特定几何形状：
+- **平面**: Hessian 为零，法线导数简化
+- **球面**: $\nabla F = 2(\boldsymbol{x} - \boldsymbol{c})$，$\frac{\partial \nabla F}{\partial \boldsymbol{c}} = -2\boldsymbol{I}$
+- **二次曲面**: Hessian 为常数矩阵
+
+**几何意义**
+
+法线导数描述了表面弯曲如何随参数变化。其在切平面内的分量与曲率变化相关：
+
+$$\kappa_{\text{change}} = \boldsymbol{t}^T \frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}}$$
+
+其中 $\boldsymbol{t}$ 是切向量，$\kappa_{\text{change}}$ 表示沿 $\boldsymbol{t}$ 方向的曲率变化。
 
 ### 12.2.3 参数化表面的处理
 
-对于参数化表面 $\boldsymbol{x}(u, v, \boldsymbol{\theta})$，我们需要同时追踪参数坐标的变化。设交点参数为 $(u^*, v^*)$，则：
+对于参数化表面 $\boldsymbol{x}: \mathbb{R}^2 \times \mathbb{R}^n \rightarrow \mathbb{R}^3$，即 $\boldsymbol{x}(u, v, \boldsymbol{\theta})$，交点满足：
 
-$$\begin{bmatrix}
-\frac{\partial u^*}{\partial \boldsymbol{\theta}} \\
-\frac{\partial v^*}{\partial \boldsymbol{\theta}}
-\end{bmatrix} = -\boldsymbol{J}^{-1} \frac{\partial \boldsymbol{r}}{\partial \boldsymbol{\theta}}$$
+$$\boldsymbol{x}(u^*, v^*, \boldsymbol{\theta}) = \boldsymbol{o} + t^*\boldsymbol{d}$$
 
-其中 $\boldsymbol{J}$ 是关于 $(u, v)$ 的Jacobian矩阵。
+这给出三个约束方程。
+
+**约束系统的微分**
+
+定义约束函数 $\boldsymbol{F}: \mathbb{R}^3 \times \mathbb{R}^n \rightarrow \mathbb{R}^3$：
+
+$$\boldsymbol{F}(u, v, t, \boldsymbol{\theta}) = \boldsymbol{x}(u, v, \boldsymbol{\theta}) - \boldsymbol{o} - t\boldsymbol{d} = \boldsymbol{0}$$
+
+对 $\boldsymbol{\theta}$ 求全微分：
+
+$$\frac{\partial \boldsymbol{F}}{\partial (u, v, t)} \begin{bmatrix} \frac{\partial u^*}{\partial \boldsymbol{\theta}} \\ \frac{\partial v^*}{\partial \boldsymbol{\theta}} \\ \frac{\partial t^*}{\partial \boldsymbol{\theta}} \end{bmatrix} + \frac{\partial \boldsymbol{F}}{\partial \boldsymbol{\theta}} = \boldsymbol{0}$$
+
+**Jacobian 矩阵**
+
+Jacobian 矩阵为：
+
+$$\boldsymbol{J} = \frac{\partial \boldsymbol{F}}{\partial (u, v, t)} = \begin{bmatrix} \frac{\partial \boldsymbol{x}}{\partial u} & \frac{\partial \boldsymbol{x}}{\partial v} & -\boldsymbol{d} \end{bmatrix}$$
+
+这是一个 $3 \times 3$ 矩阵。假设 $\det(\boldsymbol{J}) \neq 0$（非退化情况），则：
+
+$$\begin{bmatrix} \frac{\partial u^*}{\partial \boldsymbol{\theta}} \\ \frac{\partial v^*}{\partial \boldsymbol{\theta}} \\ \frac{\partial t^*}{\partial \boldsymbol{\theta}} \end{bmatrix} = -\boldsymbol{J}^{-1} \frac{\partial \boldsymbol{x}}{\partial \boldsymbol{\theta}}$$
+
+**特殊情况处理**
+
+1. **退化情况**: 当 $\det(\boldsymbol{J}) = 0$ 时，通常发生在：
+   - 光线与表面相切
+   - 参数化奇异点（如球面两极）
+   
+2. **过参数化**: 对于过参数化表面（如 NURBS），使用最小二乘：
+   $$\Delta \boldsymbol{p} = (\boldsymbol{J}^T\boldsymbol{J})^{-1}\boldsymbol{J}^T \Delta \boldsymbol{r}$$
+
+3. **约束优化**: 对于复杂参数化，可能需要迭代求解：
+   $$\boldsymbol{p}_{k+1} = \boldsymbol{p}_k - \alpha \boldsymbol{J}_k^{-1} \boldsymbol{F}_k$$
 
 ### 12.2.4 反射和折射方向的导数
 
-反射方向 $\boldsymbol{r} = \boldsymbol{i} - 2(\boldsymbol{i} \cdot \boldsymbol{n})\boldsymbol{n}$ 的导数：
+**反射方向的微分**
 
-$$\frac{\partial \boldsymbol{r}}{\partial \boldsymbol{\theta}} = \frac{\partial \boldsymbol{i}}{\partial \boldsymbol{\theta}} - 2\left[ (\boldsymbol{i} \cdot \boldsymbol{n})\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} + \boldsymbol{n} \otimes \left(\frac{\partial \boldsymbol{i}}{\partial \boldsymbol{\theta}} \cdot \boldsymbol{n} + \boldsymbol{i} \cdot \frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}}\right) \right]$$
+反射定律：$\boldsymbol{r} = \boldsymbol{i} - 2(\boldsymbol{i} \cdot \boldsymbol{n})\boldsymbol{n}$，其中 $\boldsymbol{i}$ 是入射方向，$\boldsymbol{n}$ 是法线。
 
-折射方向使用Snell定律的向量形式，其导数计算更复杂但遵循类似原理。
+使用乘积法则和链式法则：
+
+$$\frac{\partial \boldsymbol{r}}{\partial \boldsymbol{\theta}} = \frac{\partial \boldsymbol{i}}{\partial \boldsymbol{\theta}} - 2\frac{\partial}{\partial \boldsymbol{\theta}}[(\boldsymbol{i} \cdot \boldsymbol{n})\boldsymbol{n}]$$
+
+展开第二项：
+
+$$\frac{\partial}{\partial \boldsymbol{\theta}}[(\boldsymbol{i} \cdot \boldsymbol{n})\boldsymbol{n}] = (\boldsymbol{i} \cdot \boldsymbol{n})\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} + \boldsymbol{n} \otimes \frac{\partial}{\partial \boldsymbol{\theta}}(\boldsymbol{i} \cdot \boldsymbol{n})$$
+
+其中：
+$$\frac{\partial}{\partial \boldsymbol{\theta}}(\boldsymbol{i} \cdot \boldsymbol{n}) = \frac{\partial \boldsymbol{i}}{\partial \boldsymbol{\theta}} \cdot \boldsymbol{n} + \boldsymbol{i} \cdot \frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}}$$
+
+**折射方向的微分**
+
+Snell 定律的向量形式：
+
+$$\boldsymbol{t} = \frac{n_1}{n_2}\boldsymbol{i} + \left(\frac{n_1}{n_2}\cos\theta_i - \cos\theta_t\right)\boldsymbol{n}$$
+
+其中 $\cos\theta_t = \sqrt{1 - \left(\frac{n_1}{n_2}\right)^2(1 - \cos^2\theta_i)}$。
+
+对 $\boldsymbol{\theta}$ 求导：
+
+$$\frac{\partial \boldsymbol{t}}{\partial \boldsymbol{\theta}} = \frac{n_1}{n_2}\frac{\partial \boldsymbol{i}}{\partial \boldsymbol{\theta}} + \frac{\partial}{\partial \boldsymbol{\theta}}\left[\left(\frac{n_1}{n_2}\cos\theta_i - \cos\theta_t\right)\boldsymbol{n}\right]$$
+
+关键是计算 $\frac{\partial \cos\theta_t}{\partial \boldsymbol{\theta}}$：
+
+$$\frac{\partial \cos\theta_t}{\partial \boldsymbol{\theta}} = \frac{(n_1/n_2)^2\sin\theta_i}{\cos\theta_t}\frac{\partial \cos\theta_i}{\partial \boldsymbol{\theta}}$$
+
+**全内反射的处理**
+
+当 $(n_1/n_2)\sin\theta_i > 1$ 时发生全内反射。在临界角附近，导数变得不稳定。实际实现中：
+
+1. **平滑过渡**: 使用 sigmoid 函数平滑切换
+2. **分支处理**: 分别计算折射和反射分支的梯度
 
 ## 12.3 边缘采样与重参数化
 
-可见性不连续是可微渲染的核心挑战。当物体移动时，其轮廓边缘导致积分域的变化，产生Dirac delta函数形式的梯度。
+可见性不连续是可微渲染的核心挑战。当物体移动时，其轮廓边缘导致积分域的变化，产生 Dirac delta 函数形式的梯度。本节深入探讨如何数学上严格处理这些不连续性。
 
 ### 12.3.1 边缘积分理论
 
-考虑依赖于参数 $\theta$ 的2D积分域 $\Omega(\theta)$：
+**Reynolds 传输定理的应用**
 
-$$I(\theta) = \int_{\Omega(\theta)} f(\boldsymbol{x}) \, d\boldsymbol{x}$$
+考虑依赖于参数 $\theta \in \mathbb{R}$ 的时变积分域 $\Omega(\theta) \subset \mathbb{R}^d$：
 
-使用Reynolds传输定理，导数为：
+$$I(\theta) = \int_{\Omega(\theta)} f(\boldsymbol{x}, \theta) \, d\boldsymbol{x}$$
+
+Reynolds 传输定理（也称为 Leibniz-Reynolds 定理）给出：
+
+$$\frac{dI}{d\theta} = \int_{\Omega(\theta)} \frac{\partial f}{\partial \theta} \, d\boldsymbol{x} + \oint_{\partial\Omega(\theta)} f \, v_n \, ds - \int_{\Omega(\theta)} f \, \nabla \cdot \boldsymbol{v} \, d\boldsymbol{x}$$
+
+其中：
+- $v_n = \boldsymbol{v} \cdot \boldsymbol{n}$ 是边界的法向速度
+- $\boldsymbol{v} = \frac{\partial \boldsymbol{x}}{\partial \theta}$ 是速度场
+- $\boldsymbol{n}$ 是边界的外法向
+
+在渲染中，通常假设被积函数不随位置移动（$\nabla \cdot \boldsymbol{v} = 0$），简化为：
 
 $$\frac{dI}{d\theta} = \int_{\Omega(\theta)} \frac{\partial f}{\partial \theta} \, d\boldsymbol{x} + \oint_{\partial\Omega(\theta)} f \, v_n \, ds$$
 
-其中 $v_n$ 是边界的法向速度。第二项是边缘项，在渲染中对应物体轮廓的贡献。
+**渲染中的具体形式**
+
+对于像素积分 $I_p = \int_{\mathcal{A}_p} L(\boldsymbol{x}, \boldsymbol{\omega}) \, dA$，其中 $\mathcal{A}_p$ 是像素覆盖区域：
+
+$$\frac{\partial I_p}{\partial \theta} = \int_{\mathcal{A}_p} \frac{\partial L}{\partial \theta} \, dA + \sum_{e \in \text{edges}} \int_{e \cap \mathcal{A}_p} L \cdot v_{\perp} \, dl$$
+
+其中 $v_{\perp}$ 是边缘在图像平面上的垂直速度。
 
 ### 12.3.2 可见性函数的导数
 
-定义可见性函数 $V(\boldsymbol{x}, \boldsymbol{y})$：
+**分布理论视角**
+
+可见性函数 $V: \mathbb{R}^3 \times \mathbb{R}^3 \rightarrow \{0, 1\}$ 定义为：
 
 $$V(\boldsymbol{x}, \boldsymbol{y}) = \begin{cases}
-1 & \text{如果 } \boldsymbol{x} \text{ 和 } \boldsymbol{y} \text{ 互相可见} \\
+1 & \text{如果射线 } \overline{\boldsymbol{xy}} \text{ 无遮挡} \\
 0 & \text{否则}
 \end{cases}$$
 
-其导数包含Dirac delta函数：
+在分布意义下，其导数为：
 
-$$\frac{\partial V}{\partial \theta} = \delta(\text{dist}_{\text{edge}}) \cdot v_{\perp}$$
+$$\frac{\partial V}{\partial \theta} = \sum_{i \in \mathcal{S}} \delta_{\Gamma_i} \cdot n_i(\theta)$$
 
-其中 $\text{dist}_{\text{edge}}$ 是到轮廓边缘的距离，$v_{\perp}$ 是边缘的垂直速度。
+其中：
+- $\mathcal{S}$ 是所有轮廓边缘的集合
+- $\Gamma_i$ 是第 $i$ 条边缘曲线
+- $\delta_{\Gamma_i}$ 是沿 $\Gamma_i$ 的 Dirac 测度
+- $n_i(\theta)$ 是法向速度函数
+
+**几何解释**
+
+对于光线 $\boldsymbol{r}(t) = \boldsymbol{x} + t(\boldsymbol{y} - \boldsymbol{x})$ 和遮挡物边缘 $\Gamma(\theta)$，定义：
+
+- **签名距离**: $d(\boldsymbol{r}, \Gamma) = \min_{\boldsymbol{p} \in \Gamma} \|\boldsymbol{r} - \boldsymbol{p}\|$
+- **投影速度**: $v_{\perp} = \boldsymbol{v}_{\Gamma} \cdot \boldsymbol{n}_{\perp}$
+
+其中 $\boldsymbol{v}_{\Gamma} = \frac{\partial \Gamma}{\partial \theta}$ 是边缘速度，$\boldsymbol{n}_{\perp}$ 是垂直于光线的单位向量。
+
+则：
+$$\frac{\partial V}{\partial \theta} = \delta(d) \cdot v_{\perp} \cdot \|\boldsymbol{y} - \boldsymbol{x}\|^{-1}$$
+
+最后一项来自射线参数化的 Jacobian。
 
 ### 12.3.3 边缘采样策略
 
-为了处理delta函数，我们需要显式采样轮廓边缘。对于三角网格，轮廓边缘满足：
+**轮廓边缘的检测**
 
-$$(\boldsymbol{n}_1 \cdot \boldsymbol{v}) \cdot (\boldsymbol{n}_2 \cdot \boldsymbol{v}) < 0$$
+对于三角网格，轮廓边缘（silhouette edge）的数学定义为：
 
-其中 $\boldsymbol{n}_1, \boldsymbol{n}_2$ 是相邻面的法线，$\boldsymbol{v}$ 是视线方向。
+$$\mathcal{E}_{\text{sil}} = \{e \in \mathcal{E} : (\boldsymbol{n}_1 \cdot \boldsymbol{v})(\boldsymbol{n}_2 \cdot \boldsymbol{v}) < 0\}$$
 
-边缘上的积分可以参数化为：
+其中：
+- $\mathcal{E}$ 是所有边的集合
+- $\boldsymbol{n}_1, \boldsymbol{n}_2$ 是共享边 $e$ 的两个三角面的法线
+- $\boldsymbol{v}$ 是视线方向
 
-$$\int_{\text{edge}} g(s) \, ds = \int_0^L g(s(t)) \left|\frac{ds}{dt}\right| dt$$
+对于光滑曲面，轮廓满足：
+$$\boldsymbol{n}(\boldsymbol{x}) \cdot \boldsymbol{v}(\boldsymbol{x}) = 0$$
+
+**边缘的参数化**
+
+边缘可以参数化为曲线 $\boldsymbol{\gamma}: [0, 1] \rightarrow \mathbb{R}^3$。在图像平面上的投影为：
+
+$$\boldsymbol{p}(t) = \Pi(\boldsymbol{\gamma}(t))$$
+
+其中 $\Pi$ 是投影算子。边缘积分变为：
+
+$$\int_{\text{edge}} f \, ds = \int_0^1 f(\boldsymbol{p}(t)) \left\|\frac{d\boldsymbol{p}}{dt}\right\| dt$$
+
+**重要性采样**
+
+为了高效采样，我们根据边缘对像素的贡献分配样本。定义重要性度量：
+
+$$w(t) = \left\|\frac{d\boldsymbol{p}}{dt}\right\| \cdot |f(\boldsymbol{p}(t))| \cdot K(\boldsymbol{p}(t) - \boldsymbol{p}_{\text{pixel}})$$
+
+其中 $K$ 是像素滤波核。采样密度正比于 $w(t)$。
+
+**分层采样策略**
+
+实际实现中使用分层方法：
+
+1. **粗级选择**: 使用层次包围盒快速筛选潜在边缘
+2. **精确检测**: 对候选边缘计算精确的轮廓条件
+3. **自适应细分**: 根据曲率和投影长度细分边缘
 
 ### 12.3.4 重参数化技巧
 
-重参数化将不可微的采样过程转换为可微形式。对于边缘采样，我们使用：
+**重参数化的数学基础**
 
-1. **边缘参数化**：将3D边缘投影到2D图像平面
-2. **重要性采样**：根据边缘对像素的贡献分配样本
-3. **解析边缘积分**：对简单情况（如多边形遮挡）使用闭式解
+重参数化将不连续的采样决策转换为连续参数。考虑离散选择：
 
-例如，对于线性边缘和常数被积函数，边缘积分有解析解：
+$$I = \sum_{i} \mathbb{1}[\text{condition}_i] \cdot f_i$$
 
-$$\int_{\text{edge}} f_0 \, ds = f_0 \cdot \text{length}(\text{edge}) \cdot \cos(\phi)$$
+重参数化为：
 
-其中 $\phi$ 是边缘与投影方向的夹角。
+$$I(\theta) = \sum_{i} w_i(\theta) \cdot f_i(\theta)$$
+
+其中 $w_i$ 是连续权重函数。
+
+**边缘积分的重参数化**
+
+对于边缘积分，我们将变化的积分域转换为固定域：
+
+$$\int_{\Gamma(\theta)} f \, ds = \int_0^1 f(\boldsymbol{\gamma}(t, \theta)) \left\|\frac{\partial \boldsymbol{\gamma}}{\partial t}\right\| dt$$
+
+关键是找到合适的参数化 $\boldsymbol{\gamma}(t, \theta)$ 使得：
+1. $t \in [0,1]$ 与 $\theta$ 无关
+2. $\boldsymbol{\gamma}$ 关于 $\theta$ 可微
+
+**具体重参数化方法**
+
+1. **投影重参数化**
+   
+   将 3D 边缘投影到 2D 图像平面：
+   $$\boldsymbol{p}(t, \theta) = \Pi(\boldsymbol{\gamma}(t, \theta))$$
+   
+   边缘积分变为：
+   $$\int_{\text{edge}} L \, ds = \int_0^1 L(\boldsymbol{p}(t)) J(t, \theta) dt$$
+   
+   其中 $J$ 是 Jacobian 行列式。
+
+2. **解析积分**
+   
+   对于特定情况，可以解析计算。例如，三角形遮挡的线性边缘：
+   
+   $$\int_{\text{linear edge}} f_0 + \boldsymbol{g} \cdot \boldsymbol{x} \, ds = f_0 L + \frac{L^2}{2} \boldsymbol{g} \cdot \boldsymbol{t}$$
+   
+   其中 $L$ 是边缘长度，$\boldsymbol{t}$ 是单位切向量。
+
+3. **基于采样的方法**
+   
+   使用重要性采样和控制变量：
+   
+   $$\nabla_\theta I \approx \frac{1}{N} \sum_{i=1}^N \frac{f(\boldsymbol{x}_i)}{p(\boldsymbol{x}_i)} \nabla_\theta \log p(\boldsymbol{x}_i|\theta)$$
+   
+   这是 REINFORCE 算法在渲染中的应用。
 
 ## 12.4 可微阴影与可见性
 
-阴影是可见性的特殊情况，涉及光源、遮挡物和接收表面三者的关系。可微阴影计算需要正确处理软阴影的连续变化。
+阴影是可见性的特殊情况，涉及光源、遮挡物和接收表面三者的关系。可微阴影计算需要正确处理软阴影的连续变化。本节探讨如何使阴影计算在数学上可微且数值稳定。
 
 ### 12.4.1 硬阴影的可微化
 
