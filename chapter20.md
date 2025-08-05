@@ -19,11 +19,25 @@ $$I_{conf}(\mathbf{r}_0) = \int_V \rho(\mathbf{r}) |h_{ill}(\mathbf{r} - \mathbf
 
 其中 $\rho(\mathbf{r})$ 是样品的反射率或荧光分布。这个方程表明共聚焦成像是照明和探测PSF的乘积，导致改善的分辨率。
 
+这种改善可以从频域角度理解。设 $\tilde{h}_{ill}(\mathbf{k})$ 和 $\tilde{h}_{det}(\mathbf{k})$ 为PSF的傅里叶变换，共聚焦光学传递函数（OTF）为：
+
+$$\text{OTF}_{conf}(\mathbf{k}) = \text{OTF}_{ill}(\mathbf{k}) \otimes \text{OTF}_{det}(\mathbf{k})$$
+
+这种卷积扩展了系统的频率响应，使得截止频率从 $2\text{NA}/\lambda$ 提高到接近 $4\text{NA}/\lambda$。
+
 对于荧光共聚焦显微镜，需要考虑激发和发射波长的差异：
 
 $$I_{conf}(\mathbf{r}_0) = \int_V c(\mathbf{r}) |h_{exc}(\mathbf{r} - \mathbf{r}_0; \lambda_{exc})|^2 |h_{em}(\mathbf{r} - \mathbf{r}_0; \lambda_{em})|^2 d^3\mathbf{r}$$
 
 其中 $c(\mathbf{r})$ 是荧光团浓度，$h_{exc}$ 和 $h_{em}$ 分别是激发和发射波长下的PSF。
+
+由于Stokes位移，通常 $\lambda_{em} > \lambda_{exc}$，导致发射PSF略宽：
+
+$$\text{FWHM}_{em} = \text{FWHM}_{exc} \cdot \frac{\lambda_{em}}{\lambda_{exc}}$$
+
+这种波长差异对最终分辨率的影响可以通过有效PSF来量化：
+
+$$h_{eff}(\mathbf{r}) = |h_{exc}(\mathbf{r})|^2 |h_{em}(\mathbf{r})|^2$$
 
 ### 20.1.1 针孔的作用
 
@@ -44,10 +58,34 @@ $$h_{det}^{(p)}(\mathbf{r}) = \mathcal{F}^{-1}\left\{ \mathcal{F}\{h_{det}(\math
 
 $$v_p = \frac{2\pi}{\lambda} \cdot \text{NA} \cdot r_{pinhole}/M$$
 
+针孔的作用可以通过其对不同轴向位置信号的响应来量化。对于位于 $z$ 处的点源，通过针孔的积分强度为：
+
+$$T_{pinhole}(z) = \int_{|\mathbf{r}_d| \leq r_{pinhole}} |h_{det}(\mathbf{r}_d, z)|^2 d^2\mathbf{r}_d$$
+
+归一化传输函数：
+
+$$T_{norm}(u) = \frac{T_{pinhole}(z)}{T_{pinhole}(0)}$$
+
+其中 $u = 8\pi z \sin^2(\alpha/2)/\lambda$ 是归一化轴向坐标，$\alpha = \arcsin(\text{NA}/n)$。
+
 最优值通常为 $v_p \approx 3.8$（对应1个Airy单位），此时：
 - 保留焦平面信号的84%
 - 抑制离焦信号超过90%
 - 横向分辨率改善约1.4倍
+
+对于不同应用，针孔大小的选择策略：
+
+1. **高分辨率成像**：$v_p \approx 2.5-3.0$
+   - 最大化分辨率改善
+   - 牺牲部分信号强度
+
+2. **厚样品成像**：$v_p \approx 4.5-5.5$
+   - 平衡信号收集和背景抑制
+   - 适度的分辨率提升
+
+3. **活细胞成像**：$v_p \approx 5.0-7.0$
+   - 最大化信号以减少光损伤
+   - 仍保持合理的光学切片
 
 ### 20.1.2 光学切片能力
 
@@ -65,9 +103,29 @@ $$h(z) \approx \text{sinc}^2\left(\frac{k n z \text{NA}^2}{2}\right)$$
 
 $$h_{conf}(z) = \text{sinc}^4\left(\frac{k n z \text{NA}^2}{2}\right)$$
 
+更精确的分析需要考虑针孔的影响。定义归一化轴向坐标：
+
+$$u = \frac{8\pi z}{\lambda} \sin^2\left(\frac{\alpha}{2}\right) = \frac{8\pi z}{\lambda} \cdot \frac{\text{NA}^2}{2n(n + \sqrt{n^2 - \text{NA}^2})}$$
+
+包含针孔效应的轴向响应为：
+
+$$I_{conf}(u, v_p) = \left| \int_0^1 J_0(v_p\rho) \exp\left(\frac{iu\rho^2}{2}\right) \rho d\rho \right|^4$$
+
+其中 $J_0$ 是零阶贝塞尔函数。
+
 定义光学切片厚度为强度降至峰值一半的全宽（FWHM）：
 
 $$\Delta z_{conf} = \frac{0.64\lambda}{n - \sqrt{n^2 - \text{NA}^2}} \approx \frac{0.64\lambda n}{\text{NA}^2} \quad (\text{NA} \ll n)$$
+
+光学切片能力还可以通过轴向积分强度响应（ISR）来表征：
+
+$$\text{ISR}(z) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} I_{conf}(x, y, z) dx dy$$
+
+对于均匀荧光平面，共聚焦系统的背景抑制比为：
+
+$$\text{BSR} = \frac{\text{ISR}_{conf}(0)}{\int_{-\infty}^{\infty} \text{ISR}_{conf}(z) dz} \approx 3\sqrt{\pi} \cdot \frac{\text{NA}^2}{\lambda n}$$
+
+这表明背景抑制能力与NA²成正比，解释了高NA物镜在共聚焦成像中的重要性。
 
 ### 20.1.3 扫描机制与图像形成
 
@@ -87,12 +145,35 @@ $$I_{3D}(x, y, z) = \int_0^T I_{conf}(\mathbf{r}_s(t), z) \delta(\mathbf{r} - \m
 
 1. **扫描非线性**：振镜的机械响应导致边缘失真
    $$\mathbf{r}_{actual}(t) = \mathbf{r}_s(t) + \delta\mathbf{r}_{nonlinear}(t)$$
+   
+   振镜的传递函数通常表现为二阶系统：
+   $$H_{mirror}(s) = \frac{\omega_0^2}{s^2 + 2\zeta\omega_0 s + \omega_0^2}$$
+   
+   其中 $\omega_0$ 是共振频率，$\zeta$ 是阻尼系数。
 
 2. **像素驻留时间**：影响信噪比
    $$\text{SNR} \propto \sqrt{\tau_{dwell} \cdot I_{signal}}$$
+   
+   对于光子计数检测，信号遵循泊松统计：
+   $$P(n) = \frac{(\lambda \tau_{dwell})^n e^{-\lambda \tau_{dwell}}}{n!}$$
+   
+   其中 $\lambda$ 是光子到达率。
 
 3. **光漂白效应**：累积光剂量
    $$\frac{dc}{dt} = -k_{bleach} \cdot I_{exc} \cdot c$$
+   
+   考虑扫描速度的影响，有效漂白率为：
+   $$k_{eff} = k_{bleach} \cdot \frac{\tau_{dwell}}{\tau_{pixel}} \cdot \frac{I_{exc}}{I_{sat}}$$
+   
+   其中 $I_{sat}$ 是饱和强度。
+
+4. **扫描模式优化**：
+   - **双向扫描**：提高帧率但需要校正回程非线性
+   - **共振扫描**：高速成像（>30 fps）但强度分布不均
+   - **随机访问扫描**：针对感兴趣区域优化
+   
+   扫描效率定义为：
+   $$\eta_{scan} = \frac{\text{有效成像时间}}{\text{总扫描时间}} = \frac{N_x N_y \tau_{dwell}}{T_{frame}}$$
 
 ### 20.1.4 共聚焦优势的数学基础
 
@@ -107,6 +188,33 @@ $$\text{OTF}_{conf}(\mathbf{k}) = \text{OTF}_{ill}(\mathbf{k}) \otimes \text{OTF
 导致有效截止频率提高：
 
 $$k_{cutoff}^{conf} = 2 \cdot k_{cutoff}^{conv} = \frac{4\pi \cdot \text{NA}}{\lambda}$$
+
+共聚焦成像的信息理论分析揭示了其优势的本质。定义Fisher信息矩阵：
+
+$$F_{ij} = \sum_\mathbf{r} \frac{1}{\sigma^2(\mathbf{r})} \frac{\partial \mu(\mathbf{r})}{\partial \theta_i} \frac{\partial \mu(\mathbf{r})}{\partial \theta_j}$$
+
+其中 $\mu(\mathbf{r})$ 是期望信号，$\theta_i$ 是待估参数（如位置、强度）。
+
+对于定位精度，Cramér-Rao下界给出：
+
+$$\sigma_{loc}^2 \geq \frac{1}{F_{pos}} = \frac{\sigma^2}{N} \cdot \frac{\int |h(\mathbf{r})|^2 d^3\mathbf{r}}{\int |\nabla h(\mathbf{r})|^2 d^3\mathbf{r}}$$
+
+共聚焦系统由于PSF更尖锐（$h_{conf} = |h|^4$），梯度更陡：
+
+$$\frac{\int |\nabla h_{conf}|^2}{\int |h_{conf}|^2} > \frac{\int |\nabla h_{conv}|^2}{\int |h_{conv}|^2}$$
+
+导致更好的定位精度。
+
+从体积渲染角度，共聚焦成像实现了空间-角度耦合的解耦：
+
+$$L_{conf}(\mathbf{x}, \boldsymbol{\omega}) \approx L(\mathbf{x}) \cdot \delta(\boldsymbol{\omega} - \boldsymbol{\omega}_0)$$
+
+这种方向选择性源于：
+1. 点照明限制入射角度
+2. 针孔限制收集角度
+3. 共轭关系保证空间-角度对应
+
+这解释了为什么共聚焦系统能有效抑制散射光——散射改变了光的传播方向，从而被针孔拒绝。
 
 ## 20.2 点扩散函数与光学切片
 
@@ -125,17 +233,39 @@ $$A(\mathbf{k}_\perp) = \begin{cases}
 0, & \text{否则}
 \end{cases}$$
 
+这个孔径函数在实空间对应于：
+
+$$a(\mathbf{r}_p) = \frac{2\pi k \text{NA}}{|\mathbf{r}_p|} J_1(k \text{NA} |\mathbf{r}_p|)$$
+
+其中 $\mathbf{r}_p$ 是瞳孔平面坐标，$J_1$ 是一阶贝塞尔函数。
+
 使用Debye-Wolf积分，PSF的精确表达式为：
 
 $$h(\mathbf{r}) = \left| \int_0^{\alpha} \int_0^{2\pi} \sqrt{\cos\theta} \, e^{ikr\sin\theta\cos(\phi-\phi_0)} e^{ikz\cos\theta} \sin\theta \, d\phi \, d\theta \right|^2$$
 
 其中 $\alpha = \arcsin(\text{NA}/n)$ 是最大收集角。
 
+这个积分可以分解为三个分量（Richards-Wolf公式）：
+
+$$\mathbf{E}(\mathbf{r}) = -\frac{ikf}{2\pi} e^{ikf} \int_0^{\alpha} \int_0^{2\pi} \mathbf{a}(\theta, \phi) \sqrt{\cos\theta} e^{i\Phi(\mathbf{r}, \theta, \phi)} \sin\theta d\phi d\theta$$
+
+其中相位项：
+$$\Phi(\mathbf{r}, \theta, \phi) = k[r\sin\theta\cos(\phi-\phi_0) + z\cos\theta]$$
+
 对于高NA物镜（NA > 0.7），必须考虑矢量特性：
 
 $$\mathbf{h}(\mathbf{r}) = \int_{\Omega} \mathbf{A}(\mathbf{k}) e^{i\mathbf{k} \cdot \mathbf{r}} d^2\mathbf{k}_\perp$$
 
 其中 $\mathbf{A}(\mathbf{k})$ 包含偏振信息。
+
+矢量PSF的三个偏振分量为：
+
+$$I_x = |E_x|^2, \quad I_y = |E_y|^2, \quad I_z = |E_z|^2$$
+
+总强度：
+$$I_{total} = I_x + I_y + I_z$$
+
+对于线偏振入射光，轴向分量 $I_z$ 在高NA时变得显著，导致PSF的各向异性。
 
 ### 20.2.2 横向和轴向分辨率
 
@@ -155,14 +285,39 @@ $$\mathbf{h}(\mathbf{r}) = \int_{\Omega} \mathbf{A}(\mathbf{k}) e^{i\mathbf{k} \
    $$h_\perp(r) = \left[ \frac{2J_1(v)}{v} \right]^2, \quad v = \frac{2\pi}{\lambda} \text{NA} \cdot r$$
    
    其中 $J_1$ 是一阶贝塞尔函数。
+   
+   Airy斑的第一个零点位于 $v = 3.83$，对应：
+   $$r_{Airy} = \frac{1.22\lambda}{2\text{NA}}$$
+   
+   能量分布：中心Airy斑包含总能量的84%。
 
 2. **轴向PSF形状**（沿光轴）：
    $$h_\parallel(z) = \left[ \frac{\sin(u/4)}{u/4} \right]^2, \quad u = \frac{2\pi}{\lambda} n z \left(1 - \sqrt{1 - (\text{NA}/n)^2}\right)$$
+   
+   对于小NA近似：
+   $$u \approx \frac{\pi n z \text{NA}^2}{\lambda}$$
+   
+   第一个零点位于 $u = 4\pi$，给出：
+   $$z_{min} = \frac{4\lambda}{n\text{NA}^2}$$
 
 3. **完整3D PSF的近似**（Born & Wolf）：
    $$h(r,z) \approx h_\perp(r) \cdot h_\parallel(z) \cdot \cos\left(\frac{vw}{4u}\right)$$
    
    其中 $w = u \cdot (r/z)^2$，这个余弦项描述了横向和轴向的耦合。
+
+4. **分辨率的实用定义**：
+   
+   **Sparrow准则**（更宽松）：
+   - 两点间强度凹陷刚好消失
+   - 给出约0.95倍的Rayleigh距离
+   
+   **FWHM准则**（最常用）：
+   - 横向FWHM：$\Delta r_{FWHM} = 0.51\lambda/\text{NA}$
+   - 轴向FWHM：$\Delta z_{FWHM} = 0.88\lambda n/\text{NA}^2$
+   
+   **Houston准则**（更严格）：
+   - 基于两点的完全可分辨性
+   - 给出约1.5倍的Rayleigh距离
 
 ### 20.2.3 PSF与体积渲染核的联系
 
@@ -177,6 +332,38 @@ $$I(\mathbf{x}, \boldsymbol{\omega}) = \int_V \int_{4\pi} f(\mathbf{x}', \boldsy
 $$\tilde{I}(\mathbf{k}) = \tilde{h}(\mathbf{k}) \cdot \tilde{O}(\mathbf{k})$$
 
 其中 $\tilde{h}(\mathbf{k})$ 是光学传递函数（OTF），即PSF的傅里叶变换。
+
+对于非相干成像，OTF是孔径函数的自相关：
+
+$$\text{OTF}(\mathbf{k}) = \frac{\int A^*(\mathbf{u}) A(\mathbf{u} + \lambda f \mathbf{k}) d^2\mathbf{u}}{\int |A(\mathbf{u})|^2 d^2\mathbf{u}}$$
+
+其中 $f$ 是焦距。对于圆形孔径，归一化OTF为：
+
+$$\text{OTF}(k_r) = \begin{cases}
+\frac{2}{\pi}\left[\cos^{-1}\left(\frac{k_r}{2k_0}\right) - \frac{k_r}{2k_0}\sqrt{1-\left(\frac{k_r}{2k_0}\right)^2}\right], & k_r \leq 2k_0 \\
+0, & k_r > 2k_0
+\end{cases}$$
+
+其中 $k_0 = \text{NA}/\lambda$ 是截止频率。
+
+**体积渲染的等价性**：
+
+1. **前向模型**：
+   - 显微镜：$I = h * O$（卷积）
+   - 渲染：$I = \int \tau \sigma L_e dt$（积分）
+
+2. **模糊核对应**：
+   - PSF $\leftrightarrow$ 重建滤波器
+   - OTF $\leftrightarrow$ 频域滤波器
+
+3. **采样理论**：
+   - Nyquist采样：$\Delta x < \lambda/(2\text{NA})$
+   - 体素大小：与PSF FWHM匹配
+
+这种对应关系使得计算机图形学中的许多技术可以应用于显微成像：
+- 反卷积算法 $\leftrightarrow$ 超分辨率渲染
+- PSF工程 $\leftrightarrow$ 自定义重建核
+- 自适应光学 $\leftrightarrow$ 动态滤波器设计
 
 ### 20.2.4 光学切片的定量分析
 
@@ -194,6 +381,36 @@ $$S = \frac{\text{ISR}(0)}{\int_{-\infty}^{\infty} \text{ISR}(z) \, dz}$$
 
 共聚焦系统的 $S_{conf} \approx 2S_{conv}$，表明其优越的背景抑制能力。
 
+**定量分析框架**：
+
+1. **轴向响应宽度**：
+   定义包含90%能量的轴向范围：
+   $$\Delta z_{90\%} = 2z_0 \text{ where } \int_{-z_0}^{z_0} \text{ISR}(z) dz = 0.9 \int_{-\infty}^{\infty} \text{ISR}(z) dz$$
+   
+   对于共聚焦：$\Delta z_{90\%}^{conf} \approx 2.3\lambda n/\text{NA}^2$
+
+2. **对比度传递函数（CTF）**：
+   对于周期性轴向结构：
+   $$\text{CTF}(k_z) = \frac{|\text{OTF}(0, 0, k_z)|}{\text{OTF}(0, 0, 0)}$$
+   
+   共聚焦系统的轴向CTF延伸到更高频率。
+
+3. **切片强度（Sectioning Strength）**：
+   $$\text{SS} = \frac{d^2I/dz^2|_{z=0}}{I(0)}$$
+   
+   量化焦点附近的强度变化率：
+   - 宽场：$\text{SS}_{wide} = (\pi\text{NA}^2/\lambda n)^2$
+   - 共聚焦：$\text{SS}_{conf} = 4\text{SS}_{wide}$
+
+4. **背景贡献函数**：
+   来自深度 $z'$ 的均匀荧光层对焦点的贡献：
+   $$B(z') = 2\pi \int_0^{\infty} h(r, z') r dr$$
+   
+   总背景：
+   $$B_{total} = \int_{-\infty}^{\infty} c(z') B(z') dz'$$
+   
+   其中 $c(z')$ 是荧光团浓度分布。
+
 ### 20.2.5 像差对PSF的影响
 
 实际系统中的像差通过波前畸变影响PSF：
@@ -204,16 +421,55 @@ $$\Phi(\mathbf{k}_\perp) = \sum_{n,m} W_{nm} Z_{nm}(\rho, \theta)$$
 
 1. **球差**（$W_{040}$）：深度成像时最重要
    $$\Phi_{spher} = W_{040} \left( 6\rho^4 - 6\rho^2 + 1 \right)$$
+   
+   折射率失配引起的球差：
+   $$W_{040} = \frac{2\pi z}{\lambda} \left[ n_1 \sqrt{1 - (\text{NA}/n_1)^2} - n_2 \sqrt{1 - (\text{NA}/n_2)^2} \right]$$
+   
+   其中 $n_1$ 是浸油折射率，$n_2$ 是样品折射率，$z$ 是成像深度。
 
 2. **彗差**（$W_{131}$）：倾斜入射导致
    $$\Phi_{coma} = W_{131} \left( 3\rho^3 - 2\rho \right) \cos\theta$$
+   
+   倾斜角 $\alpha$ 引起的彗差系数：
+   $$W_{131} = \frac{2\pi}{\lambda} \cdot \text{NA} \cdot t \cdot \sin\alpha$$
+   
+   其中 $t$ 是盖玻片厚度。
 
 3. **像散**（$W_{222}$）：非圆对称系统
    $$\Phi_{astig} = W_{222} \rho^2 \cos(2\theta)$$
+   
+   圆柱形表面引起的像散：
+   $$W_{222} = \frac{\pi}{\lambda} \cdot \text{NA}^2 \cdot \Delta f$$
+   
+   其中 $\Delta f$ 是两个主曲率焦距之差。
 
 含像差的PSF为：
 
 $$h_{aberr}(\mathbf{r}) = \left| \int_{\Omega} A(\mathbf{k}_\perp) e^{i\Phi(\mathbf{k}_\perp)} e^{i\mathbf{k} \cdot \mathbf{r}} d^2\mathbf{k}_\perp \right|^2$$
+
+**像差的影响分析**：
+
+1. **Strehl比**（峰值强度比）：
+   $$S = \frac{I_{aberr}(0,0,0)}{I_{ideal}(0,0,0)} \approx \exp(-\sigma_\Phi^2)$$
+   
+   其中 $\sigma_\Phi^2$ 是波前RMS误差的方差。
+   
+   Maréchal准则：$S > 0.8$ 时系统接近衍射极限。
+
+2. **PSF展宽**：
+   球差导致的轴向展宽：
+   $$\Delta z_{aberr} \approx \Delta z_{ideal} \cdot \left(1 + \frac{|W_{040}|}{\lambda}\right)$$
+
+3. **不对称性**：
+   彗差引入的质心偏移：
+   $$\Delta r_{centroid} \approx 0.28 \cdot W_{131} \cdot \frac{f}{\text{NA}}$$
+
+4. **自适应光学校正**：
+   使用变形镜产生共轭相位：
+   $$\Phi_{mirror}(\rho, \theta) = -\Phi_{aberr}(\rho, \theta)$$
+   
+   校正后的残余误差：
+   $$\sigma_{residual}^2 = \sigma_{measurement}^2 + \sigma_{fitting}^2 + \sigma_{temporal}^2$$
 
 ## 20.3 双光子激发与非线性吸收
 
