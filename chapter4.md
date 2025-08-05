@@ -31,16 +31,31 @@ $$L(s,t,u,v) = \int_{\lambda} L_{\lambda}(s,t,u,v) d\lambda$$
 光线的参数方程为：
 $$\mathbf{r}(\tau) = (1-\tau)\begin{pmatrix}s\\t\\0\end{pmatrix} + \tau\begin{pmatrix}u\\v\\d\end{pmatrix}, \quad \tau \in [0,1]$$
 
+**从光线参数到方向向量的映射**：
+光线方向向量为：
+$$\mathbf{d} = \begin{pmatrix}u-s\\v-t\\d\end{pmatrix}$$
+
+归一化方向：
+$$\omega = \frac{\mathbf{d}}{\|\mathbf{d}\|} = \frac{1}{\sqrt{(u-s)^2 + (v-t)^2 + d^2}}\begin{pmatrix}u-s\\v-t\\d\end{pmatrix}$$
+
 **参数化的选择准则**：
 1. **完备性**：能表示所有相关光线
 2. **唯一性**：每条光线有唯一表示
 3. **连续性**：相邻光线在参数空间中相邻
 4. **计算效率**：易于采样和插值
+5. **均匀性**：参数空间的度量与物理空间的度量相关
+
+**参数化的雅可比行列式**：
+从双平面参数到光线空间 $(\mathbf{x}, \omega)$ 的映射的雅可比行列式为：
+$$J = \frac{\partial(\mathbf{x}, \omega)}{\partial(s,t,u,v)} = \frac{d}{(\omega \cdot \mathbf{n})^3}$$
+
+其中 $\mathbf{n}$ 是平面法向量。这个雅可比在积分变换中至关重要。
 
 除了双平面参数化，常见的还有：
 - **球面参数化**：$L(\mathbf{x}, \theta, \phi)$，适合全景捕获
 - **平面+方向参数化**：$L(s,t,\theta,\phi)$，适合相机阵列
 - **表面参数化**：$L(u,v,\theta,\phi)$，适合已知几何
+- **光线空间参数化**：使用Plücker坐标 $(\mathbf{l}, \mathbf{m})$，其中 $\mathbf{l}$ 是方向，$\mathbf{m} = \mathbf{p} \times \mathbf{l}$ 是矩
 
 ### 4.1.2 离散采样与插值
 
@@ -52,12 +67,25 @@ $$\hat{L}(s,t,u,v) = \sum_{i,j,k,l} L_{ijkl} \cdot K(s-s_i, t-t_j, u-u_k, v-v_l)
 - **最近邻**：$K = \delta$，计算最快但质量最差
 - **三线性**：$K = \prod_{d} (1-|x_d|)_+$，平衡了质量和效率
 - **Lanczos**：$K = \prod_{d} \text{sinc}(x_d)\text{sinc}(x_d/a)$，高质量但计算密集
+- **高斯核**：$K = \prod_{d} \exp(-x_d^2/2\sigma^2)$，平滑但有模糊
+- **Mitchell-Netravali**：$K = \prod_{d} B(x_d)$，其中 $B$ 是双三次B样条
 
 **插值核的数学性质**：
 理想的插值核应满足以下条件：
 1. **分离条件**：$K(0,0,0,0) = 1$，$K(i,j,k,l) = 0$ 对所有非零整数
 2. **归一化**：$\sum_{ijkl} K(s-s_i, t-t_j, u-u_k, v-v_l) = 1$
 3. **紧支撑**：$K(x) = 0$ 当 $|x| > r$ 对某个有限 $r$
+4. **平滑性**：$K \in C^k$ 对某个 $k \geq 0$
+5. **正定性**：$K(x) \geq 0$ 对所有 $x$（某些核如Lanczos可能违反）
+
+**广义插值理论**：
+将插值视为在再生核Hilbert空间（RKHS）中的投影：
+$$\hat{L} = \arg\min_{f \in \mathcal{H}} \sum_{ijkl} (f(s_i,t_j,u_k,v_l) - L_{ijkl})^2 + \lambda\|f\|_{\mathcal{H}}^2$$
+
+解具有形式：
+$$\hat{L}(s,t,u,v) = \sum_{ijkl} \alpha_{ijkl} K((s,t,u,v), (s_i,t_j,u_k,v_l))$$
+
+其中系数 $\alpha$ 通过求解线性系统 $(\mathbf{K} + \lambda\mathbf{I})\alpha = \mathbf{L}$ 获得。
 
 **频域分析**：
 插值核的频率响应决定了重建质量。理想低通滤波器：
@@ -70,6 +98,13 @@ $$\hat{K}(\omega) = \begin{cases}
 - 最近邻：$\hat{K}(\omega) = \text{sinc}^4(\omega/2\pi)$，有严重的频谱泄漏
 - 三线性：$\hat{K}(\omega) = \text{sinc}^8(\omega/2\pi)$，改进但仍有混叠
 - Lanczos：接近理想低通，但有Gibbs现象
+- 高斯：$\hat{K}(\omega) = \exp(-\|\omega\|^2\sigma^2/2)$，无Gibbs但过度平滑
+
+**预滤波理论**：
+为避免混叠，采样前应用抗混叠滤波器：
+$$L_{filtered}(s,t,u,v) = (L * \phi)(s,t,u,v)$$
+
+其中 $\phi$ 是预滤波核，满足 $\hat{\phi}(\omega) = 0$ 当 $|\omega| > \pi/\Delta$。
 
 ### 4.1.3 体积渲染方程形式
 
@@ -89,6 +124,16 @@ t + \lambda(v-t)/d \\
 \lambda
 \end{pmatrix}$$
 
+**光场体的数学性质**：
+定义光场测度：
+$$dL = L(s,t,u,v) ds\,dt\,du\,dv$$
+
+与体积渲染测度的关系：
+$$dV = \sigma(\mathbf{x})c(\mathbf{x},\omega) d\mathbf{x}\,d\omega$$
+
+通过Radon变换建立联系：
+$$\mathcal{R}[\sigma c](s,t,u,v) = \int_{\mathbb{R}} \sigma(\mathbf{x}(\lambda))c(\mathbf{x}(\lambda),\omega) d\lambda = L(s,t,u,v)$$
+
 体积渲染方程变为：
 
 $$L(\mathbf{r}) = \int_0^{\infty} T(\tau) \cdot \sigma(\mathbf{r}(\tau)) \cdot c(\mathbf{r}(\tau), -\mathbf{r}'(\tau)) d\tau$$
@@ -96,7 +141,23 @@ $$L(\mathbf{r}) = \int_0^{\infty} T(\tau) \cdot \sigma(\mathbf{r}(\tau)) \cdot c
 其中透射率：
 $$T(\tau) = \exp\left(-\int_0^{\tau} \sigma(\mathbf{r}(t)) dt\right)$$
 
-这种形式揭示了IBR与体积渲染的深层联系：光场的每个采样可视为空间中的一个方向性点光源。
+**离散化与求积公式**：
+使用分段常数近似：
+$$L \approx \sum_{n=0}^{N-1} T_n \cdot \alpha_n \cdot c_n$$
+
+其中：
+- $\alpha_n = 1 - \exp(-\sigma_n \Delta_n)$ 是不透明度
+- $T_n = \prod_{k=0}^{n-1}(1-\alpha_k)$ 是累积透射率
+- $\Delta_n = t_{n+1} - t_n$ 是步长
+
+**误差分析**：
+离散化误差满足：
+$$|L - L_{discrete}| \leq C \cdot \max_n \Delta_n \cdot \sup_t |\sigma''(t)|$$
+
+使用Richardson外推可获得高阶精度：
+$$L_{extrap} = \frac{4L(\Delta/2) - L(\Delta)}{3} + O(\Delta^4)$$
+
+这种形式揭示了IBR与体积渲染的深层联系：光场的每个采样可视为空间中的一个方向性点光源，而连续光场则对应于体积密度场。
 
 ### 4.1.4 插值误差分析
 
@@ -105,6 +166,16 @@ $$T(\tau) = \exp\left(-\int_0^{\tau} \sigma(\mathbf{r}(t)) dt\right)$$
 $$\|L - \hat{L}\|_2 \leq C \cdot h^{p+1} \cdot \|D^{p+1}L\|_{\infty}$$
 
 其中 $h$ 是采样间隔，$p$ 是插值核的阶数。
+
+**误差的概率表征**：
+假设光场是随机过程，具有协方差函数 $C_L(\Delta s, \Delta t, \Delta u, \Delta v)$。插值误差的方差为：
+
+$$\text{Var}[L - \hat{L}] = C_L(0,0,0,0) - \sum_{ijkl} K^2(s-s_i, t-t_j, u-u_k, v-v_l) C_L(s-s_i, t-t_j, u-u_k, v-v_l)$$
+
+对于平稳过程，这简化为：
+$$\text{Var}[L - \hat{L}] = C_L(0,0,0,0)(1 - \int_{\mathbb{R}^4} |\hat{K}(\omega)|^2 S_L(\omega) d\omega)$$
+
+其中 $S_L$ 是功率谱密度。
 
 **误差的频域表征**：
 对于带限信号，频域分析给出更紧的界：
@@ -124,9 +195,22 @@ $$|R_p| \leq \frac{M_{p+1}}{(p+1)!} \|(s-s_0, t-t_0, u-u_0, v-v_0)\|^{p+1}$$
 
 其中 $M_{p+1} = \sup |D^{p+1}L|$。
 
+**Bramble-Hilbert引理应用**：
+对于Sobolev空间 $W^{k,p}$ 中的函数，插值误差满足：
+$$\|L - \Pi_h L\|_{W^{m,p}} \leq C h^{k-m} |L|_{W^{k,p}}$$
+
+其中 $\Pi_h$ 是插值算子，$|\cdot|_{W^{k,p}}$ 是半范数。
+
 **自适应采样策略**：
 基于局部误差估计，可设计自适应采样密度：
 $$\rho(s,t,u,v) \propto \left(\sum_{|\alpha|=2} |D^{\alpha}L(s,t,u,v)|^2\right)^{1/2}$$
+
+**最优采样理论**：
+给定总采样数 $N$，最优采样密度最小化积分误差：
+$$\rho^* = \arg\min_{\rho} \int_{\Omega} \frac{\|\nabla L\|^2}{\rho} d\Omega \quad \text{s.t.} \quad \int_{\Omega} \rho d\Omega = N$$
+
+使用Lagrange乘数法，解为：
+$$\rho^*(s,t,u,v) = N \frac{\|\nabla L(s,t,u,v)\|^{2/3}}{\int_{\Omega} \|\nabla L\|^{2/3} d\Omega}$$
 
 这确保高频区域获得更密集的采样。
 
@@ -157,16 +241,38 @@ t_z & 0 & -t_x \\
 
 $R_{21} = R_2 R_1^T$，$t_{21} = t_2 - R_{21}t_1$。
 
+**几何解释**：
+极线约束的几何意义是：点 $\mathbf{x}_1$ 对应的极线 $l_2 = F\mathbf{x}_1$ 是所有可能的对应点 $\mathbf{x}_2$ 的轨迹。这条极线是光心 $C_1$、点 $\mathbf{x}_1$ 和极点 $\mathbf{e}_2$ 构成的平面与图像平面 $\Pi_2$ 的交线。
+
 **基础矩阵的性质**：
-1. **秩为2**：$\det(F) = 0$，因为 $[t]_{\times}$ 是反对称矩阵
+1. **秩为2**：$\text{rank}(F) = 2$，因为 $\det([t]_{\times}) = 0$
 2. **极点关系**：$F^T\mathbf{e}_2 = 0$，$F\mathbf{e}_1 = 0$，其中 $\mathbf{e}_1, \mathbf{e}_2$ 是极点
 3. **对应关系**：点 $\mathbf{x}_1$ 在第二幅图像中的极线为 $l_2 = F\mathbf{x}_1$
+4. **对偶性**：若 $F$ 是从视图1到视图2的基础矩阵，则 $F^T$ 是从视图2到视图1的基础矩阵
+
+**SVD分解**：
+基础矩阵的SVD分解：
+$$F = U\Sigma V^T = U\begin{pmatrix}\sigma_1 & 0 & 0\\0 & \sigma_2 & 0\\0 & 0 & 0\end{pmatrix}V^T$$
+
+其中 $\sigma_1 \geq \sigma_2 > 0$。极点为：
+- $\mathbf{e}_1 = V(:,3)$（右零空间）
+- $\mathbf{e}_2 = U(:,3)$（左零空间）
 
 **本质矩阵**：
 对于校准相机，本质矩阵 $E = [t_{21}]_{\times} R_{21}$ 满足：
 $$\hat{\mathbf{x}}_2^T E \hat{\mathbf{x}}_1 = 0$$
 
-其中 $\hat{\mathbf{x}}$ 是归一化坐标。本质矩阵有5个自由度（3个旋转+2个平移方向）。
+其中 $\hat{\mathbf{x}}$ 是归一化坐标。本质矩阵的特殊性质：
+- 两个非零奇异值相等：$\sigma_1 = \sigma_2$
+- 满足约束：$2E^TE\cdot E - \text{tr}(E^TE)\cdot E = 0$
+- 5个自由度（3个旋转 + 2个平移方向）
+
+**从本质矩阵恢复运动**：
+给定SVD分解 $E = U\text{diag}(1,1,0)V^T$，可能的解为：
+$$R = U\text{diag}(1,1,\pm 1)V^T$$
+$$[t]_{\times} = U\text{diag}(1,1,0)W^{\pm}U^T$$
+
+其中 $W^{\pm} = \begin{pmatrix}0 & \mp 1 & 0\\\pm 1 & 0 & 0\\0 & 0 & 1\end{pmatrix}$。有四种可能的解，需要通过深度约束消歧义。
 
 ### 4.2.2 深度引导的视图合成
 
@@ -184,6 +290,13 @@ $$\mathbf{X}_2 = R_{21}\mathbf{X}_1 + \mathbf{t}_{21}$$
 投影到图像平面：
 $$\mathbf{x}_2 = K_2\frac{\mathbf{X}_2}{Z_2} = K_2\left(R_{21}K_1^{-1}\mathbf{x}_1 + \frac{\mathbf{t}_{21}}{D(\mathbf{x}_1)}\right)$$
 
+**单应矩阵形式**：
+定义单应矩阵：
+$$H = K_2(R_{21} + \mathbf{t}_{21}\mathbf{n}^T/d)K_1^{-1}$$
+
+其中 $\mathbf{n}$ 是平面法向量，$d$ 是平面到相机1的距离。对于平面上的点：
+$$\mathbf{x}_2 = H\mathbf{x}_1$$
+
 **视差形式**：
 对于平行相机配置（纯水平平移），公式简化为：
 
@@ -191,12 +304,27 @@ $$x_2 - x_1 = d(\mathbf{x}_1) = \frac{bf}{D(\mathbf{x}_1)}$$
 
 其中 $b$ 是基线长度，$f$ 是焦距，$d$ 是视差。
 
+**逆深度参数化**：
+使用逆深度 $\rho = 1/D$ 可以线性化变换：
+$$\mathbf{x}_2 = K_2 R_{21} K_1^{-1} \mathbf{x}_1 + \rho(\mathbf{x}_1) K_2 \mathbf{t}_{21}$$
+
+这在优化中更稳定，因为逆深度的分布更均匀。
+
 **深度不确定性传播**：
 深度误差对重投影的影响：
 $$\frac{\partial \mathbf{x}_2}{\partial D} = -\frac{K_2 \mathbf{t}_{21}}{D^2}$$
 
 给定深度标准差 $\sigma_D$，重投影误差协方差：
 $$\Sigma_{\mathbf{x}_2} = \left(\frac{\partial \mathbf{x}_2}{\partial D}\right)\sigma_D^2\left(\frac{\partial \mathbf{x}_2}{\partial D}\right)^T$$
+
+**一阶误差传播**：
+考虑完整的误差源（深度误差、标定误差、姿态误差）：
+$$\delta\mathbf{x}_2 = \frac{\partial \mathbf{x}_2}{\partial D}\delta D + \frac{\partial \mathbf{x}_2}{\partial \mathbf{K}_1}\delta\mathbf{K}_1 + \frac{\partial \mathbf{x}_2}{\partial \mathbf{R}}\delta\mathbf{R} + \frac{\partial \mathbf{x}_2}{\partial \mathbf{t}}\delta\mathbf{t}$$
+
+总误差协方差：
+$$\Sigma_{total} = J_D\Sigma_D J_D^T + J_K\Sigma_K J_K^T + J_R\Sigma_R J_R^T + J_t\Sigma_t J_t^T$$
+
+其中 $J_*$ 是对应的雅可比矩阵。
 
 ### 4.2.3 遮挡处理与体积积分
 
@@ -213,6 +341,15 @@ $$T(\mathbf{x}_1 \to \mathbf{x}_2) = \exp\left(-\int_0^1 \sigma(\gamma(t)) dt\ri
 - **后向映射**：从目标视图到源视图
   $$I_2^{backward}(\mathbf{x}_2) = \sum_{\mathbf{x}_1} W(\mathbf{x}_1, \mathbf{x}_2) \cdot I_1(\mathbf{x}_1)$$
 
+**贝叶斯遮挡推理**：
+将遮挡建模为二元随机变量 $O \in \{0,1\}$：
+$$P(I_2|I_1,D_1,D_2) = \sum_{O} P(I_2|I_1,D_1,D_2,O)P(O|D_1,D_2)$$
+
+其中：
+- $P(O=1|D_1,D_2) = \exp(-\lambda|D_2 - D_{proj}|)$（遮挡概率）
+- $P(I_2|I_1,O=1) = \mathcal{N}(I_1, \sigma_I^2)$（可见时的强度分布）
+- $P(I_2|I_1,O=0) = \mathcal{U}(0,255)$（遮挡时的均匀分布）
+
 **遮挡检测**：
 使用深度一致性检查：
 $$\mathcal{O}(\mathbf{x}_1, \mathbf{x}_2) = \begin{cases}
@@ -222,9 +359,27 @@ $$\mathcal{O}(\mathbf{x}_1, \mathbf{x}_2) = \begin{cases}
 
 其中 $D_{proj}$ 是从视图1投影到视图2的深度。
 
+**多视图遮挡累积**：
+对于 $N$ 个视图，可见性测度：
+$$V(\mathbf{x}) = \prod_{i=1}^N V_i(\mathbf{x}) = \prod_{i=1}^N \exp\left(-\int_{C_i}^{\mathbf{x}} \sigma(\mathbf{r}) d\mathbf{r}\right)$$
+
+其中 $C_i$ 是第 $i$ 个相机中心。
+
 **软遮挡模型**：
 使用sigmoid函数建模遮挡边界：
 $$W_{occ}(\mathbf{x}) = \frac{1}{1 + \exp(-k(D_{front} - D_{back}))}$$
+
+**光线空间遮挡处理**：
+在光场空间 $(s,t,u,v)$ 中，遮挡表现为不连续性。定义遮挡函数：
+$$\mathcal{O}(s,t,u,v) = H(d(s,t,u,v) - d_{threshold})$$
+
+其中 $H$ 是Heaviside函数，$d$ 是深度函数。
+
+**变分遮挡处理**：
+通过最小化能量泛函处理遮挡：
+$$E[u,v] = \int_{\Omega} (I_2 - I_1 \circ \phi)^2 v\,dx + \lambda_1\int_{\Omega} |\nabla u|\,dx + \lambda_2\int_{\Omega} |\nabla v|\,dx$$
+
+其中 $u$ 是深度场，$v$ 是遮挡指示函数，$\phi$ 是变形场。
 
 合成的像素值为：
 
@@ -243,24 +398,64 @@ F_{1N} & 0 & \cdots & -I
 \mathbf{x}_1 \\ \mathbf{x}_2 \\ \vdots \\ \mathbf{x}_N
 \end{bmatrix} = 0$$
 
+**约束系统的秩分析**：
+系统矩阵 $\mathcal{M}$ 的秩为：
+$$\text{rank}(\mathcal{M}) = \min(3(N-1), 2N-\text{rank}(\mathcal{C}))$$
+
+其中 $\mathcal{C}$ 是相机中心的配置矩阵。当所有相机中心共线时，系统退化。
+
 **三视图张量**：
 对于三个视图，存在三焦张量 $\mathcal{T}_{ijk}$ 满足：
 $$[\mathbf{x}_2]_{\times}^i [\mathbf{x}_3]_{\times}^j \mathcal{T}_{ijk} \mathbf{x}_1^k = 0$$
 
+三焦张量的分解：
+$$\mathcal{T}_{ijk} = \sum_{\alpha=1}^3 a_i^{\alpha} b_j^{\alpha} c_k^{\alpha}$$
+
+其中：
+- $a_i^{\alpha} = [P_2^{\alpha}]_i$（第2个相机矩阵的第$\alpha$列）
+- $b_j^{\alpha} = [P_3^{\alpha}]_j$（第3个相机矩阵的第$\alpha$列）  
+- $c_k^{\alpha} = (-1)^{\alpha+1}[P_1^{\bar{\alpha}}]_k$（第1个相机矩阵去掉第$\alpha$列）
+
 三焦张量编码了三视图间的所有几何关系，包含27个元素但只有18个自由度。
+
+**从三焦张量提取基础矩阵**：
+$$F_{21} = [\mathbf{e}_2]_{\times}[\mathcal{T}_{1jk}\mathbf{e}_3^j\mathbf{e}_3^k]$$
+$$F_{31} = [\mathbf{e}_3]_{\times}[\mathcal{T}_{i1k}\mathbf{e}_2^i\mathbf{e}_2^k]$$
+$$F_{32} = [\mathbf{e}_3]_{\times}[\mathcal{T}_{ij1}\mathbf{e}_2^i\mathbf{e}_2^j]$$
 
 **鲁棒估计**：
 使用RANSAC算法估计多视图几何：
-1. 随机选择最小样本集
+1. 随机选择最小样本集（F矩院7点，三焦张量6点）
 2. 计算几何模型（F矩阵或三焦张量）
 3. 计算内点数：$|\{\mathbf{x} : d(\mathbf{x}, \mathcal{M}) < \tau\}|$
 4. 迭代直到找到足够好的模型
+
+**迭代次数理论界限**：
+$$N_{iter} = \frac{\log(1-p)}{\log(1-w^m)}$$
+
+其中 $p$ 是置信度，$w$ 是内点比例，$m$ 是最小样本数。
 
 **Bundle Adjustment**：
 联合优化所有相机参数和3D点：
 $$\min_{\{P_i\}, \{\mathbf{X}_j\}} \sum_{i,j} \rho\left(\|\mathbf{x}_{ij} - \pi(P_i\mathbf{X}_j)\|^2\right)$$
 
-其中 $\rho$ 是鲁棒核函数（如Huber函数），$\pi$ 是投影函数。
+其中 $\rho$ 是鲁棒核函数（如Huber函数）：
+$$\rho_{Huber}(x) = \begin{cases}
+\frac{1}{2}x^2, & |x| \leq \delta \\
+\delta(|x| - \frac{1}{2}\delta), & |x| > \delta
+\end{cases}$$
+
+**Schur补优化**：
+Bundle Adjustment的Hessian矩阵具有特殊结构：
+$$H = \begin{bmatrix}
+U & W \\
+W^T & V
+\end{bmatrix}$$
+
+其中 $U$ 对应相机参数，$V$ 对应3D点，$W$ 是交叉项。使用Schur补：
+$$S = U - WV^{-1}W^T$$
+
+可以高效求解法方程。
 
 ## 4.3 光图与表面光场
 
