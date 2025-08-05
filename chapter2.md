@@ -93,8 +93,17 @@ $$\frac{dL}{dt} = \frac{∂L}{∂t} + \{\mathcal{H}, L\} = 0$$
 
 其中 {·,·} 是泊松括号，$\mathcal{H}$ 是哈密顿量。
 
+泊松括号的展开形式：
+$$\{f, g\} = \sum_i \left(\frac{∂f}{∂q_i}\frac{∂g}{∂p_i} - \frac{∂f}{∂p_i}\frac{∂g}{∂q_i}\right)$$
+
 对于自由传播：
 $$\mathcal{H} = c||\mathbf{k}|| = c\sqrt{k_x^2 + k_y^2 + k_z^2}$$
+
+运动方程通过哈密顿正则方程给出：
+$$\frac{dq_i}{dt} = \frac{∂\mathcal{H}}{∂p_i}, \quad \frac{dp_i}{dt} = -\frac{∂\mathcal{H}}{∂q_i}$$
+
+在傍轴近似下（$k_z \gg k_x, k_y$）：
+$$\mathcal{H} \approx ck_z + \frac{c}{2k_z}(k_x^2 + k_y^2)$$
 
 这导出了光场传播的基本方程：
 $$L(u', v', s', t') = L(u, v, s, t)$$
@@ -112,6 +121,16 @@ $$\iiint\int L(x, y, p_x, p_y) dx dy dp_x dp_y = \text{const}$$
 $$n^2 A \Omega = \text{const}$$
 
 其中 A 是光束截面积，Ω 是立体角，n 是折射率。这就是著名的étendue（光学扩展量）守恒。
+
+推导过程：考虑光束通过光学系统，入射和出射参数满足：
+$$n_1^2 A_1 \Omega_1 = n_2^2 A_2 \Omega_2$$
+
+对于小立体角：$\Omega = \pi \sin^2\theta_{max}$
+
+这导出了数值孔径的不变性：
+$$n_1 A_1 \text{NA}_1^2 = n_2 A_2 \text{NA}_2^2$$
+
+其中 NA = n sin θ 是数值孔径。
 
 #### 光场采样定理
 
@@ -136,8 +155,19 @@ $$L'(u', v', s', t') = L(Au + Bs + E, Cv + Dt + F, s, t)$$
 
 其中变换矩阵编码了相机的平移和旋转。
 
+完整的4D变换矩阵形式：
+$$\begin{pmatrix} u' \\ v' \\ s' \\ t' \end{pmatrix} = \mathbf{T} \begin{pmatrix} u \\ v \\ s \\ t \end{pmatrix} + \mathbf{d}$$
+
 对于纯平移 $(t_x, t_y, t_z)$：
 $$\begin{pmatrix} u' \\ v' \\ s' \\ t' \end{pmatrix} = \begin{pmatrix} 1 & 0 & -t_z/z_0 & 0 \\ 0 & 1 & 0 & -t_z/z_0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} u \\ v \\ s \\ t \end{pmatrix} + \begin{pmatrix} t_x \\ t_y \\ 0 \\ 0 \end{pmatrix}$$
+
+对于旋转角度 θ（绕 z 轴）：
+$$\mathbf{T}_{rot} = \begin{pmatrix} 
+\cos\theta & \sin\theta & 0 & 0 \\
+-\sin\theta & \cos\theta & 0 & 0 \\
+0 & 0 & \cos\theta & \sin\theta \\
+0 & 0 & -\sin\theta & \cos\theta
+\end{pmatrix}$$
 
 #### 光场的投影操作
 
@@ -150,18 +180,42 @@ $$\begin{pmatrix} u' \\ v' \\ s' \\ t' \end{pmatrix} = \begin{pmatrix} 1 & 0 & -
 2. **有限孔径相机**：
    $$I(x, y) = \int\int_{aperture} L(u, v, x, y) A(u, v) du dv$$
    其中 A(u, v) 是孔径函数
+   
+   对于圆形孔径：$A(u, v) = \text{circ}(\sqrt{u^2 + v^2}/R)$
+   
+   景深公式：
+   $$\text{DOF} = \frac{2Nc(z_f^2 - z_n^2)}{f^2}$$
+   其中 N 是 f 数，c 是混淆圆直径，$z_f, z_n$ 是远近焦平面。
 
 3. **光场相机**（聚焦后）：
    $$I(x, y) = \int\int L(u, v, u + \alpha(x-u), v + \alpha(y-v)) du dv$$
    其中 α 控制焦平面深度
+   
+   焦平面深度与 α 的关系：
+   $$z_{focus} = \frac{z_{uv} \cdot z_{st}}{z_{st} - \alpha(z_{st} - z_{uv})}$$
+
+4. **积分成像**（多视点）：
+   $$I_n(x, y) = L(u_n, v_n, x, y)$$
+   其中 $(u_n, v_n)$ 是第 n 个视点位置
 
 #### 光场的剪切操作
 
 聚焦对应于光场的4D剪切：
 $$L_{focused}(u, v, s, t) = L(u, v, s + \alpha u, t + \alpha v)$$
 
+剪切矩阵表示：
+$$\mathbf{S}_\alpha = \begin{pmatrix} 
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+\alpha & 0 & 1 & 0 \\
+0 & \alpha & 0 & 1
+\end{pmatrix}$$
+
 在频域中，这是一个相位调制：
 $$\tilde{L}_{focused}(f_u, f_v, f_s, f_t) = \tilde{L}(f_u - \alpha f_s, f_v - \alpha f_t, f_s, f_t)$$
+
+剪切定理的一般形式：
+$$\mathcal{F}\{f(x - \alpha y, y)\} = e^{-2\pi i \alpha f_x f_y} \tilde{f}(f_x, f_y)$$
 
 ### 2.1.5 光场的稀疏表示
 
@@ -198,15 +252,27 @@ Adelson和Bergen提出的全光函数 P(x, y, z, θ, φ, λ, t) 描述了观察�
 这个函数可以分解为：
 $$P(x, y, z, θ, φ, λ, t) = ∫ L(x', y', z', θ', φ', λ, t') δ(光线约束) dx'dy'dz'dθ'dφ'$$
 
+光线约束的具体形式：
+$$\delta(光线约束) = \delta(\mathbf{x} - \mathbf{x}' - s\mathbf{ω}) \delta(\mathbf{ω} - \mathbf{ω}')$$
+
+其中 s 是从观察点到场景点的距离。
+
 #### 全光函数的物理解释
 
 全光函数捕获了视觉世界的完整信息：
 1. **空间位置** (x, y, z)：观察者的3D位置
 2. **观察方向** (θ, φ)：视线的球面角度
-3. **波长** λ：电磁辐射的光谱成分
+3. **波长** λ：电磁辐射的光谱成分（380-780 nm 可见光）
 4. **时间** t：动态场景的时间演化
 
 从信息论角度，全光函数包含了产生任何可能视觉体验所需的所有信息。
+
+维度分析：
+- 空间：3D连续流形
+- 方向：2D球面 S²
+- 光谱：1D正实轴
+- 时间：1D实轴
+- 总维度：7D流形 ℝ³ × S² × ℝ⁺ × ℝ
 
 #### 全光函数的积分形式
 
@@ -214,9 +280,17 @@ $$P(x, y, z, θ, φ, λ, t) = ∫ L(x', y', z', θ', φ', λ, t') δ(光线约�
 $$P(\mathbf{x}, \mathbf{ω}, λ, t) = \int_0^∞ L(\mathbf{x} - s\mathbf{ω}, \mathbf{ω}, λ, t - s/c) e^{-\int_0^s σ_t(\mathbf{x} - s'\mathbf{ω}, λ) ds'} ds$$
 
 其中：
-- σ_t 是介质的消光系数
+- σ_t 是介质的消光系数（吸收 + 散射）
 - 积分沿着观察方向 ω 进行
-- 指数项表示介质中的衰减
+- 指数项表示介质中的衰减（Beer-Lambert定律）
+
+对于散射介质，需要加入内散射项：
+$$P(\mathbf{x}, \mathbf{ω}, λ, t) = \int_0^∞ \left[L_e + \int_{4π} f_p(\mathbf{ω}', \mathbf{ω}) L_{in}(\mathbf{ω}') d\mathbf{ω}'\right] T(s) ds$$
+
+其中：
+- $L_e$ 是自发光项
+- $f_p$ 是相位函数
+- $T(s) = e^{-\int_0^s σ_t ds'}$ 是透射率
 
 ### 2.2.2 降维与实际应用
 
@@ -379,21 +453,46 @@ $$W(x, k) = ∫ U^*(x - ξ/2) U(x + ξ/2) e^{-ikξ} dξ$$
 
 其中 x 是位置，k 是空间频率（与传播角度相关）。
 
+等价的频域表示：
+$$W(x, k) = \frac{1}{2π} ∫ \tilde{U}^*(k - κ/2) \tilde{U}(k + κ/2) e^{ixκ} dκ$$
+
+对于2D光场，Wigner分布推广为：
+$$W(x, y, k_x, k_y) = \int\int U^*(x - ξ_x/2, y - ξ_y/2) U(x + ξ_x/2, y + ξ_y/2) e^{-i(k_x ξ_x + k_y ξ_y)} dξ_x dξ_y$$
+
 #### 从量子力学到光学的类比
 
 Wigner分布最初在量子力学中引入，用于相空间中的准概率分布。在光学中：
 - 位置 x ↔ 横向坐标
 - 动量 p ↔ 横向波矢 k = k₀sin θ（k₀ = 2π/λ）
 - 波函数 ψ ↔ 光场振幅 U
+- 普朗克常数 ℏ ↔ 波长 λ/2π
+
+对应关系：
+$$W_{quantum}(x, p) \leftrightarrow W_{optics}(x, k)$$
+$$[x, p] = iℏ \leftrightarrow \Delta x \Delta k ≥ 1/2$$
 
 #### Wigner分布的性质
 
 1. **实值性**：W(x, k) ∈ ℝ，即使对复光场
+   证明：$W^*(x, k) = W(x, k)$
+
 2. **边缘分布**：
    $$\int W(x, k) dk = |U(x)|^2$$ （强度分布）
    $$\int W(x, k) dx = |\tilde{U}(k)|^2$$ （角谱分布）
+   
 3. **非正定性**：W(x, k) 可以为负，因此是准概率分布
+   负值区域表示量子/波动干涉效应
+
 4. **归一化**：$$\int\int W(x, k) dx dk = \int |U(x)|^2 dx$$ （总功率）
+
+5. **平移不变性**：
+   若 $U'(x) = U(x - x_0)$，则 $W'(x, k) = W(x - x_0, k)$
+
+6. **调制性质**：
+   若 $U'(x) = U(x)e^{ik_0 x}$，则 $W'(x, k) = W(x, k - k_0)$
+
+7. **尺度变换**：
+   若 $U'(x) = \sqrt{a}U(ax)$，则 $W'(x, k) = W(ax, k/a)$
 
 ### 2.3.2 相空间表示
 
@@ -506,27 +605,54 @@ $$R_θ(t) = \int W(t\cos θ - s\sin θ, t\sin θ + s\cos θ) ds$$
 ### 2.4.1 惠更斯-菲涅尔原理
 
 从波动方程出发，光场传播满足：
-$$U(P) = \frac{1}{iλ} ∫∫_Σ U(Q) \frac{e^{ikr}}{r} cos(n, r) dΣ$$
+$$U(P) = \frac{1}{iλ} ∫∫_Σ U(Q) \frac{e^{ikr}}{r} \cos(n, r) dΣ$$
 
-其中 P 是观察点，Q 是孔径上的点，r 是它们之间的距离。
+其中 P 是观察点，Q 是孔径上的点，r = |P - Q| 是它们之间的距离。
+
+惠更斯原理的数学表述：
+- 每个波前元素都是次级球面波源
+- 后续波前是所有次级波的包络
+- 菲涅尔贡献：引入了相位和倾斜因子
+
+倾斜因子的物理意义：
+$$K(χ) = \frac{1 + \cos χ}{2}$$
+其中 χ 是法向与观察方向的夹角。
 
 #### 基尔霍夫衍射理论
 
 从标量波动方程出发：
 $$\nabla^2 U + k^2 U = 0$$
 
+亥姆霍兹方程的格林函数解：
+$$G(\mathbf{r}, \mathbf{r}') = \frac{e^{ik|\mathbf{r} - \mathbf{r}'|}}{4π|\mathbf{r} - \mathbf{r}'|}$$
+
 应用格林定理，得到基尔霍夫积分：
 $$U(P) = \frac{1}{4π} ∫∫_Σ \left[U\frac{∂G}{∂n} - G\frac{∂U}{∂n}\right] dΣ$$
 
-其中格林函数 $G = \frac{e^{ikr}}{r}$。
+展开后：
+$$U(P) = \frac{1}{iλ} ∫∫_Σ U(Q) \frac{e^{ikr}}{r} \frac{1 + \cos χ}{2} dΣ$$
+
+基尔霍夫边界条件（在孔径Σ上）：
+- U = U_{incident}（孔径内）
+- U = 0（屏幕上）
+- ∂U/∂n = ∂U_{incident}/∂n（孔径内）
+- ∂U/∂n = 0（屏幕上）
 
 #### Rayleigh-Sommerfeld衍射公式
 
 第一类Rayleigh-Sommerfeld公式（更精确）：
 $$U(P) = \frac{1}{iλ} ∫∫_Σ U(Q) \frac{e^{ikr}}{r} \cos(n, r) dΣ$$
 
+推导使用了更合理的边界条件：
+- 仅指定U或∂U/∂n之一
+- 避免了基尔霍夫理论的数学不一致性
+
 第二类公式：
 $$U(P) = -\frac{1}{iλ} ∫∫_Σ \frac{∂U}{∂n} \frac{e^{ikr}}{r} dΣ$$
+
+两种公式的选择：
+- 第一类：已知孔径平面的场分布U
+- 第二类：已知孔径平面的场梯度∂U/∂n
 
 ### 2.4.2 菲涅尔衍射
 
