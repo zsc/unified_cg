@@ -10,6 +10,23 @@ The transition from rays to waves fundamentally changes how we model light trans
 
 We'll see how the volume rendering equation naturally extends to include wave phenomena through the Green's function formalism, providing a unified framework that encompasses both ray and wave regimes.
 
+## Mathematical Foundations and Context
+
+Before diving into wave equations, let's establish the mathematical context. The transition from geometric to wave optics represents a fundamental shift in how we describe light propagation:
+
+**Geometric Optics**: Light intensity I(x,ω) follows rays according to:
+dI/ds = -σₜI along ray parameterized by s
+
+**Wave Optics**: Complex field amplitude u(x,t) satisfies wave equations:
+∇²u - (1/c²)∂²u/∂t² = 0
+
+The connection emerges through the **eikonal approximation**. For highly oscillatory fields u = A exp(ikS), where k >> 1:
+- Amplitude A varies slowly
+- Phase S satisfies the eikonal equation: |∇S|² = n²
+- Rays are orthogonal to surfaces of constant phase
+
+This chapter explores what happens when k is finite, revealing diffraction, interference, and the wave nature of light.
+
 ## 15.1 From Maxwell's Equations to the Helmholtz Equation
 
 ### Vector Wave Equation
@@ -23,6 +40,12 @@ We begin with Maxwell's equations in a source-free, homogeneous medium:
 
 For linear, isotropic media: **D** = ε**E** and **B** = μ**H**, where ε = ε₀εᵣ and μ = μ₀μᵣ.
 
+These equations embody fundamental electromagnetic principles:
+- **Faraday's law**: Time-varying magnetic fields induce electric fields
+- **Ampère-Maxwell law**: Time-varying electric fields (displacement current) and conduction currents create magnetic fields
+- **Gauss's law**: Electric field divergence relates to charge density
+- **No monopoles**: Magnetic field lines are always closed loops
+
 Taking the curl of Faraday's law:
 ∇ × (∇ × **E**) = -∇ × (∂**B**/∂t) = -∂(∇ × **B**)/∂t = -μ∂(∇ × **H**)/∂t
 
@@ -34,11 +57,34 @@ This yields the vector wave equation:
 
 ∇²**E** - με(∂²**E**/∂t²) = 0
 
+Or in more compact form:
+∇²**E** - (1/v²)(∂²**E**/∂t²) = 0
+
 The wave velocity is v = 1/√(με) = c/n, where:
-- c = 1/√(μ₀ε₀) ≈ 3×10⁸ m/s is the speed of light in vacuum
+- c = 1/√(μ₀ε₀) ≈ 2.998×10⁸ m/s is the speed of light in vacuum
 - n = √(εᵣμᵣ) ≈ √εᵣ is the refractive index (since μᵣ ≈ 1 for most optical materials)
 
-An identical equation holds for the magnetic field **H**. These vector equations couple the three spatial components of the fields through boundary conditions.
+An identical equation holds for the magnetic field **H**. These vector equations couple the three spatial components of the fields through:
+1. **Boundary conditions** at material interfaces
+2. **Transversality constraint**: ∇ · **E** = 0 implies **k** · **E** = 0 for plane waves
+3. **Impedance relations**: Z = √(μ/ε) relates **E** and **H** magnitudes
+
+### Mathematical Structure
+
+The vector wave equation exhibits several key mathematical properties:
+
+**Linearity**: Solutions can be superposed
+If **E₁** and **E₂** are solutions, then α**E₁** + β**E₂** is also a solution
+
+**Time-reversal symmetry**: Replace t → -t yields valid solutions
+Forward and backward propagating waves are equally valid
+
+**Gauge invariance**: In vacuum, we can choose ∇ · **A** = 0 (Coulomb gauge) or 
+∂Φ/∂t + ∇ · **A** = 0 (Lorenz gauge), where **E** = -∇Φ - ∂**A**/∂t
+
+**Energy conservation**: The Poynting vector **S** = **E** × **H** satisfies:
+∂u/∂t + ∇ · **S** = 0
+where u = (ε|**E**|² + μ|**H**|²)/2 is the electromagnetic energy density
 
 ### Scalar Wave Approximation
 
@@ -48,23 +94,62 @@ For many optical phenomena, we can approximate the vector field with a scalar fi
 - The field varies slowly compared to wavelength (paraxial approximation)
 - We're far from material interfaces where boundary conditions couple components
 
-To derive the scalar approximation, we note that each Cartesian component of **E** satisfies:
-∇²Eᵢ - (1/v²)(∂²Eᵢ/∂t²) = 0
+#### Rigorous Derivation
+
+To derive the scalar approximation systematically, we start with the vector Helmholtz equation for each component. Consider a predominantly z-propagating wave with electric field:
+
+**E** = E_x **x̂** + E_y **ŷ** + E_z **ẑ**
+
+From Maxwell's equations, the transversality condition ∇ · **E** = 0 gives:
+∂E_x/∂x + ∂E_y/∂y + ∂E_z/∂z = 0
+
+For paraxial waves where ∂/∂z ~ ik (rapid phase variation) but transverse derivatives are small:
+E_z ≈ -(1/ik)(∂E_x/∂x + ∂E_y/∂y)
+
+This shows E_z << E_x, E_y for paraxial propagation, justifying focus on transverse components.
+
+Each transverse component satisfies:
+∇²E_⊥ - (1/v²)(∂²E_⊥/∂t²) = 0
 
 For monochromatic fields with angular frequency ω:
-Eᵢ(r,t) = Re[eᵢ(r)e^(-iωt)]
+E_⊥(r,t) = Re[e_⊥(r)e^(-iωt)]
 
-Substituting and using ∂²/∂t² → -ω²:
-∇²eᵢ + (ω²/v²)eᵢ = 0
+The complex amplitude representation separates time and space:
+- Temporal: e^(-iωt) with ∂²/∂t² → -ω²
+- Spatial: e_⊥(r) contains all spatial variation
+
+Substituting:
+∇²e_⊥ + (ω²/v²)e_⊥ = 0
 
 Defining the wavenumber k = ω/v = 2πn/λ, we get:
 
 ∇²u + k²u = 0
 
-This is the **Helmholtz equation**, where u represents any scalar component of the field. The full vector nature manifests only through:
-1. Boundary conditions at interfaces
-2. Near-field of sources
-3. Strong focusing or high numerical aperture systems
+This is the **Helmholtz equation**, where u represents any scalar component of the field.
+
+#### Validity Limits
+
+The scalar approximation breaks down when:
+
+1. **High numerical aperture** (NA > 0.6):
+   - Vector effects: longitudinal fields become significant
+   - Polarization coupling in tight focusing
+   - Use vector diffraction theory (Richards-Wolf)
+
+2. **Near material interfaces**:
+   - Boundary conditions couple field components
+   - Fresnel coefficients depend on polarization
+   - Surface plasmons and guided modes
+
+3. **Subwavelength structures**:
+   - Near-field enhancement
+   - Evanescent waves dominate
+   - Full vector treatment required
+
+4. **Birefringent media**:
+   - Different propagation for orthogonal polarizations
+   - Coupled wave equations
+   - Jones or Mueller calculus needed
 
 ### Physical Interpretation
 
@@ -73,50 +158,157 @@ The Helmholtz equation describes monochromatic wave propagation where:
 - The equation balances spatial curvature (∇²u) against phase accumulation (k²u)
 - Solutions form a complete basis for arbitrary fields
 
-Fundamental solutions include:
+#### Fundamental Solutions
 
 1. **Plane waves**: u = A exp(i**k**·**r**)
-   - Wavevector **k** with |**k**| = k
+   - Wavevector **k** = k(sin θ cos φ **x̂** + sin θ sin φ **ŷ** + cos θ **ẑ**)
+   - |**k**| = k = 2πn/λ
    - Constant amplitude surfaces perpendicular to **k**
+   - Energy flux along **k** direction
    - Basis for angular spectrum representation
 
-2. **Spherical waves**: u = (A/r)exp(±ikr)
-   - Point source at origin
-   - ± for outgoing/incoming waves
-   - Amplitude decays as 1/r (energy conservation)
+   Verification: ∇²[exp(i**k**·**r**)] = -k²exp(i**k**·**r**) ✓
 
-3. **Gaussian beams**: u = (A/w(z))exp[ikz - kr²/2R(z) - iζ(z)]
-   - Finite beam width w(z)
-   - Wavefront curvature R(z)
-   - Gouy phase ζ(z)
+2. **Spherical waves**: u = (A/r)exp(±ikr)
+   - Point source/sink at origin
+   - ± for outgoing/incoming waves
+   - Amplitude ∝ 1/r (energy conservation)
+   - Intensity ∝ 1/r² (inverse square law)
+   - Phase surfaces are concentric spheres
+
+   In spherical coordinates with radial symmetry:
+   ∇²u = (1/r²)d/dr(r²du/dr) = (A/r²)d/dr[r²d/dr((1/r)e^(ikr))]
+   After calculation: ∇²u = -k²u ✓
+
+3. **Gaussian beams**: u = (A₀/q(z))exp[ikz + ikr²/2q(z)]
+   
+   Complex beam parameter: q(z) = z - iz₀ where z₀ = πw₀²/λ
+   
+   Beam properties:
+   - Beam width: w(z) = w₀√(1 + (z/z₀)²)
+   - Wavefront radius: R(z) = z(1 + (z₀/z)²)
+   - Gouy phase: ζ(z) = arctan(z/z₀)
+   - Rayleigh range: z₀ (beam doubles in area)
+   
+   Near axis (r << w): Satisfies paraxial wave equation
+   ∂²u/∂x² + ∂²u/∂y² + 2ik∂u/∂z = 0
+
+4. **Bessel beams**: u = J₀(k_⊥r)exp(ik_z z)
+   - Non-diffracting solution
+   - k_⊥² + k_z² = k²
+   - Infinite energy (not physically realizable)
+   - Approximated by finite apertures
+
+5. **Hermite-Gaussian modes**: u_{mn} = H_m(√2x/w)H_n(√2y/w)exp(-r²/w²)×[Gaussian beam factor]
+   - H_m: Hermite polynomials
+   - Orthogonal mode basis
+   - Rectangular symmetry
+   - Important for laser cavities
+
+6. **Laguerre-Gaussian modes**: u_{pl} = (r/w)^|l| L_p^|l|(2r²/w²)exp(-r²/w²)exp(ilφ)×[Gaussian beam factor]
+   - L_p^|l|: Associated Laguerre polynomials
+   - Orbital angular momentum: l𝗁 per photon
+   - Cylindrical symmetry
+   - Optical vortices for l ≠ 0
 
 ### Connection to Volume Rendering
 
-The Helmholtz equation naturally connects to our volume rendering framework. Consider the frequency-domain rendering equation:
+The Helmholtz equation naturally connects to our volume rendering framework through the Green's function formalism. This connection reveals how wave optics emerges from and extends the radiative transfer equation.
+
+#### Green's Function Formulation
+
+Consider the frequency-domain rendering equation with coherent illumination:
 
 L(x,ω) = L₀(x,ω) + ∫ σₛ(x')p(x',ω'→ω)G(x,x')L(x',ω')dV'
 
-where the Green's function G(x,x') represents propagation from x' to x and satisfies:
+The Green's function G(x,x') represents coherent propagation from x' to x and satisfies:
 
 (∇² + k²)G(x,x') = -δ(x-x')
 
-The Green's function solution:
+This inhomogeneous Helmholtz equation has the fundamental solution:
 G(x,x') = exp(ik|x-x'|)/(4π|x-x'|)
 
-In the geometric optics limit (k→∞):
-- Phase varies rapidly: exp(ik|x-x'|) oscillates
-- Stationary phase approximation → ray paths
-- G reduces to delta function along rays
+Physical interpretation:
+- Outgoing spherical wave from point source at x'
+- Phase accumulation: k|x-x'|
+- Amplitude decay: 1/|x-x'|
+- Satisfies Sommerfeld radiation condition
 
-For finite k:
-- Captures diffraction and interference
-- Describes spreading of light beams
-- Includes near-field effects
+#### Scale-Dependent Regimes
 
-This provides a scale-dependent transition:
-- k⁻¹ << scene scale: Ray optics
-- k⁻¹ ~ feature scale: Wave effects dominate
-- Unified through Green's function formalism
+The parameter kr = k|x-x'| determines the propagation regime:
+
+1. **Geometric optics limit** (kr >> 1):
+   - Rapid phase oscillation: exp(ikr)
+   - Stationary phase approximation applies
+   - Only paths with ∇φ = 0 contribute
+   - Green's function → δ-function along rays
+   
+   G(x,x') ≈ δ(s - |x-x'|)/|∂s/∂x'|
+   
+   where s parameterizes the ray from x' to x
+
+2. **Wave regime** (kr ~ 1):
+   - Phase and amplitude comparable
+   - Diffraction effects significant
+   - Interference between multiple paths
+   - Full Green's function needed
+
+3. **Near-field** (kr << 1):
+   - Static field approximation
+   - G(x,x') ≈ 1/(4π|x-x'|) (Coulomb-like)
+   - Evanescent waves dominate
+   - Non-propagating near-field coupling
+
+#### Coherent vs Incoherent Rendering
+
+The transition between coherent and incoherent rendering depends on source coherence:
+
+**Coherent sources** (lasers, single-mode fibers):
+- Fields add: E_total = E₁ + E₂ + ...
+- Cross terms: |E_total|² = |E₁|² + |E₂|² + 2Re(E₁*E₂) + ...
+- Interference fringes with visibility V = |γ₁₂|
+
+**Partially coherent sources** (LEDs, thermal):
+- Mutual coherence function: Γ(x₁,x₂) = ⟨E*(x₁)E(x₂)⟩
+- Van Cittert-Zernike theorem relates source size to coherence
+- Coherence length: l_c = λ²/(Δλ) 
+- Coherence area: A_c = λ²R²/A_source
+
+**Incoherent limit** (most rendering):
+- Intensities add: I_total = I₁ + I₂ + ...
+- No interference terms
+- Ray optics sufficient
+- Standard rendering equation applies
+
+#### Extended Volume Rendering Equation
+
+For partial coherence, the rendering equation generalizes to:
+
+L(x₁,x₂,ω) = L₀(x₁,x₂,ω) + ∬ σₛ(x'₁)σₛ(x'₂)p₁p₂G*(x₁,x'₁)G(x₂,x'₂)L(x'₁,x'₂,ω)dx'₁dx'₂
+
+This 6D equation reduces to:
+- Standard rendering (x₁ = x₂, diagonal terms only)
+- Coherent rendering (factorizable L)
+- Speckle/interference (off-diagonal terms)
+
+#### Practical Implications
+
+1. **Multi-scale rendering**:
+   - Geometric optics: λ << feature size
+   - Wave corrections: λ ~ feature size  
+   - Full wave solution: λ >> feature size
+
+2. **Unified algorithms**:
+   - Path tracing with phase tracking
+   - Beam propagation methods
+   - Hybrid ray-wave techniques
+
+3. **New phenomena**:
+   - Diffraction from edges/apertures
+   - Interference in thin films
+   - Speckle from rough surfaces
+   - Focusing and caustics beyond geometric limit
 
 ## 15.2 Huygens-Fresnel Principle
 
