@@ -28,12 +28,28 @@ $$\rho_{\text{voxel}}(\mathbf{x}) = \sum_{i,j,k} \rho_{ijk} \cdot \mathbb{1}_{V_
 1. **分辨率-内存权衡**：提高分辨率导致内存需求立方增长
 2. **固定采样**：无法在采样点之间进行连续查询
 3. **混叠效应**：离散采样导致高频细节丢失
+4. **拓扑约束**：离散网格强加了固定的连接性结构
+5. **各向异性限制**：轴对齐的体素难以表示任意方向的细节
+
+从信息论角度，离散表示的基本限制可以通过采样定理理解。对于带宽为 $B$ 的信号，Nyquist-Shannon定理要求采样率至少为 $2B$。在3D空间中，这转化为：
+
+$$N_{\min} \geq (2B)^3$$
+
+其中 $N_{\min}$ 是最小体素数。这表明高频细节需要指数级增长的存储。
 
 神经辐射场通过将场景表示为神经网络参数化的连续函数来克服这些限制：
 
 $$F_\Theta: (\mathbf{x}, \mathbf{d}) \mapsto (\sigma, \mathbf{c})$$
 
 其中 $\mathbf{x} \in \mathbb{R}^3$ 是空间位置，$\mathbf{d} \in \mathbb{S}^2$ 是视角方向，$\sigma \in \mathbb{R}_+$ 是体积密度，$\mathbf{c} \in [0,1]^3$ 是RGB颜色，$\Theta \in \mathbb{R}^p$ 是神经网络的 $p$ 个参数。
+
+**连续表示的信息论优势**：
+
+考虑Kolmogorov复杂度 $K(S)$，即描述场景 $S$ 所需的最短程序长度。对于许多自然场景：
+
+$$K(S_{\text{neural}}) \ll K(S_{\text{voxel}})$$
+
+这是因为神经网络可以利用场景中的规律性和对称性。例如，一个包含重复纹理的表面在体素表示中需要 $\mathcal{O}(N^2)$ 存储，但神经网络可以通过学习周期函数以 $\mathcal{O}(1)$ 复杂度表示。
 
 #### 6.1.2 与体积渲染方程的自然对应
 
@@ -47,30 +63,101 @@ $$T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$$
 
 射线参数化为 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$，其中 $\mathbf{o}$ 是射线原点，$\mathbf{d}$ 是单位方向向量。
 
+这个方程的深层数学结构揭示了几个关键洞察：
+
+1. **指数衰减的物理意义**：透射率 $T(t)$ 满足微分方程：
+   $$\frac{dT}{dt} = -\sigma(\mathbf{r}(t)) T(t)$$
+   
+   这是Beer-Lambert定律在参与介质中的表现，描述了光在传播过程中的指数衰减。
+
+2. **测度论解释**：体积渲染积分可以理解为关于测度 $d\mu = \sigma(\mathbf{r}(t)) dt$ 的Lebesgue-Stieltjes积分：
+   $$L(\mathbf{r}) = \int_{[t_n, t_f]} T(t) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) d\mu(t)$$
+   
+   这提供了处理不连续密度场（如表面）的严格框架。
+
+3. **算子理论视角**：定义渲染算子 $\mathcal{R}$：
+   $$\mathcal{R}[\sigma, \mathbf{c}](\mathbf{r}) = \int_{t_n}^{t_f} \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+   
+   这是一个非线性算子，其Fréchet导数为：
+   $$D\mathcal{R}[\sigma, \mathbf{c}][\delta\sigma, \delta\mathbf{c}] = \int_{t_n}^{t_f} T(t) \left[\delta\sigma(t) \mathbf{c}(t) + \sigma(t) \delta\mathbf{c}(t) - \sigma(t) \mathbf{c}(t) \int_{t_n}^t \delta\sigma(s) ds\right] dt$$
+   
+   这对理解梯度传播至关重要。
+
 #### 6.1.3 神经表示的理论优势
 
 神经网络表示提供了几个理论优势：
 
 1. **压缩表示**：根据Kolmogorov-Arnold表示定理，任何连续函数可以表示为有限个单变量连续函数的组合。神经网络通过其层次结构自然实现这种分解。
 
+   更精确地，Kolmogorov-Arnold定理指出：对于任意连续函数 $f: [0,1]^n \rightarrow \mathbb{R}$，存在连续函数 $\phi_q$ 和 $\psi_{pq}$ 使得：
+   $$f(x_1, ..., x_n) = \sum_{q=0}^{2n} \phi_q\left(\sum_{p=1}^n \psi_{pq}(x_p)\right)$$
+   
+   神经网络的层次结构提供了这种分解的可学习实现。
+
 2. **隐式正则化**：神经网络的参数化引入了隐式的平滑性先验，这可以通过神经切线核（NTK）理论来理解：
    $$K_{\text{NTK}}(\mathbf{x}, \mathbf{x}') = \lim_{m \to \infty} \frac{1}{m} \sum_{i=1}^m \frac{\partial f(\mathbf{x}; \Theta)}{\partial \Theta_i} \frac{\partial f(\mathbf{x}'; \Theta)}{\partial \Theta_i}$$
    
    其中 $m$ 是网络宽度。这个核决定了函数空间的归纳偏置。
+   
+   **定理（NTK的RKHS特性）**：在适当的初始化下，NTK诱导的再生核希尔伯特空间（RKHS）包含所有满足某种平滑性条件的函数。具体地，对于深度 $L$ 的网络：
+   $$\|f\|_{\mathcal{H}_{\text{NTK}}}^2 \approx \int |\hat{f}(\mathbf{k})|^2 (1 + |\mathbf{k}|^2)^L d\mathbf{k}$$
+   
+   这表明深度网络隐式地施加了高阶平滑性约束。
 
 3. **自适应分辨率**：不同于固定分辨率的离散表示，神经网络可以自适应地分配容量到场景的不同部分。信息论分析表明，对于熵为 $H$ 的场景，神经网络可以达到接近最优的压缩率 $R \approx H$。
+   
+   **率失真理论分析**：设场景的概率分布为 $p(S)$，失真度量为 $d(S, \hat{S})$。率失真函数：
+   $$R(D) = \inf_{p(\hat{S}|S): \mathbb{E}[d(S,\hat{S})] \leq D} I(S; \hat{S})$$
+   
+   神经网络通过变分推断近似这个最优编码：
+   $$\min_\Theta \mathbb{E}_{S \sim p(S)} [d(S, F_\Theta)] + \beta \cdot \text{Complexity}(\Theta)$$
+
+4. **函数空间的几何结构**：神经网络参数空间诱导了场景空间的黎曼度量：
+   $$g_{ij}(\Theta) = \mathbb{E}_{\mathbf{x}, \mathbf{d}} \left[\frac{\partial F_\Theta(\mathbf{x}, \mathbf{d})}{\partial \Theta_i} \frac{\partial F_\Theta(\mathbf{x}, \mathbf{d})}{\partial \Theta_j}\right]$$
+   
+   这个Fisher信息度量提供了理解优化景观和泛化的几何框架。
 
 #### 6.1.4 NeRF在统一框架中的位置
 
 在我们的统一计算机图形学框架中，NeRF占据了一个特殊位置，连接了几个重要概念：
 
 1. **与基于点的渲染的联系**（第3章）：NeRF可以视为无限密集点云的极限情况，其中每个空间点都有定义的属性。
+   
+   数学上，点云表示：
+   $$\rho_{\text{points}}(\mathbf{x}) = \sum_{i=1}^N w_i \delta(\mathbf{x} - \mathbf{x}_i)$$
+   
+   NeRF提供了平滑逼近：
+   $$\rho_{\text{NeRF}}(\mathbf{x}) = \lim_{\epsilon \to 0} \sum_{i=1}^N w_i K_\epsilon(\mathbf{x} - \mathbf{x}_i)$$
+   
+   其中 $K_\epsilon$ 是宽度为 $\epsilon$ 的平滑核。
 
 2. **与基于图像的渲染的联系**（第4章）：NeRF隐式编码了光场，可以生成任意视角的图像。
+   
+   光场 $L(\mathbf{x}, \mathbf{d})$ 与NeRF的关系：
+   $$L(\mathbf{x}, \mathbf{d}) = \int_0^\infty T(t) \sigma(\mathbf{x} + t\mathbf{d}) \mathbf{c}(\mathbf{x} + t\mathbf{d}, -\mathbf{d}) dt$$
+   
+   这建立了4D光场与5D辐射场之间的积分变换。
 
 3. **与物理渲染的联系**（第5章）：通过适当的修改，NeRF可以扩展到建模参与介质和次表面散射。
+   
+   扩展到完整的辐射传输方程：
+   $$\frac{d L(\mathbf{x}, \mathbf{d})}{dt} = -\sigma_t L + \sigma_s \int_{\mathbb{S}^2} p(\mathbf{d}' \rightarrow \mathbf{d}) L(\mathbf{x}, \mathbf{d}') d\mathbf{d}' + \sigma_a L_e$$
+   
+   NeRF的简化假设相当于忽略散射项（$\sigma_s = 0$）。
 
 4. **向波动光学的桥梁**（第15-20章）：连续表示为后续引入相位信息和波动效应提供了自然基础。
+   
+   从标量场到复值场的推广：
+   $$F_\Theta: (\mathbf{x}, \mathbf{d}, \lambda) \mapsto (A e^{i\phi}, \mathbf{c}) \in \mathbb{C} \times \mathbb{R}^3$$
+   
+   这允许建模干涉、衍射等波动现象。
+
+5. **与逆向渲染的联系**（第11-14章）：NeRF的可微性使其成为逆向问题的理想表示。
+   
+   逆向渲染可表述为变分问题：
+   $$\min_\Theta \sum_{i} \|\mathcal{R}[F_\Theta](\mathbf{r}_i) - I_i\|^2 + \mathcal{R}_{\text{reg}}(\Theta)$$
+   
+   其中 $\mathcal{R}$ 是渲染算子，$I_i$ 是观测图像。
 
 ### 6.2 连续体积表示
 
@@ -84,16 +171,37 @@ $$T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$$
    $$\phi: \mathbb{R}^3 \rightarrow \mathbb{R}, \quad \text{其中} \quad |\nabla \phi| = 1 \text{ a.e.}$$
    
    表面定义为零水平集：$\mathcal{S} = \{\mathbf{x} : \phi(\mathbf{x}) = 0\}$
+   
+   **Eikonal方程约束**：SDF满足偏微分方程：
+   $$|\nabla \phi(\mathbf{x})| = 1, \quad \forall \mathbf{x} \in \mathbb{R}^3 \setminus \mathcal{S}_{\text{skeleton}}$$
+   
+   其中 $\mathcal{S}_{\text{skeleton}}$ 是中轴骷髅。这保证了到表面的最短距离属性。
 
 2. **占用场（Occupancy Field）**：
    $$o: \mathbb{R}^3 \rightarrow [0,1], \quad o(\mathbf{x}) = \mathbb{P}[\mathbf{x} \in \mathcal{V}]$$
    
    其中 $\mathcal{V}$ 是占用体积。
+   
+   **与SDF的关系**：通过sigmoid函数转换：
+   $$o(\mathbf{x}) = \text{sigmoid}(-\alpha \phi(\mathbf{x})) = \frac{1}{1 + \exp(\alpha \phi(\mathbf{x}))}$$
+   
+   其中 $\alpha$ 控制过渡的锐度。
 
 3. **NeRF的体积密度场**：
    $$\sigma: \mathbb{R}^3 \rightarrow \mathbb{R}_+$$
    
    这可以理解为微分不透明度：$\sigma(\mathbf{x}) = -\frac{d\log T}{dt}|_{\mathbf{x}}$
+   
+   **物理解释**：$\sigma(\mathbf{x})$ 表示单位长度内光子被吸收的概率密度。在微小距离 $dt$ 内：
+   $$\mathbb{P}[\text{absorption}] = \sigma(\mathbf{x}) dt + o(dt)$$
+
+4. **广义隐式神经表示**：
+   $$F_\Theta: \mathcal{X} \times \mathcal{D} \rightarrow \mathcal{Y}$$
+   
+   其中：
+   - $\mathcal{X} \subseteq \mathbb{R}^3$：空间域
+   - $\mathcal{D} \subseteq \mathbb{S}^2$：方向域
+   - $\mathcal{Y} \subseteq \mathbb{R}^{d_y}$：属性空间
 
 NeRF通过联合表示几何和外观扩展了这些概念：
 $$F_\Theta: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}_+ \times [0,1]^3$$
@@ -102,10 +210,15 @@ $$F_\Theta: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}_+ \times [0,
 
 $$\sup_{(\mathbf{x},\mathbf{d}) \in K \times \mathbb{S}^2} \|F_\Theta(\mathbf{x},\mathbf{d}) - (\sigma^*(\mathbf{x}), \mathbf{c}^*(\mathbf{x},\mathbf{d}))\| < \epsilon$$
 
+*证明要点*：利用Stone-Weierstrass定理的神经网络版本。由于 $K \times \mathbb{S}^2$ 是紧致的Hausdorff空间，且神经网络形成的函数类分离点、包含常函数且在点乘下封闭，故在连续函数空间中稠密。
+
+**复杂度分析**：
+
 这种表示的优势包括：
 - **内存效率**：存储需求 $\mathcal{O}(p)$ 与场景复杂度无关，仅取决于网络参数数量 $p$
 - **连续性**：可在任意分辨率下查询，支持超分辨率渲染
 - **可微性**：几乎处处可微，支持基于梯度的优化和逆向渲染
+- **适应性**：网络容量自动分配到复杂区域
 
 #### 6.2.2 从体素到连续函数
 
@@ -115,6 +228,14 @@ $$\sigma_{\text{voxel}}(\mathbf{x}) = \sum_{i,j,k} \sigma_{ijk} \cdot \mathbb{1}
 
 其中 $\mathbb{1}_{V_{ijk}}$ 是体素 $(i,j,k)$ 的指示函数。这种表示本质上是在函数空间中使用了阶跃基函数。
 
+**函数空间理论视角**：
+
+设 $\mathcal{F}$ 为紧支撑上的连续函数空间 $C_c(\mathbb{R}^3)$。不同的表示方法对应于 $\mathcal{F}$ 中不同的子空间：
+
+1. **体素空间**：$\mathcal{F}_{\text{voxel}} = \text{span}\{\mathbb{1}_{V_{ijk}}\}$
+2. **样条空间**：$\mathcal{F}_{\text{spline}} = \{f : f \in C^k, f|_{V_{ijk}} \in \mathcal{P}^k\}$
+3. **神经空间**：$\mathcal{F}_{\text{neural}} = \{F_\Theta : \Theta \in \mathbb{R}^p\}$
+
 我们可以将这种表示推广到更一般的基函数展开：
 
 $$\sigma(\mathbf{x}) = \sum_{n=1}^N c_n \psi_n(\mathbf{x})$$
@@ -122,9 +243,20 @@ $$\sigma(\mathbf{x}) = \sum_{n=1}^N c_n \psi_n(\mathbf{x})$$
 不同的基函数选择导致不同的表示：
 
 1. **体素基**：$\psi_n = \mathbb{1}_{V_n}$ - 零阶不连续
-2. **三线性插值**：$\psi_n = \prod_{i=1}^3 (1-|x_i - x_i^n|)_+$ - 一阶连续
+   - 逼近误差：$\mathcal{O}(h)$，$h$ 为体素尺寸
+   - 存储复杂度：$\mathcal{O}(N^3)$
+
+2. **三线性插值**：$\psi_n = \prod_{i=1}^3 (1-|x_i - x_i^n|/h)_+$ - 一阶连续
+   - 逼近误差：$\mathcal{O}(h^2)$
+   - 存储复杂度：$\mathcal{O}(N^3)$
+
 3. **B样条基**：$\psi_n = B^k((\mathbf{x} - \mathbf{x}_n)/h)$ - $k$阶连续
+   - 逼近误差：$\mathcal{O}(h^{k+1})$
+   - 紧支撑：$\text{supp}(B^k) = [-k/2, k/2]^3$
+
 4. **径向基函数**：$\psi_n = \exp(-\|\mathbf{x} - \mathbf{x}_n\|^2/\sigma^2)$ - 无限阶平滑
+   - 谱衰减：$\hat{\psi}(\mathbf{k}) \propto \exp(-\sigma^2\|\mathbf{k}\|^2)$
+   - 正定性：$\sum_{i,j} c_i c_j \psi(\mathbf{x}_i - \mathbf{x}_j) \geq 0$
 
 神经网络表示可以理解为使用自适应、可学习基函数的推广：
 
@@ -137,11 +269,20 @@ $$\sigma_{\text{neural}}(\mathbf{x}) = g\left(\sum_{l=1}^L W_l^{(L)} \phi_{l-1}\
 - 每个区域内：函数是线性的
 - 边界复杂度：由网络架构决定
 
+*证明要点*：ReLU神经网络 $f(\mathbf{x}) = \max(0, W\mathbf{x} + b)$ 在超平面 $\{\mathbf{x}: W_i\mathbf{x} + b_i = 0\}$ 上不可微。这些超平面将 $\mathbb{R}^3$ 划分成多个凸多面体区域，每个区域内网络是仿射函数。
+
+**压缩效率分析**：
+
 这种表示通过神经网络的组合性质实现了更高效的场景编码，其压缩率可以通过率失真理论分析：
 
 $$R(D) = \inf_{F_\Theta} \{H(\Theta) : \mathbb{E}[\|\sigma - F_\Theta(\cdot)\|^2] \leq D\}$$
 
 其中 $H(\Theta)$ 是参数的熵，$D$ 是允许的失真。
+
+**定理（神经压缩效率）**：对于具有Lipschitz常数 $L$ 的场景函数，神经网络表示的压缩率满足：
+$$R(D) \leq C \cdot \log\left(\frac{L^3 \text{Vol}(K)}{D}\right)$$
+
+其中 $\text{Vol}(K)$ 是场景体积，$C$ 是常数。这表明神经网络可以达到近乎最优的压缩率。
 
 #### 6.2.3 MLP作为辐射场编码器
 
@@ -166,29 +307,78 @@ $$\mathbf{c} = \text{sigmoid}(W_c \mathbf{f}_c + \mathbf{b}_c) = \frac{1}{1 + \e
 
 1. **视角无关的几何**：密度 $\sigma$ 仅依赖于位置 $\mathbf{x}$，确保几何的视角一致性
    
+   数学上，这意味着：
+   $$\frac{\partial \sigma}{\partial \mathbf{d}} = 0$$
+   
+   这保证了从不同视角看到的几何是一致的。
+   
 2. **视角相关的外观**：颜色 $\mathbf{c}$ 依赖于位置和方向 $(\mathbf{x}, \mathbf{d})$，允许建模镜面反射等效果
+   
+   这可以建模复杂的BRDF：
+   $$\mathbf{c}(\mathbf{x}, \mathbf{d}) \approx \int_{\Omega} f_r(\mathbf{x}, \mathbf{d}_i \rightarrow \mathbf{d}) L_i(\mathbf{x}, \mathbf{d}_i) (\mathbf{n} \cdot \mathbf{d}_i) d\mathbf{d}_i$$
 
 3. **跳跃连接**：在第 $l^*$ 层重新注入位置编码
    $$\mathbf{h}_{l^*+1} = \phi(W_{l^*} [\mathbf{h}_{l^*}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
    
    这改善了梯度流并保留了高频信息。
+   
+   **理论分析**：跳跃连接可以视为残差学习：
+   $$F(\mathbf{x}) = F_{\text{low}}(\mathbf{x}) + F_{\text{high}}(\mathbf{x})$$
+   
+   其中 $F_{\text{low}}$ 由前 $l^*$ 层学习，$F_{\text{high}}$ 由后续层学习。
 
 **网络容量分析**：
 
 对于深度 $L$、宽度 $w$ 的全连接网络，其表达能力可以通过以下度量：
 
 1. **参数数量**：$p = \mathcal{O}(Lw^2)$
+   
+   具体地：
+   $$p = \sum_{l=0}^{L-1} (w_l \cdot w_{l+1} + w_{l+1}) \approx Lw^2 + Lw$$
+
 2. **线性区域数量**：$N_{\text{regions}} = \mathcal{O}((w/L)^L)$
+   
+   **定理（Montufar et al., 2014）**：具有 $L$ 层、每层 $w$ 个神经元的ReLU网络最多可以表示：
+   $$N_{\text{regions}} \leq \left(\prod_{l=1}^{L-1} \lfloor w/d \rfloor^d\right) \cdot \sum_{j=0}^d \binom{w}{j}$$
+   
+   其中 $d$ 是输入维度。
+
 3. **Lipschitz常数**：$\text{Lip}(F_\Theta) \leq \prod_{l=1}^L \|W_l\|_2$
+   
+   这决定了函数的平滑性：
+   $$|F_\Theta(\mathbf{x}_1) - F_\Theta(\mathbf{x}_2)| \leq \text{Lip}(F_\Theta) \cdot \|\mathbf{x}_1 - \mathbf{x}_2\|$$
+
+4. **VC维**：$\text{VCdim} = \mathcal{O}(pL)$
+   
+   这决定了泛化能力。
 
 **激活函数选择的理论依据**：
 
 - **Softplus用于密度**：确保 $\sigma \geq 0$，且在零点处平滑
   $$\text{softplus}'(x) = \text{sigmoid}(x) \in (0, 1)$$
+  $$\text{softplus}''(x) = \text{sigmoid}(x)(1 - \text{sigmoid}(x)) \geq 0$$
+  
+  这保证了密度函数的凸性。
   
 - **Sigmoid用于颜色**：确保 $\mathbf{c} \in [0,1]^3$，物理上对应归一化的RGB值
-
+  
+  Sigmoid的对称性：$\text{sigmoid}(-x) = 1 - \text{sigmoid}(x)$
+  
 - **ReLU用于隐藏层**：计算效率高，且保持了分片线性性质
+  
+  ReLU的正同性：$\text{ReLU}(\alpha x) = \alpha \text{ReLU}(x), \forall \alpha \geq 0$
+
+**初始化策略**：
+
+适当的初始化对于避免梯度消失/爆炸至关重要：
+
+1. **Xavier/He初始化**：
+   $$W_{ij} \sim \mathcal{N}(0, \sqrt{2/n_{\text{in}}})$$
+   
+   这保持了前向传播中激活值的方差稳定。
+
+2. **SIREN初始化**（用于周期激活函数）：
+   $$W_{ij} \sim \mathcal{U}(-\sqrt{6/n_{\text{in}}}, \sqrt{6/n_{\text{in}}})$$
 
 #### 6.2.4 密度与颜色的联合建模
 
@@ -201,6 +391,46 @@ $$\mathbf{c} = F_{\text{color}}(\mathbf{f}, \gamma(\mathbf{d}))$$
 这种分解确保了物理合理性：
 - 几何（密度）与视角无关
 - 外观（颜色）可以建模视角相关效果（如镜面反射）
+
+**信息论解释**：
+
+从信息论角度，这种分解可以视为学习一个充分统计量：
+$$\mathbf{f} = T(\mathbf{x})$$
+
+其中 $T$ 满足：
+$$I(\mathbf{x}; \sigma, \mathbf{c} | \mathbf{d}) = I(T(\mathbf{x}); \sigma, \mathbf{c} | \mathbf{d})$$
+
+这意味着 $\mathbf{f}$ 包含了从位置预测密度和颜色所需的所有信息。
+
+**分离表示的优势**：
+
+1. **参数共享**：减少参数数量，提高效率
+   $$p_{\text{shared}} < p_{\text{separate}} = p_{\sigma} + p_{\mathbf{c}}$$
+
+2. **一致性约束**：密度和颜色共享底层特征，保证了几何和外观的一致性
+
+3. **梯度传播**：来自颜色预测的梯度也会影响底层特征，间接改善密度预测
+
+**理论分析：解耦学习**：
+
+设联合分布为 $p(\sigma, \mathbf{c} | \mathbf{x}, \mathbf{d})$，我们可以分解为：
+$$p(\sigma, \mathbf{c} | \mathbf{x}, \mathbf{d}) = p(\sigma | \mathbf{x}) \cdot p(\mathbf{c} | \mathbf{x}, \mathbf{d}, \sigma)$$
+
+由于密度与视角无关：
+$$p(\sigma | \mathbf{x}, \mathbf{d}) = p(\sigma | \mathbf{x})$$
+
+这种因式分解指导了网络架构设计。
+
+**物理约束的编码**：
+
+1. **能量守恒**：通过限制颜色输出范围
+   $$\|\mathbf{c}\|_\infty \leq 1$$
+
+2. **空间连续性**：通过网络的Lipschitz性质
+   $$\|\mathbf{c}(\mathbf{x}_1) - \mathbf{c}(\mathbf{x}_2)\| \leq L_c \|\mathbf{x}_1 - \mathbf{x}_2\|$$
+
+3. **视角一致性**：对于漫反射表面
+   $$\mathbf{c}(\mathbf{x}, \mathbf{d}_1) \approx \mathbf{c}(\mathbf{x}, \mathbf{d}_2)$$
 
 ### 6.3 位置编码与频谱偏差
 
