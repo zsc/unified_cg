@@ -30,6 +30,24 @@ $$R_n^m(\rho) = (-1)^{(n-m)/2} \rho^m P_{(n-m)/2}^{(m,0)}(2\rho^2 - 1)$$
 
 where P_k^{(α,β)} are Jacobi polynomials. This connection reveals deeper mathematical structure and enables efficient computation using recurrence relations.
 
+**Recurrence Relations:**
+The Jacobi polynomial representation enables efficient computation via three-term recurrence:
+
+$$P_k^{(\alpha,\beta)}(x) = \frac{(2k+\alpha+\beta-1)[(2k+\alpha+\beta)(2k+\alpha+\beta-2)x + \alpha^2 - \beta^2]}{2k(k+\alpha+\beta)(2k+\alpha+\beta-2)} P_{k-1}^{(\alpha,\beta)}(x) - \frac{2(k+\alpha-1)(k+\beta-1)(2k+\alpha+\beta)}{2k(k+\alpha+\beta)(2k+\alpha+\beta-2)} P_{k-2}^{(\alpha,\beta)}(x)$$
+
+For Zernike radial polynomials with α = m, β = 0:
+
+$$R_n^m(\rho) = \frac{4(n-1)\rho^2 - 2(n+m-2)}{n-m} R_{n-2}^m(\rho) - \frac{(n+m-2)}{n-m} R_{n-4}^m(\rho)$$
+
+This recurrence relation dramatically reduces computational complexity from O(n²) to O(n) for high-order polynomials.
+
+**Generating Functions:**
+The generating function for Zernike radial polynomials provides another computational avenue:
+
+$$\sum_{n=m}^{\infty} R_n^m(\rho) t^{(n-m)/2} = \frac{\rho^m}{(1-t)^{m+1}} \cdot _2F_1\left(\frac{m+1}{2}, \frac{m+2}{2}; m+1; \frac{4\rho^2 t}{(1-t)^2}\right)$$
+
+where $_2F_1$ is the hypergeometric function. This representation connects to quantum mechanical angular momentum eigenfunctions and spherical harmonics.
+
 For normalization, we include the factor:
 $$N_n^m = \sqrt{\frac{2(n+1)}{1 + \delta_{m0}}}$$
 
@@ -37,6 +55,14 @@ making the normalized polynomials:
 $$\tilde{Z}_n^m(\rho, \theta) = N_n^m Z_n^m(\rho, \theta)$$
 
 The normalization ensures unit variance for each mode when integrated over the unit disk, crucial for comparing aberration strengths across different orders.
+
+**Connection to Other Polynomial Systems:**
+Zernike polynomials relate to other orthogonal polynomial families:
+- **Legendre polynomials**: $R_n^0(\rho) = P_{n/2}(2\rho^2 - 1)$ for m = 0
+- **Chebyshev polynomials**: Connected via Jacobi polynomial special cases
+- **Bessel functions**: Asymptotic behavior for large n follows Bessel function oscillations
+
+These connections enable leveraging existing mathematical machinery for analysis and computation.
 
 ### 17.1.2 Orthogonality Properties
 
@@ -58,12 +84,46 @@ $$\int_0^1 R_n^m(\rho) R_{n'}^m(\rho) \rho d\rho = \frac{1}{2(n+1)} \delta_{nn'}
 
 The weight function ρ in the integral arises from the Jacobian in polar coordinates and ensures proper orthogonality over the circular domain. This weight is crucial—without it, the radial polynomials would not be orthogonal. The specific form of R_n^m is carefully constructed to achieve orthogonality with respect to this measure.
 
+**Proof of Radial Orthogonality:**
+The radial orthogonality can be proven using the Rodrigues formula for Jacobi polynomials:
+
+$$P_n^{(\alpha,\beta)}(x) = \frac{(-1)^n}{2^n n!}(1-x)^{-\alpha}(1+x)^{-\beta} \frac{d^n}{dx^n}[(1-x)^{\alpha+n}(1+x)^{\beta+n}]$$
+
+Transforming to the Zernike radial polynomial domain with x = 2ρ² - 1:
+
+$$\int_0^1 R_n^m(\rho) R_{n'}^m(\rho) \rho d\rho = \frac{1}{2}\int_{-1}^1 P_{(n-m)/2}^{(m,0)}(x) P_{(n'-m)/2}^{(m,0)}(x) (1+x)^{m/2} dx$$
+
+The Jacobi polynomial orthogonality with weight $(1-x)^\alpha(1+x)^\beta$ yields the desired result.
+
+**Generalized Orthogonality Relations:**
+For annular pupils with inner radius ε:
+
+$$\int_0^{2\pi} \int_\epsilon^1 Z_n^m(\rho, \theta) Z_{n'}^{m'}(\rho, \theta) \rho d\rho d\theta = h_{nm}(\epsilon) \delta_{nn'} \delta_{mm'}$$
+
+where the normalization factor h_{nm}(ε) depends on the obscuration ratio. This modification is crucial for telescope systems with central obscurations.
+
+**Discrete Orthogonality:**
+For numerical implementation on a discrete grid of N points $(\rho_i, \theta_i)$:
+
+$$\sum_{i=1}^N Z_n^m(\rho_i, \theta_i) Z_{n'}^{m'}(\rho_i, \theta_i) w_i \approx \frac{\pi}{2n+2} \delta_{nn'} \delta_{mm'}$$
+
+where $w_i$ are quadrature weights. The Cubature rules on the disk provide optimal point distributions:
+- Gauss-Jacobi radial nodes: $\rho_j$ are roots of $P_n^{(1,0)}(2\rho^2-1)$
+- Equally spaced angular nodes: $\theta_k = 2\pi k/M$
+
 **Completeness and Parseval's Identity:**
 Any square-integrable function over the unit disk can be expanded in Zernike polynomials, with Parseval's identity guaranteeing energy conservation:
 
 $$\int_0^{2\pi} \int_0^1 |W(\rho, \theta)|^2 \rho d\rho d\theta = \sum_{n=0}^{\infty} \sum_{m=-n}^n |a_n^m|^2 \frac{\pi}{2n+2}$$
 
 This relationship enables direct computation of wavefront variance from Zernike coefficients, fundamental for aberration budgeting in optical design.
+
+**Bessel's Inequality and Convergence:**
+For any finite truncation at order N:
+
+$$\sum_{n=0}^{N} \sum_{m=-n}^n |a_n^m|^2 \frac{\pi}{2n+2} \leq \int_0^{2\pi} \int_0^1 |W(\rho, \theta)|^2 \rho d\rho d\theta$$
+
+Equality holds only in the limit N → ∞, providing a convergence criterion for truncated expansions.
 
 ### 17.1.3 Wavefront Expansion
 
@@ -77,12 +137,45 @@ $$a_n^m = \frac{2n+2}{\pi \epsilon_m} \int_0^{2\pi} \int_0^1 W(\rho, \theta) Z_n
 
 where εₘ = 2 for m = 0 and εₘ = 1 otherwise. This factor accounts for the different normalization of the m = 0 (rotationally symmetric) terms.
 
+**Matrix Formulation:**
+For a wavefront sampled at points $(\rho_i, \theta_i)$, the expansion becomes a linear system:
+
+$$\mathbf{w} = \mathbf{Z} \mathbf{a} + \boldsymbol{\epsilon}$$
+
+where:
+- $\mathbf{w} \in \mathbb{R}^M$: wavefront measurements
+- $\mathbf{Z} \in \mathbb{R}^{M \times J}$: Zernike polynomial matrix with $Z_{ij} = Z_j(\rho_i, \theta_i)$
+- $\mathbf{a} \in \mathbb{R}^J$: coefficient vector
+- $\boldsymbol{\epsilon}$: measurement noise
+
 **Efficient Coefficient Computation:**
 For measured wavefront data on a discrete grid, the coefficients can be computed using least squares:
 
 $$\mathbf{a} = (\mathbf{Z}^T \mathbf{Z})^{-1} \mathbf{Z}^T \mathbf{w}$$
 
 where **Z** is the matrix of Zernike polynomial values at measurement points, and **w** is the vector of wavefront measurements. For a regular grid with proper sampling, Z^T Z becomes nearly diagonal, simplifying inversion.
+
+**Weighted Least Squares:**
+When measurement uncertainties vary spatially, use weighted least squares:
+
+$$\mathbf{a} = (\mathbf{Z}^T \mathbf{W} \mathbf{Z})^{-1} \mathbf{Z}^T \mathbf{W} \mathbf{w}$$
+
+where $\mathbf{W} = \text{diag}(1/\sigma_i^2)$ contains inverse variances. This approach naturally handles:
+- Variable signal-to-noise across the pupil
+- Missing data (set weight to zero)
+- Non-uniform pupil illumination
+
+**Singular Value Decomposition Approach:**
+For ill-conditioned problems, use SVD regularization:
+
+$$\mathbf{Z} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^T$$
+
+$$\mathbf{a} = \sum_{i=1}^{r} \frac{\mathbf{u}_i^T \mathbf{w}}{\sigma_i} \mathbf{v}_i$$
+
+where r is the effective rank determined by:
+$$\sigma_r / \sigma_1 > \epsilon_{machine}$$
+
+This prevents noise amplification in poorly sampled modes.
 
 In practice, we truncate the expansion at some maximum order N:
 $$W(\rho, \theta) \approx \sum_{n=0}^{N} \sum_{m=-n}^n a_n^m Z_n^m(\rho, \theta)$$
@@ -94,6 +187,19 @@ For example:
 - N = 3: J = 10 terms (up to coma)
 - N = 4: J = 15 terms (includes spherical aberration)
 - N = 8: J = 45 terms (high-order aberrations)
+- N = 20: J = 231 terms (extreme adaptive optics)
+
+**Optimal Truncation Order:**
+The optimal truncation balances fitting error against noise amplification:
+
+$$N_{opt} = \arg\min_N \left[ \sigma_{fit}^2(N) + \sigma_{noise}^2(N) \right]$$
+
+where:
+- $\sigma_{fit}^2(N) \propto N^{-\alpha}$ (fitting error)
+- $\sigma_{noise}^2(N) \propto N$ (noise propagation)
+
+For Kolmogorov turbulence with measurement noise:
+$$N_{opt} \approx 2.2(D/r_0)^{0.6}(\text{SNR})^{0.3}$$
 
 **Truncation Error Analysis:**
 The RMS error from truncating at order N follows:
@@ -101,6 +207,13 @@ The RMS error from truncating at order N follows:
 $$\sigma_{truncation}^2 = \sum_{n=N+1}^{\infty} \sum_{m=-n}^n |a_n^m|^2$$
 
 For atmospheric turbulence, this error decreases as N^(-α/2) where α ≈ 11/3, providing guidance for selecting truncation order based on desired accuracy.
+
+**Modal Variance Scaling:**
+In Kolmogorov turbulence, the expected variance of each mode:
+
+$$\langle |a_n^m|^2 \rangle = A_n (D/r_0)^{5/3}$$
+
+where $A_n \propto (n+1)^{-11/3}$ for n >> 1. This power law enables prediction of high-order contributions.
 
 ### 17.1.4 Conversion Between Indices
 
