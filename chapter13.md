@@ -53,8 +53,24 @@ $$F(\boldsymbol{\omega}_i, \mathbf{h}) = F_0 + (1 - F_0)(1 - \boldsymbol{\omega}
 
 其中 $F_0 = \left(\frac{\eta - 1}{\eta + 1}\right)^2$ 为垂直入射时的反射率。
 
+**精确Fresnel方程**：
+对于非偏振光：
+$$F = \frac{1}{2}(F_s + F_p)$$
+
+其中：
+$$F_s = \left|\frac{n_1\cos\theta_i - n_2\cos\theta_t}{n_1\cos\theta_i + n_2\cos\theta_t}\right|^2$$
+$$F_p = \left|\frac{n_2\cos\theta_i - n_1\cos\theta_t}{n_2\cos\theta_i + n_1\cos\theta_t}\right|^2$$
+
+利用Snell定律 $n_1\sin\theta_i = n_2\sin\theta_t$ 可得：
+$$\cos\theta_t = \sqrt{1 - \left(\frac{n_1}{n_2}\right)^2\sin^2\theta_i}$$
+
 **GGX法线分布**：
 $$D_{GGX}(\mathbf{h}) = \frac{\alpha^2}{\pi((\mathbf{n} \cdot \mathbf{h})^2(\alpha^2 - 1) + 1)^2}$$
+
+**各向异性GGX**：
+$$D_{aniso}(\mathbf{h}) = \frac{1}{\pi\alpha_x\alpha_y} \frac{1}{\left(\frac{(\mathbf{h}\cdot\mathbf{t})^2}{\alpha_x^2} + \frac{(\mathbf{h}\cdot\mathbf{b})^2}{\alpha_y^2} + (\mathbf{h}\cdot\mathbf{n})^2\right)^2}$$
+
+其中 $\mathbf{t}$ 和 $\mathbf{b}$ 为切线和副切线方向。
 
 **Smith遮蔽函数**：
 $$G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = G_1(\boldsymbol{\omega}_i) G_1(\boldsymbol{\omega}_o)$$
@@ -62,10 +78,39 @@ $$G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = G_1(\boldsymbol{\omega}_i) G
 其中：
 $$G_1(\boldsymbol{\omega}) = \frac{2(\mathbf{n} \cdot \boldsymbol{\omega})}{(\mathbf{n} \cdot \boldsymbol{\omega}) + \sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot \boldsymbol{\omega})^2}}$$
 
+**Height-correlated Smith函数**：
+考虑入射和出射方向的相关性：
+$$G_{corr}(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{1 + \Lambda(\boldsymbol{\omega}_i) + \Lambda(\boldsymbol{\omega}_o)}$$
+
+其中：
+$$\Lambda(\boldsymbol{\omega}) = \frac{\sqrt{1 + \alpha^2\tan^2\theta} - 1}{2}$$
+
 **完整参数向量**：
 $$\boldsymbol{\theta} = [\alpha, \eta, \mathbf{k}_d, \mathbf{k}_s, \mathbf{k}_e]$$
 
 包含粗糙度、折射率、漫反射率、镜面反射率和自发光。
+
+**Disney BRDF参数化**：
+更直观的艺术家友好参数：
+- baseColor: 基础颜色
+- metallic: 金属度 $\in [0,1]$
+- roughness: 粗糙度 $\in [0,1]$
+- specular: 镜面反射强度
+- specularTint: 镜面反射染色
+- anisotropic: 各向异性 $\in [0,1]$
+- sheen: 织物光泽
+- sheenTint: 光泽染色
+- clearcoat: 清漆层
+- clearcoatGloss: 清漆光泽度
+
+参数映射：
+$$\alpha = roughness^2$$
+$$F_0 = lerp(0.08 \cdot specular, baseColor, metallic)$$
+
+**分层材质模型**：
+$$\rho_{total} = \rho_{coat} + (1 - F_{coat}) \cdot \rho_{base}$$
+
+其中 $F_{coat}$ 为清漆层的Fresnel反射率。
 
 ### 13.1.3 梯度计算
 
@@ -83,6 +128,9 @@ $$\frac{\partial \rho}{\partial \alpha} = \rho \left[ \frac{\partial \ln D}{\par
 其中：
 $$\frac{\partial \ln D_{GGX}}{\partial \alpha} = \frac{2}{\alpha} - \frac{4\alpha((\mathbf{n} \cdot \mathbf{h})^2 - 1)}{(\mathbf{n} \cdot \mathbf{h})^2(\alpha^2 - 1) + 1}$$
 
+**Smith函数对粗糙度的导数**：
+$$\frac{\partial G_1}{\partial \alpha} = -\frac{G_1^2(\boldsymbol{\omega})}{2(\mathbf{n} \cdot \boldsymbol{\omega})} \cdot \frac{\alpha}{\sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot \boldsymbol{\omega})^2}}$$
+
 **对折射率的导数**：
 $$\frac{\partial \rho}{\partial \eta} = \frac{G D}{4(\boldsymbol{\omega}_i \cdot \mathbf{n})(\boldsymbol{\omega}_o \cdot \mathbf{n})} \frac{\partial F}{\partial \eta}$$
 
@@ -90,15 +138,53 @@ $$\frac{\partial F}{\partial \eta} = \frac{\partial F_0}{\partial \eta}(1 - (1 -
 
 其中 $\frac{\partial F_0}{\partial \eta} = \frac{4}{(\eta + 1)^3}$。
 
+**对漫反射系数的导数**：
+对于包含漫反射项的完整BRDF：
+$$\rho_{total} = \frac{\mathbf{k}_d}{\pi}(1 - F) + \rho_{spec}$$
+
+梯度为：
+$$\frac{\partial \rho_{total}}{\partial \mathbf{k}_d} = \frac{1 - F}{\pi}$$
+
 **蒙特卡洛估计**：
 实际计算中使用重要性采样：
 $$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} \approx \frac{1}{N} \sum_{i=1}^N \frac{\partial \rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o)}{\partial \boldsymbol{\theta}} \frac{L_i(\boldsymbol{\omega}_i)(\boldsymbol{\omega}_i \cdot \mathbf{n})}{p(\boldsymbol{\omega}_i)}$$
+
+**方差减少技术**：
+1. **多重重要性采样**（MIS）：
+   $$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} = \sum_{k} \frac{1}{N_k} \sum_{i=1}^{N_k} w_k(\boldsymbol{\omega}_i) \frac{\partial \rho}{\partial \boldsymbol{\theta}} \frac{L_i(\boldsymbol{\omega}_i \cdot \mathbf{n})}{p_k(\boldsymbol{\omega}_i)}$$
+   
+   其中权重函数：
+   $$w_k(\boldsymbol{\omega}) = \frac{N_k p_k(\boldsymbol{\omega})}{\sum_j N_j p_j(\boldsymbol{\omega})}$$
+
+2. **控制变量**：
+   使用已知期望的辅助函数减少方差：
+   $$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} = \frac{\partial \hat{I}_{MC}}{\partial \boldsymbol{\theta}} - c(\frac{\partial \hat{I}_{CV}}{\partial \boldsymbol{\theta}} - E[\frac{\partial I_{CV}}{\partial \boldsymbol{\theta}}])$$
+
+**Hessian计算**：
+二阶导数对于优化算法的收敛性分析至关重要：
+$$\frac{\partial^2 \mathcal{L}}{\partial \boldsymbol{\theta}_i \partial \boldsymbol{\theta}_j} = 2\sum_{\mathbf{x}} \left[ \frac{\partial \hat{I}}{\partial \boldsymbol{\theta}_i} \frac{\partial \hat{I}}{\partial \boldsymbol{\theta}_j} - (I - \hat{I}) \frac{\partial^2 \hat{I}}{\partial \boldsymbol{\theta}_i \partial \boldsymbol{\theta}_j} \right]$$
+
+**自动微分**：
+使用反向模式自动微分（backpropagation）高效计算梯度：
+1. 前向传播：计算渲染值
+2. 反向传播：从损失函数反向计算梯度
+
+对于路径追踪，需要处理不连续性：
+- 使用边缘采样处理可见性变化
+- 重参数化技巧处理采样相关的导数
 
 ### 13.1.4 BSSRDF估计
 
 对于半透明材质，需要考虑次表面散射：
 
 $$L_o(\mathbf{x}_o, \boldsymbol{\omega}_o) = \int_A \int_{\Omega} S(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) L_i(\mathbf{x}_i, \boldsymbol{\omega}_i) (\boldsymbol{\omega}_i \cdot \mathbf{n}_i) d\boldsymbol{\omega}_i dA$$
+
+**完整BSSRDF分解**：
+$$S(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) = S^{(1)}(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) + S^{d}(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i)$$
+
+其中：
+- $S^{(1)}$: 单次散射项
+- $S^{d}$: 多次散射（扩散）项
 
 偶极子近似下的BSSRDF：
 $$S(\mathbf{x}_o, \mathbf{x}_i) = \frac{1}{\pi} F_t(\eta) R_d(\|\mathbf{x}_o - \mathbf{x}_i\|) F_t(\eta)$$
@@ -116,16 +202,60 @@ $$R_d(r) = \frac{\alpha'}{4\pi} \left[ \frac{z_r(1 + \sigma_{tr}d_r)e^{-\sigma_{
 - $d_r = \sqrt{r^2 + z_r^2}$，$d_v = \sqrt{r^2 + z_v^2}$ 为偶极子距离
 - $A = \frac{1 + F_{dr}}{1 - F_{dr}}$，$D = 1/(3\sigma_{tr})$ 为边界条件参数
 
+**改进的扩散模型**：
+
+1. **量化扩散**（Quantized Diffusion）：
+   处理多层材质的离散化方法：
+   $$R_d(r) = \sum_{n=0}^{\infty} R_n \exp(-\sigma_n r)$$
+   
+   其中 $R_n$ 和 $\sigma_n$ 通过求解扩散方程的特征值问题得到。
+
+2. **光子束扩散**（Photon Beam Diffusion）：
+   更准确地处理各向异性和几何边界：
+   $$R_{PBD}(r, \theta) = \int_0^{\infty} J_0(sr) \tilde{R}(s) e^{-\mu_0 s \cos\theta} s ds$$
+   
+   其中 $J_0$ 为零阶贝塞尔函数，$\tilde{R}(s)$ 为频域反射率。
+
 **参数化优化**：
 我们优化材质参数 $\boldsymbol{\phi} = [\sigma_a, \sigma_s, g, \eta]$：
 
 $$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left\| I(\mathbf{x}) - \int_A S[\boldsymbol{\phi}](\mathbf{x}, \mathbf{x}') L(\mathbf{x}') dA' \right\|^2$$
+
+**梯度计算**：
+对于扩散参数的导数：
+$$\frac{\partial R_d}{\partial \sigma_a} = R_d \left[ \frac{\partial \ln \alpha'}{\partial \sigma_a} + \sum_{i \in \{r,v\}} \frac{\partial \ln T_i}{\partial \sigma_a} \right]$$
+
+其中传输项：
+$$T_i = \frac{z_i(1 + \sigma_{tr}d_i)e^{-\sigma_{tr}d_i}}{d_i^3}$$
+
+**采样策略**：
+1. **重要性采样**：
+   根据扩散剖面采样入射点：
+   $$p(\mathbf{x}_i | \mathbf{x}_o) \propto R_d(\|\mathbf{x}_o - \mathbf{x}_i\|)$$
+   
+2. **分层采样**：
+   将采样域分为近场（$r < 3l_t$）和远场（$r \geq 3l_t$）
 
 **分层表示**：
 对于多层材质，使用分层BSSRDF：
 $$S_{total} = \sum_{k=1}^K w_k S_k(\sigma_{a,k}, \sigma_{s,k})$$
 
 其中 $w_k$ 为各层权重，满足 $\sum_k w_k = 1$。
+
+**快速近似**：
+1. **可分离近似**：
+   $$S(\mathbf{x}_o, \mathbf{x}_i) \approx S_r(\|\mathbf{x}_o - \mathbf{x}_i\|) S_{\omega}(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$$
+   
+2. **高斯和近似**：
+   $$R_d(r) \approx \sum_{i=1}^n w_i \frac{e^{-r^2/2v_i}}{2\pi v_i}$$
+   
+   其中 $w_i$ 和 $v_i$ 通过最小二乘拟合得到。
+
+**非均匀介质**：
+对于空间变化的散射参数：
+$$\nabla \cdot (D(\mathbf{x})\nabla\phi(\mathbf{x})) - \sigma_a(\mathbf{x})\phi(\mathbf{x}) + Q(\mathbf{x}) = 0$$
+
+其中 $\phi$ 为光通量密度，$Q$ 为源项。使用有限元方法（FEM）求解。
 
 ## 13.2 形状从明暗恢复
 
@@ -160,6 +290,15 @@ $$\frac{dx}{dt} = \frac{\partial H}{\partial p}, \quad \frac{dy}{dt} = \frac{\pa
 
 $$E[z] = \int_{\Omega} (I(x,y) - \rho \mathbf{n}[z] \cdot \mathbf{l})^2 dxdy + \lambda \int_{\Omega} |\nabla z|^2 dxdy$$
 
+**泛函变分推导**：
+设 $z + \epsilon h$ 为深度的扰动，其中 $h$ 为测试函数，$\epsilon \to 0$。
+
+首先计算法线的变分：
+$$\mathbf{n}[z + \epsilon h] = \frac{(-\nabla(z + \epsilon h), 1)}{\sqrt{1 + |\nabla(z + \epsilon h)|^2}}$$
+
+对 $\epsilon$ 求导并在 $\epsilon = 0$ 处计算：
+$$\frac{d\mathbf{n}}{d\epsilon}\bigg|_{\epsilon=0} = \frac{(-\nabla h, 0)}{\sqrt{1 + |\nabla z|^2}} - \frac{(-\nabla z, 1)(\nabla z \cdot \nabla h)}{(1 + |\nabla z|^2)^{3/2}}$$
+
 欧拉-拉格朗日方程：
 
 $$\frac{\partial}{\partial z}\left(\frac{(I - \rho \mathbf{n} \cdot \mathbf{l})^2}{\sqrt{1 + |\nabla z|^2}}\right) - \lambda \nabla^2 z = 0$$
@@ -171,16 +310,46 @@ $$\frac{\delta E_{data}}{\delta z} = -2(I - \rho \mathbf{n} \cdot \mathbf{l}) \r
 其中：
 $$\frac{\partial (\mathbf{n} \cdot \mathbf{l})}{\partial z} = \frac{\mathbf{l} \cdot \nabla^2 z \cdot \mathbf{n} - (\mathbf{l} \cdot \mathbf{n})(\mathbf{n} \cdot \nabla^2 z \cdot \mathbf{n})}{(1 + |\nabla z|^2)^{3/2}}$$
 
+**高阶正则化**：
+考虑曲率正则化以获得更平滑的解：
+$$E_{reg}[z] = \int_{\Omega} \left(\kappa_1^2 + \kappa_2^2\right) dxdy$$
+
+其中主曲率：
+$$\kappa_1, \kappa_2 = \frac{z_{xx} + z_{yy} \pm \sqrt{(z_{xx} - z_{yy})^2 + 4z_{xy}^2}}{2(1 + |\nabla z|^2)^{3/2}}$$
+
 **数值解法**：
 1. **固定点迭代**：
    $$z^{(k+1)} = z^{(k)} - \tau \left[ \frac{\delta E_{data}}{\delta z} + \lambda \nabla^2 z^{(k)} \right]$$
+   
+   其中步长 $\tau$ 通过线搜索确定。
 
 2. **多重网格方法**：
    从粗网格到细网格逐步求解，避免局部最小值
+   - 限制算子：$I_h^{2h}: \Omega_h \to \Omega_{2h}$
+   - 延拓算子：$I_{2h}^h: \Omega_{2h} \to \Omega_h$
+   - V-循环或W-循环迭代
 
 3. **线性化方法**：
    在每次迭代中将非线性项线性化：
    $$I \approx \rho(\mathbf{n}^{(k)} \cdot \mathbf{l}) + \rho \frac{\partial(\mathbf{n} \cdot \mathbf{l})}{\partial z}\bigg|_{z^{(k)}} (z - z^{(k)})$$
+
+4. **半隐式方案**：
+   处理非线性和刚性问题：
+   $$\frac{z^{(k+1)} - z^{(k)}}{\Delta t} = -\frac{\delta E}{\delta z}[z^{(k+1)}]_{linear} - \frac{\delta E}{\delta z}[z^{(k)}]_{nonlinear}$$
+
+**边界条件处理**：
+1. **Dirichlet条件**：$z|_{\partial\Omega} = z_0$
+2. **Neumann条件**：$\frac{\partial z}{\partial n}|_{\partial\Omega} = 0$
+3. **混合条件**：结合已知深度和法线信息
+
+**稳定性分析**：
+线性化算子的谱半径决定收敛性：
+$$\rho(L) = \max_i |\lambda_i(L)| < 1$$
+
+其中 $L$ 为迭代矩阵。CFL条件：
+$$\tau < \frac{2}{\lambda_{max}(H)}$$
+
+其中 $H$ 为Hessian矩阵。
 
 ### 13.2.3 多光源形状从明暗
 
@@ -220,6 +389,20 @@ $$\begin{bmatrix} I_1 \\ I_2 \\ \vdots \\ I_m \end{bmatrix} = \rho \begin{bmatri
 
 通过最小二乘：$\mathbf{n} = \frac{1}{\rho}(\mathbf{L}^T\mathbf{L})^{-1}\mathbf{L}^T\mathbf{I}$
 
+**鲁棒光度立体**：
+处理阴影和高光的鲁棒估计：
+1. **RANSAC方法**：
+   随机选择3个光源，估计法线，计算内点
+   
+2. **稀疏回归**：
+   $$\min_{\mathbf{n}, \mathbf{e}} \|\mathbf{I} - \rho\mathbf{L}\mathbf{n} - \mathbf{e}\|^2 + \lambda\|\mathbf{e}\|_1$$
+   
+   其中 $\mathbf{e}$ 为稀疏误差项（阴影/高光）。
+
+3. **矩阵秩最小化**：
+   $$\min_{\mathbf{N}, \mathbf{E}} rank(\mathbf{N}) + \lambda\|\mathbf{E}\|_0$$
+   s.t. $\mathbf{I} = \mathbf{N} + \mathbf{E}$
+
 **法线积分**：
 从法线场恢复深度需要满足可积性条件：
 $$\frac{\partial n_x/n_z}{\partial y} = \frac{\partial n_y/n_z}{\partial x}$$
@@ -227,18 +410,53 @@ $$\frac{\partial n_x/n_z}{\partial y} = \frac{\partial n_y/n_z}{\partial x}$$
 使用泊松方程求解：
 $$\nabla^2 z = \nabla \cdot \left( \frac{n_x}{n_z}, \frac{n_y}{n_z} \right)$$
 
+**快速傅里叶变换求解**：
+在频域中：
+$$\hat{z}(u,v) = \frac{i2\pi(u\hat{n}_x + v\hat{n}_y)/\hat{n}_z}{-4\pi^2(u^2 + v^2)}$$
+
+其中 $\hat{·}$ 表示傅里叶变换。
+
+**最小二乘积分**：
+考虑噪声的影响，最小化：
+$$E[z] = \int_{\Omega} \left[ \left(\frac{\partial z}{\partial x} + \frac{n_x}{n_z}\right)^2 + \left(\frac{\partial z}{\partial y} + \frac{n_y}{n_z}\right)^2 \right] dxdy$$
+
 **非朗伯表面的光度立体**：
 对于一般的BRDF $\rho(\mathbf{n}, \mathbf{l}, \mathbf{v})$：
 $$I_j = \rho(\mathbf{n}, \mathbf{l}_j, \mathbf{v})$$
 
-可以使用球谐函数展开：
+**球谐函数方法**：
+使用球谐函数展开：
 $$\rho(\mathbf{n}, \mathbf{l}, \mathbf{v}) \approx \sum_{l=0}^{L} \sum_{m=-l}^{l} a_{lm}(\mathbf{v}) Y_{lm}(\mathbf{n}) Y_{lm}(\mathbf{l})$$
 
 这将非线性问题转化为线性系统。
 
+对于各向同性BRDF，使用Zernike多项式：
+$$\rho(\theta_h) = \sum_{n=0}^{N} c_n P_n(\cos\theta_h)$$
+
+其中 $\theta_h$ 为半角，$P_n$ 为Legendre多项式。
+
+**双向纹理函数**（BTF）：
+考虑空间变化的BRDF：
+$$I_j(\mathbf{x}) = \rho(\mathbf{x}, \mathbf{n}(\mathbf{x}), \mathbf{l}_j, \mathbf{v})$$
+
+使用张量分解：
+$$\rho(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \approx \sum_{k=1}^{K} a_k(\mathbf{x}) b_k(\boldsymbol{\omega}_i) c_k(\boldsymbol{\omega}_o)$$
+
 **校准光度立体**：
 使用已知形状的参考物体校准光源方向：
 $$\mathbf{l}_j = \arg\min_{\|\mathbf{l}\|=1} \sum_{\mathbf{x} \in \mathcal{R}} (I_j(\mathbf{x}) - \rho_{ref} \mathbf{n}_{ref}(\mathbf{x}) \cdot \mathbf{l})^2$$
+
+**自校准方法**：
+利用可积性约束同时估计光源和法线：
+$$\min_{\mathbf{L}, \mathbf{N}} \|\mathbf{I} - \mathbf{L}\mathbf{N}\|_F^2 + \lambda \int_{\Omega} \left\|\frac{\partial \mathbf{p}}{\partial y} - \frac{\partial \mathbf{q}}{\partial x}\right\|^2 dxdy$$
+
+其中 $\mathbf{p} = n_x/n_z$，$\mathbf{q} = n_y/n_z$。
+
+**深度学习方法**：
+使用CNN直接从图像预测法线：
+$$\mathbf{n} = f_{\theta}(\{I_j\}_{j=1}^m)$$
+
+其中 $f_{\theta}$ 为神经网络，$\theta$ 为学习参数。
 
 ## 13.3 多视图立体重建中的优化
 
