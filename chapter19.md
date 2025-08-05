@@ -73,6 +73,39 @@ $$\delta \left[ \int_A^{Q_D} n ds + \int_{Q_D}^B n ds \right] = 0$$
 
 $$\hat{\mathbf{s}}^d = \sin\beta_0(\cos\phi \hat{\mathbf{n}}^i + \sin\phi \hat{\boldsymbol{\phi}}^i) + \cos\beta_0 \hat{\mathbf{t}}$$
 
+#### 边缘局部坐标系的严格定义
+
+为了精确计算衍射，必须建立明确的坐标系统。对于楔形边缘：
+
+1. **楔形几何定义**：
+   - 面0：$\phi = 0$ 的表面
+   - 面n：$\phi = n\pi$ 的表面（$n = 2\pi/\alpha - 1$）
+   - 楔形内部：$0 < \phi < n\pi$
+
+2. **标准坐标基**：
+   $$\begin{aligned}
+   \hat{\mathbf{t}} &= \text{边缘单位切向量} \\
+   \hat{\boldsymbol{\beta}}_0 &= \text{面0的外法向} \\
+   \hat{\boldsymbol{\beta}}_n &= \text{面n的外法向}
+   \end{aligned}$$
+
+3. **入射和衍射平面**：
+   - 入射平面：包含 $\hat{\mathbf{s}}^i$ 和 $\hat{\mathbf{t}}$ 的平面
+   - 衍射平面：包含 $\hat{\mathbf{s}}^d$ 和 $\hat{\mathbf{t}}$ 的平面
+   - 方位角关系：$\phi^d - \phi^i = \Delta\phi$
+
+#### 广义费马原理的应用
+
+衍射射线路径满足稳相条件：
+
+$$\frac{\partial}{\partial Q_D}\left[\Phi^i(S, Q_D) + k_0|Q_D - P|\right] = 0$$
+
+其中 $\Phi^i$ 是入射场在 $Q_D$ 点的相位。这导致：
+
+1. **路径长度极值**：衍射路径是从源点经边缘到观察点的极值路径
+2. **斯涅尔定律的推广**：入射角等于衍射角（相对于边缘）
+3. **因果性**：衍射射线沿最小时间路径传播
+
 ### 19.1.4 衍射系数的渐近形式
 
 GTD中的衍射场表示为：
@@ -97,7 +130,101 @@ $$A^d(P) = \sqrt{\frac{\rho}{s(\rho + s)}}$$
 
 其中 $\rho$ 是边缘的曲率半径（直边缘时 $\rho \to \infty$）。
 
-## 19.2 物理绕射理论（PTD/UTD）
+#### 衍射系数的物理解释
+
+衍射系数 $D$ 的结构揭示了重要的物理含义：
+
+1. **频率依赖性**：$D \propto k_0^{-1/2}$，表明衍射强度随频率增加而减弱
+2. **几何奇点**：当 $\phi = \pm\phi' + 2n\pi/N$ 时出现奇点，对应于几何光学射线方向
+3. **对称性**：$D(\phi, \phi') = D(-\phi, -\phi')$，反映了互易原理
+
+衍射系数可以分解为软边界和硬边界贡献：
+
+$$D = D_s \hat{\mathbf{e}}_s \otimes \hat{\mathbf{e}}_s + D_h \hat{\mathbf{e}}_h \otimes \hat{\mathbf{e}}_h$$
+
+其中 $\hat{\mathbf{e}}_s$ 和 $\hat{\mathbf{e}}_h$ 分别是软（TE）和硬（TM）极化的单位矢量。
+
+### 19.1.5 GTD的高阶修正
+
+标准GTD是 $k_0 \to \infty$ 的首阶渐近近似。高阶修正提供更精确的结果：
+
+$$u^d = u_0^d \left[1 + \frac{1}{ik_0}\mathcal{L}_1 + \frac{1}{(ik_0)^2}\mathcal{L}_2 + \cdots \right]$$
+
+其中 $\mathcal{L}_n$ 是 $n$ 阶微分算子，作用于振幅和相位函数。
+
+#### 曲率修正
+
+对于弯曲边缘，需要考虑边缘曲率 $\kappa(l)$ 和挠率 $\tau(l)$ 的影响：
+
+$$D_{curved} = D_{straight} \cdot \exp\left[i\int_0^s \kappa(l') \cos\beta(l') dl'\right]$$
+
+这导致额外的相位积累和振幅调制。
+
+#### 高阶衍射过程
+
+除了单次衍射，GTD框架还包括：
+
+1. **顶点衍射**：三维拐角产生的球面波
+   $$u^v \sim \frac{e^{ik_0 r}}{r} V(\hat{\mathbf{r}}, \hat{\mathbf{s}}^i)$$
+   
+   其中 $V$ 是顶点衍射系数，依赖于观察和入射方向。
+
+2. **爬行波**：沿凸曲面传播的表面波
+   $$u^{creeping} = \sum_m A_m(s) e^{i\nu_m s} e^{-\alpha_m s}$$
+   
+   其中 $\nu_m$ 是复传播常数，$\alpha_m$ 是衰减系数。
+
+3. **斜率衍射**：表面曲率不连续处的贡献
+   $$D_{slope} \sim \frac{1}{k_0} \frac{\partial n}{\partial s}\bigg|_{edge}$$
+
+### 19.1.6 GTD的适用范围与局限
+
+#### 有效性条件
+
+GTD的准确性依赖于以下条件：
+
+1. **高频条件**：$k_0 a \gg 1$，其中 $a$ 是最小几何特征尺寸
+2. **局部性条件**：衍射点附近的几何形状决定衍射场
+3. **远场条件**：观察距离 $r \gg \lambda$
+4. **避开奇点**：远离阴影边界和焦散区
+
+#### 失效区域
+
+GTD在以下区域失效，需要特殊处理：
+
+1. **阴影边界（SB）和反射边界（RB）**：
+   - 衍射系数出现奇点
+   - 场的不连续性
+   - 需要UTD过渡函数修正
+
+2. **焦散区域**：
+   - 射线汇聚导致振幅无穷大
+   - 需要复射线或波动方法
+
+3. **边缘附近**：
+   - $r < \lambda$ 时射线近似失效
+   - 需要完整波动方程求解
+
+4. **多重衍射区域**：
+   - 高阶衍射贡献可能显著
+   - 计算复杂度急剧增加
+
+#### 与其他方法的衔接
+
+为了克服GTD的局限性，常与其他方法结合：
+
+$$u_{total} = \begin{cases}
+u_{MoM} & r < \lambda \\
+u_{PO} + u_{PTD} & \lambda < r < 10\lambda \\
+u_{GTD/UTD} & r > 10\lambda
+\end{cases}$$
+
+其中：
+- MoM：矩量法（Method of Moments）
+- PO：物理光学（Physical Optics）
+- PTD：物理衍射理论（Physical Theory of Diffraction）
+
+过渡区域需要特殊的匹配技术确保场的连续性。
 
 GTD在阴影边界和反射边界附近失效，因为衍射系数包含奇点。一致性衍射理论（UTD）通过引入过渡函数修正了这些问题，使得场在所有区域都保持连续。
 
@@ -173,6 +300,86 @@ $$D_h = -D_{UTD} \cdot \text{sgn}(\text{反射角})$$
    - 曲面-边缘过渡：爬行波与衍射波的转换
 
 收敛性分析表明，对于大多数几何配置，考虑到第二阶衍射即可达到 $O(k_0^{-2})$ 的精度。
+
+#### 双重衍射的UTD公式
+
+对于两个边缘的连续衍射，总场为：
+
+$$u^{dd}(P) = u^i(Q_1) \cdot D_1 \cdot T_{12} \cdot D_2 \cdot A_{tot} \cdot e^{ik_0(s_1 + s_2)}$$
+
+其中：
+- $Q_1, Q_2$：第一和第二衍射点
+- $T_{12}$：边缘间的传输因子
+- $A_{tot}$：总的扩散因子
+
+传输因子考虑了中间路径的相位和振幅变化：
+
+$$T_{12} = \sqrt{\frac{s_1}{s_1 + s_2}} \cdot \exp\left[i\Phi_{12}\right]$$
+
+#### 多边缘系统的矩阵方法
+
+对于复杂的多边缘系统，可以使用散射矩阵方法：
+
+$$\mathbf{u}^{out} = \mathbf{S} \cdot \mathbf{u}^{in}$$
+
+其中散射矩阵元素：
+
+$$S_{ij} = \begin{cases}
+D_{ii} & i = j \text{（自衍射）} \\
+T_{ij} D_{jj} & i \neq j \text{（交叉衍射）}
+\end{cases}$$
+
+总场通过迭代求解：
+
+$$\mathbf{u} = (\mathbf{I} - \mathbf{S})^{-1} \mathbf{u}^{inc}$$
+
+### 19.2.5 UTD的数值实现考虑
+
+#### 过渡函数的高效计算
+
+UTD的计算瓶颈通常在过渡函数 $F(\xi)$ 的评估。常用方法：
+
+1. **级数展开**（小参数 $|\xi| < 2$）：
+   $$F(\xi) = \sqrt{\pi} \xi \sum_{n=0}^{\infty} \frac{(i\xi^2)^n}{n!(2n+1)}$$
+
+2. **渐近展开**（大参数 $|\xi| > 2$）：
+   $$F(\xi) \approx 1 + \sum_{n=1}^{\infty} \frac{i^n (2n-1)!!}{2^n n! \xi^{2n}}$$
+
+3. **有理函数近似**：
+   $$F(\xi) \approx \frac{P_m(\xi)}{Q_n(\xi)} + \epsilon$$
+   
+   其中 $\epsilon < 10^{-6}$ 对于适当选择的多项式阶数。
+
+#### 射线追踪的优化策略
+
+1. **空间索引**：
+   - 边缘的层次包围盒（BVH）
+   - 八叉树加速结构
+   - 距离场预计算
+
+2. **重要性采样**：
+   $$p(\phi) \propto |D(\phi)|^2 \cdot \cos(\phi - \phi_{obs})$$
+   
+   集中计算资源在对观察点贡献大的方向。
+
+3. **自适应细分**：
+   - 基于场变化率的边缘细分
+   - 视角相关的LOD系统
+   - 误差驱动的递归细化
+
+#### 边界处理的鲁棒性
+
+在阴影和反射边界附近，数值稳定性至关重要：
+
+1. **连续性测试**：
+   $$\lim_{\phi \to \phi_{SB}} u_{lit} = \lim_{\phi \to \phi_{SB}} u_{shadow}$$
+
+2. **奇点消除**：
+   使用 L'Hôpital 法则处理 $0/0$ 型不定式：
+   $$\lim_{\xi \to 0} \frac{F(\xi)}{\xi} = \sqrt{\pi}$$
+
+3. **相位展开**：
+   避免 $2\pi$ 跳变导致的不连续性，维护连续相位历史。
 
 ## 19.3 Ufimtsev的边缘波理论
 
