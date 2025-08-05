@@ -49,11 +49,52 @@ This seemingly simple extension has profound implications:
 2. **Temporal Coherence**: Neighboring time frames should produce similar radiance values
 3. **Motion Blur**: Fast motions during exposure time require integration over $\tau$
 
-For motion blur modeling, the observed color becomes:
+**Mathematical Properties of Time-Extended Fields:**
+
+The time-extended radiance field must satisfy several continuity conditions for physical plausibility:
+
+1. **Temporal Continuity**: For smooth motion, we require:
+   $$\lim_{\Delta\tau \to 0} \|\sigma(\mathbf{x}, \tau + \Delta\tau) - \sigma(\mathbf{x}, \tau)\| = 0$$
+
+2. **Spatial-Temporal Coupling**: The gradient tensor:
+   $$\nabla_{(\mathbf{x},\tau)} f = \begin{bmatrix} \nabla_\mathbf{x} f \\ \frac{\partial f}{\partial \tau} \end{bmatrix}$$
+   
+   captures how spatial and temporal variations interact.
+
+3. **Conservation Laws**: For physical scenes, density changes must respect mass conservation:
+   $$\frac{\partial \rho}{\partial \tau} + \nabla \cdot (\rho \mathbf{v}) = 0$$
+   
+   where $\rho = \sigma$ (treating density as mass density) and $\mathbf{v}$ is the velocity field.
+
+**Motion Blur Formulation:**
+
+For realistic rendering, we must account for finite exposure times. The observed radiance becomes a temporal integral:
 
 $$C_{\text{blur}}(\mathbf{r}) = \frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} C(\mathbf{r}, \tau) d\tau$$
 
-where $\Delta\tau$ is the exposure time.
+Expanding this with the volume rendering equation:
+
+$$C_{\text{blur}}(\mathbf{r}) = \frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt d\tau$$
+
+By Fubini's theorem (under appropriate integrability conditions), we can exchange the order of integration:
+
+$$C_{\text{blur}}(\mathbf{r}) = \int_{t_n}^{t_f} \left[\frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) d\tau\right] dt$$
+
+This formulation reveals that motion blur can be interpreted as rendering with time-averaged density and color fields.
+
+**Shutter Functions:**
+
+Real cameras don't have uniform exposure over time. We generalize with a shutter function $s(\tau)$:
+
+$$C_{\text{blur}}(\mathbf{r}) = \int_{\tau_0}^{\tau_0+\Delta\tau} s(\tau) C(\mathbf{r}, \tau) d\tau$$
+
+where $\int s(\tau) d\tau = 1$. Common shutter functions include:
+
+1. **Box shutter** (ideal): $s(\tau) = \frac{1}{\Delta\tau}\mathbb{1}_{[\tau_0, \tau_0+\Delta\tau]}(\tau)$
+2. **Triangular shutter**: $s(\tau) = \frac{2}{\Delta\tau}\left(1 - \frac{2|\tau - \tau_0 - \Delta\tau/2|}{\Delta\tau}\right)$
+3. **Gaussian shutter**: $s(\tau) = \frac{1}{\sqrt{2\pi}\sigma_s}\exp\left(-\frac{(\tau - \tau_0 - \Delta\tau/2)^2}{2\sigma_s^2}\right)$
+
+The choice of shutter function affects motion blur characteristics and can be learned from data or designed for artistic effect.
 
 ### 7.1.2 Discrete vs Continuous Time Modeling
 
@@ -64,15 +105,36 @@ For a sequence of $N$ time steps $\{\tau_i\}_{i=1}^N$, we can represent the radi
 
 $$\mathcal{F}_{\text{discrete}} = \{f_{\theta_i}: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}^4\}_{i=1}^N$$
 
+Each $f_{\theta_i}$ is a complete neural radiance field for time $\tau_i$. The temporal evolution is captured through the sequence of parameter sets $\{\theta_i\}$.
+
 Advantages:
 - Perfect reconstruction at sampled times
 - No temporal aliasing at discrete points
 - Independent optimization per frame
+- Can handle arbitrary temporal discontinuities
 
 Disadvantages:
 - Memory complexity: $O(N \cdot |\theta|)$
-- No intermediate frame generation
-- Temporal discontinuities possible
+- No intermediate frame generation without interpolation
+- Temporal discontinuities possible between frames
+- Redundant learning of static scene elements
+
+**Interpolation Between Discrete Fields:**
+
+For intermediate times $\tau \in [\tau_i, \tau_{i+1}]$, we need interpolation strategies:
+
+1. **Parameter Interpolation**:
+   $$\theta(\tau) = (1-\alpha)\theta_i + \alpha\theta_{i+1}, \quad \alpha = \frac{\tau - \tau_i}{\tau_{i+1} - \tau_i}$$
+   
+   This is problematic due to the non-convexity of neural network parameter space.
+
+2. **Output Interpolation**:
+   $$f(\mathbf{x}, \mathbf{d}, \tau) = (1-\alpha)f_{\theta_i}(\mathbf{x}, \mathbf{d}) + \alpha f_{\theta_{i+1}}(\mathbf{x}, \mathbf{d})$$
+   
+   More stable but can produce ghosting artifacts.
+
+3. **Latent Interpolation**:
+   Learn a shared encoder-decoder architecture where only latent codes vary with time.
 
 **Continuous Time Representation:**
 A single network that takes time as input:
@@ -82,22 +144,55 @@ $$f_\theta: \mathbb{R}^3 \times \mathbb{S}^2 \times \mathbb{R} \rightarrow \math
 The time dimension typically uses positional encoding:
 $$\gamma(\tau) = [\sin(2^0\pi\tau), \cos(2^0\pi\tau), ..., \sin(2^{L-1}\pi\tau), \cos(2^{L-1}\pi\tau)]$$
 
+**Frequency Analysis of Positional Encoding:**
+
+The choice of $L$ determines the maximum representable temporal frequency:
+$$f_{\text{max}} = 2^{L-1} \text{ cycles per unit time}$$
+
+For a sequence of duration $T$, this translates to $2^{L-1}T$ resolvable temporal features.
+
 Advantages:
 - Memory complexity: $O(|\theta|)$ (independent of sequence length)
 - Natural temporal interpolation
 - Smooth motion trajectories
+- Compact representation
 
 Disadvantages:
 - Limited temporal resolution (bounded by network capacity)
-- Potential temporal aliasing
-- Harder to fit rapid changes
+- Potential temporal aliasing for high-frequency motions
+- Harder to fit rapid changes or discontinuities
+- Global coupling of all time instants
 
 **Hybrid Approaches:**
-Combine benefits by using time-conditioned hypernetworks:
 
-$$f_\theta(\mathbf{x}, \mathbf{d}, \tau) = g_{\phi(\tau)}(\mathbf{x}, \mathbf{d})$$
+1. **Time-Conditioned Hypernetworks:**
+   $$f_\theta(\mathbf{x}, \mathbf{d}, \tau) = g_{\phi(\tau)}(\mathbf{x}, \mathbf{d})$$
+   
+   where $\phi: \mathbb{R} \rightarrow \mathbb{R}^{|\theta_g|}$ generates parameters for the main network $g$.
 
-where $\phi(\tau)$ generates time-specific network parameters.
+2. **Mixture of Experts:**
+   $$f(\mathbf{x}, \mathbf{d}, \tau) = \sum_{k=1}^K w_k(\tau) f_{\theta_k}(\mathbf{x}, \mathbf{d})$$
+   
+   where $w_k(\tau)$ are time-dependent gating functions with $\sum_k w_k(\tau) = 1$.
+
+3. **Hierarchical Time Modeling:**
+   $$f(\mathbf{x}, \mathbf{d}, \tau) = f_{\text{coarse}}(\mathbf{x}, \mathbf{d}, \lfloor\tau\rfloor) + f_{\text{fine}}(\mathbf{x}, \mathbf{d}, \tau)$$
+   
+   Coarse network handles low-frequency changes, fine network captures details.
+
+**Memory-Computation Tradeoffs:**
+
+Let $M$ be memory budget, $C$ be computation per query, and $Q$ be reconstruction quality:
+
+- Discrete: $M = O(N|\theta|)$, $C = O(|\theta|)$, $Q = $ perfect at $\{\tau_i\}$
+- Continuous: $M = O(|\theta|)$, $C = O(|\theta|)$, $Q = $ limited by network capacity
+- Hybrid: $M = O(K|\theta|)$, $C = O(K|\theta|)$, $Q = $ adaptive
+
+The optimal choice depends on:
+- Sequence length $N$
+- Motion complexity
+- Available memory
+- Real-time requirements
 
 ### 7.1.3 Temporal Basis Functions
 
@@ -109,6 +204,14 @@ $$\mathbf{c}(\mathbf{x}, \mathbf{d}, \tau) = \sum_{k=1}^K \mathbf{c}_k(\mathbf{x
 
 This separable representation reduces the problem to learning $K$ spatial fields and temporal basis functions.
 
+**Mathematical Foundation:**
+
+The decomposition can be viewed as a tensor factorization. Let $\mathcal{T} \in \mathbb{R}^{X \times Y \times Z \times T}$ be the 4D radiance tensor. We approximate:
+
+$$\mathcal{T} \approx \sum_{k=1}^K \mathbf{S}_k \otimes \boldsymbol{\phi}_k$$
+
+where $\mathbf{S}_k \in \mathbb{R}^{X \times Y \times Z}$ are spatial components and $\boldsymbol{\phi}_k \in \mathbb{R}^T$ are temporal components.
+
 **Common Basis Function Choices:**
 
 1. **Fourier Basis** (for periodic motions):
@@ -119,39 +222,75 @@ This separable representation reduces the problem to learning $K$ spatial fields
    
    Properties:
    - Global support (affects entire timeline)
-   - Orthogonal basis
+   - Orthogonal basis: $\langle\phi_i, \phi_j\rangle = \delta_{ij}$
    - Natural for cyclic motions
    - Spectral interpretation via FFT
+   - Parseval's theorem: $\|\mathbf{f}\|^2 = \sum_k |c_k|^2$
+   
+   **Truncation Error Analysis:**
+   For a function with bounded variation $V(f) < \infty$, the truncation error:
+   $$\|f - f_K\| \leq \frac{V(f)}{\pi K}$$
 
 2. **B-spline Basis** (for local control):
    $$\phi_k(\tau) = B_n\left(\frac{\tau - \tau_k}{\Delta\tau}\right)$$
    
-   where $B_n$ is the $n$-th order B-spline kernel.
+   where $B_n$ is the $n$-th order B-spline kernel defined recursively:
+   $$B_0(t) = \begin{cases} 1 & |t| < 0.5 \\ 0 & \text{otherwise} \end{cases}$$
+   $$B_n(t) = \int_{-0.5}^{0.5} B_{n-1}(t-s) ds$$
    
    Properties:
    - Compact support: $\phi_k(\tau) = 0$ for $|\tau - \tau_k| > n\Delta\tau/2$
    - $C^{n-1}$ continuity
+   - Partition of unity: $\sum_k \phi_k(\tau) = 1$
    - Local editing capability
-   - Efficient evaluation
+   - Efficient evaluation via Cox-de Boor formula
 
-3. **Learned Basis** (data-driven):
+3. **Wavelet Basis** (multi-resolution):
+   $$\phi_{j,k}(\tau) = 2^{j/2}\psi(2^j\tau - k)$$
+   
+   where $\psi$ is the mother wavelet (e.g., Daubechies, Meyer).
+   
+   Properties:
+   - Multi-resolution analysis
+   - Localized in both time and frequency
+   - Efficient compression of transient features
+   - Fast wavelet transform: $O(T)$
+
+4. **Learned Basis** (data-driven):
    $$\phi_k(\tau) = \text{softmax}(\text{MLP}_k(\gamma(\tau)))_k$$
    
    Properties:
    - Adapts to data distribution
    - Can capture complex temporal patterns
-   - Requires careful regularization
+   - Requires regularization for smoothness:
+     $$\mathcal{L}_{\text{smooth}} = \sum_k \int \left\|\frac{d^2\phi_k}{d\tau^2}\right\|^2 d\tau$$
 
 **Optimal Basis Selection:**
+
 The choice depends on the expected motion characteristics:
 - Periodic scenes → Fourier basis
-- Localized changes → B-splines
+- Localized changes → B-splines or wavelets
+- Multi-scale dynamics → Wavelets
 - Complex, non-periodic → Learned basis
 
-The truncation parameter $K$ controls the temporal bandwidth:
-$$K \approx 2 \cdot f_{\text{max}} \cdot T$$
+**Basis Truncation Analysis:**
+
+The truncation parameter $K$ controls the temporal bandwidth. By the sampling theorem:
+$$K \geq 2 \cdot f_{\text{max}} \cdot T$$
 
 where $f_{\text{max}}$ is the maximum motion frequency and $T$ is the sequence duration.
+
+**Compression Ratio:**
+$$\text{CR} = \frac{\text{Original Size}}{\text{Compressed Size}} = \frac{XYZ \cdot T}{K(XYZ + T)}$$
+
+For $T \gg K$, we achieve approximately $T/K$ compression.
+
+**Adaptive Basis Selection:**
+
+We can adaptively choose $K$ based on reconstruction error:
+$$K^* = \arg\min_K \left\{\|f - f_K\|^2 + \lambda K\right\}$$
+
+where $\lambda$ controls the sparsity-accuracy tradeoff.
 
 ### 7.1.4 Frequency Analysis of Temporal Changes
 
@@ -164,11 +303,27 @@ $$f_{\text{sample}} \geq 2 f_{\text{max}}$$
 
 where $f_{\text{max}}$ is the maximum frequency of scene changes.
 
+**Temporal Frequency Spectrum:**
+
+For a time-varying radiance field $f(\mathbf{x}, \tau)$, the temporal Fourier transform at each spatial location:
+
+$$\hat{f}(\mathbf{x}, \omega) = \int_{-\infty}^{\infty} f(\mathbf{x}, \tau) e^{-i\omega\tau} d\tau$$
+
+The power spectral density:
+$$S(\mathbf{x}, \omega) = |\hat{f}(\mathbf{x}, \omega)|^2$$
+
+reveals the frequency content of motion at each point.
+
 **Motion-Specific Analysis:**
 
 1. **Periodic Motion** (e.g., rotating objects):
    For motion with angular frequency $\omega$:
    $$\mathbf{x}(\tau) = \mathbf{R}(\omega\tau)\mathbf{x}_0$$
+   
+   The radiance field becomes:
+   $$f(\mathbf{x}, \tau) = f_0(\mathbf{R}^T(\omega\tau)\mathbf{x})$$
+   
+   Frequency content: Single spike at $\omega/2\pi$ Hz
    
    Minimum samples per period:
    $$N_{\text{min}} = \frac{4\pi}{\omega \Delta\tau} \geq 4$$
@@ -176,16 +331,45 @@ where $f_{\text{max}}$ is the maximum frequency of scene changes.
 2. **Linear Motion** (constant velocity $\mathbf{v}$):
    $$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}\tau$$
    
-   Frequency content depends on observation window:
-   $$f_{\text{max}} \approx \frac{\|\mathbf{v}\|}{2\lambda_{\text{min}}}$$
+   The space-time gradient:
+   $$\frac{\partial f}{\partial \tau} = -\mathbf{v} \cdot \nabla f$$
    
-   where $\lambda_{\text{min}}$ is the smallest spatial feature size.
+   Frequency content depends on spatial frequencies:
+   $$\omega_{\text{max}} = \|\mathbf{v}\| \cdot k_{\text{max}}$$
+   
+   where $k_{\text{max}} = 2\pi/\lambda_{\text{min}}$ is the maximum spatial frequency.
 
 3. **Accelerated Motion**:
    $$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}_0\tau + \frac{1}{2}\mathbf{a}\tau^2$$
    
-   Instantaneous frequency:
-   $$f(\tau) = \frac{\|\mathbf{v}_0 + \mathbf{a}\tau\|}{2\pi\lambda_{\text{min}}}$$
+   Instantaneous frequency (via stationary phase approximation):
+   $$\omega(\tau) = (\mathbf{v}_0 + \mathbf{a}\tau) \cdot \mathbf{k}$$
+   
+   Chirp-like behavior requires time-frequency analysis.
+
+4. **Deformable Motion**:
+   For general deformation $\mathbf{W}(\mathbf{x}, \tau)$:
+   $$\omega_{\text{local}}(\mathbf{x}) = \left\|\frac{\partial \mathbf{W}}{\partial \tau}\right\| \cdot \|\nabla f\|$$
+
+**Aliasing Analysis:**
+
+Aliasing occurs when $f_{\text{motion}} > f_{\text{Nyquist}} = f_{\text{sample}}/2$.
+
+**Aliased Frequency Mapping:**
+$$f_{\text{alias}} = |f_{\text{true}} - n \cdot f_{\text{sample}}|$$
+
+where $n = \text{round}(f_{\text{true}}/f_{\text{sample}})$.
+
+**Pre-aliasing Filter Design:**
+
+To prevent aliasing, apply a low-pass filter before sampling:
+$$H(\omega) = \begin{cases}
+1 & |\omega| < \omega_c \\
+\cos^2\left(\frac{\pi(|\omega| - \omega_c)}{2(\omega_s - \omega_c)}\right) & \omega_c \leq |\omega| \leq \omega_s \\
+0 & |\omega| > \omega_s
+\end{cases}$$
+
+where $\omega_c = 0.8 \cdot \pi f_{\text{sample}}$ and $\omega_s = \pi f_{\text{sample}}$.
 
 **Practical Sampling Strategy:**
 
@@ -201,9 +385,26 @@ $$f_{\text{effective}} = \min(f_{\text{motion}}, f_{\text{neural}})$$
 
 **Anti-aliasing Strategies:**
 
-1. **Temporal Supersampling**: Sample at $kf_{\text{sample}}$ and average
-2. **Motion Blur Integration**: Explicitly model exposure time
-3. **Adaptive Sampling**: Increase samples in high-motion regions
+1. **Temporal Supersampling**: 
+   $$f'(\tau) = \frac{1}{K}\sum_{k=0}^{K-1} f\left(\tau + \frac{k}{K}\Delta\tau\right)$$
+
+2. **Motion-Adaptive Sampling**:
+   $$\Delta\tau_{\text{local}} = \frac{C}{\|\partial \mathbf{W}/\partial \tau\|_{\text{max}}}$$
+   
+   where $C$ is a user-defined constant.
+
+3. **Frequency-Domain Filtering**:
+   Apply band-limiting in Fourier domain before reconstruction.
+
+**Temporal Resolution Requirements:**
+
+| Motion Type | Typical Frequency | Required FPS |
+|------------|------------------|--------------|
+| Human walking | 1-2 Hz | 4-8 |
+| Running | 3-4 Hz | 8-16 |
+| Hand gestures | 5-10 Hz | 20-40 |
+| Fast sports | 10-20 Hz | 40-80 |
+| Vibrations | 20-100 Hz | 80-400 |
 
 ## 7.2 Deformation Field Modeling
 
