@@ -27,6 +27,24 @@ d/ds(n d**r**/ds) = ∇n
 
 This reduces to straight lines when n is constant.
 
+**Connection to Wave Optics**: The geometric optics approximation emerges from the WKB (Wentzel-Kramers-Brillouin) approximation of the wave equation. When we substitute ψ = A exp(ikS) into the Helmholtz equation and take k → ∞:
+
+∇²ψ + k²n²ψ = 0 → (∇S)² = n² (eikonal equation)
+
+The surfaces of constant phase S = const are wavefronts, and rays are orthogonal trajectories to these wavefronts. This connection becomes crucial when we extend to wave optics in later chapters.
+
+**Ray Optics Validity**: The geometric optics approximation breaks down when:
+1. Feature size ~ wavelength (diffraction becomes significant)
+2. Near caustics where ray density → ∞
+3. In the presence of sharp edges or discontinuities
+4. For coherent phenomena requiring phase information
+
+**Fermat's Principle**: Rays follow paths of stationary optical path length:
+
+δ∫ n(**r**) ds = 0
+
+This variational principle unifies ray behavior: straight lines in homogeneous media, Snell's law at interfaces, and curved paths in gradient-index media. It also connects to the principle of least action in physics and the geodesic equation in differential geometry.
+
 ### Radiometric Quantities
 
 Before deriving the rendering equation, we must establish our radiometric framework. These quantities form a hierarchy, each building upon the previous:
@@ -56,6 +74,22 @@ Radiance is the fundamental quantity in rendering because:
 2. It's what cameras and eyes measure
 3. All other radiometric quantities can be derived from it
 
+**Photometric vs Radiometric Quantities**: While we focus on radiometric quantities (physical energy), rendering for human perception often uses photometric quantities:
+- Luminous flux [lm] = Radiant flux [W] × luminous efficacy
+- Luminance [cd/m²] = Radiance × photopic response V(λ)
+- The CIE luminosity function V(λ) peaks at 555 nm (green)
+
+**Spectral Radiance**: In reality, radiance varies with wavelength:
+L(x, ω, λ) [W/(m²·sr·nm)]
+
+For rendering, we typically use:
+- RGB approximation: 3 samples of the spectrum
+- Spectral rendering: N wavelength samples (typ. 10-100)
+- Hero wavelengths: Stochastic sampling of spectrum
+
+**Coherent vs Incoherent Addition**: Radiometry assumes incoherent light—intensities add directly. For coherent sources (lasers), we must track phase and add complex amplitudes:
+I_total = |E₁ + E₂|² ≠ |E₁|² + |E₂|² (in general)
+
 ### The Rendering Equation
 
 The rendering equation, introduced by Kajiya (1986), describes the equilibrium distribution of light in a scene. It emerges from power balance: at any surface point, outgoing power equals emitted plus reflected power.
@@ -81,11 +115,27 @@ Energy conservation constrains the BRDF. The directional-hemispherical reflectan
 
 Equality holds for lossless surfaces. The white furnace test verifies energy conservation: in a uniformly lit environment (L_i = L_0), a closed surface should neither gain nor lose energy.
 
-The measurement equation connects scene radiance to sensor response:
+**Detailed Energy Balance**: For a surface element dA, conservation requires:
+
+∫_Ω L_o(**x**, **ω**) cos θ dω dA = L_e dA + ∫_Ω L_i(**x**, **ω**) cos θ dω dA
+
+In a closed system at thermal equilibrium, Kirchhoff's law relates emissivity to absorptivity:
+ε(λ, θ) = α(λ, θ) = 1 - ρ(λ, θ)
+
+**The Measurement Equation**: The measurement equation connects scene radiance to sensor response:
 
 I_j = ∫_A ∫_Ω W_j(**x**, **ω**) L(**x**, **ω**) cos θ dω dA
 
 where W_j(**x**, **ω**) is the importance (sensitivity) function for pixel j. This duality between radiance and importance enables bidirectional algorithms.
+
+**Importance Transport**: Importance satisfies an adjoint equation:
+
+W(**x**, **ω**) = W_e(**x**, **ω**) + ∫_Ω f_r(**x**, **ω**, **ω**') W(**x**, **ω**') cos θ' dω'
+
+This symmetry leads to:
+- Bidirectional path tracing
+- Photon mapping (forward light, backward importance)
+- Adjoint methods for gradient computation
 
 For a pinhole camera with pixel j subtending solid angle Ω_j from the pinhole:
 
@@ -94,6 +144,12 @@ I_j = ∫_{Ω_j} L(**x**_lens, **ω**) cos⁴ θ dω
 The cos⁴ θ term accounts for:
 - cos θ: projected lens area
 - cos³ θ: inverse square falloff and pixel foreshortening
+
+**Finite Aperture Cameras**: For realistic cameras with aperture A_lens:
+
+I_j = (1/A_lens) ∫_{A_lens} ∫_{A_pixel} L(**x**_lens → **x**_pixel) G(**x**_lens ↔ **x**_pixel) dA_pixel dA_lens
+
+This leads to depth of field effects and requires careful sampling strategies.
 
 ### Operator Form and Neumann Series
 
@@ -133,6 +189,21 @@ with:
 - ||**x** - **x**'||²: squared distance for inverse square falloff
 
 This form emphasizes that light transport couples all surface points, leading to the path integral formulation.
+
+**Visibility Complexity**: The visibility function V(**x** ↔ **x**') makes the rendering equation non-linear and non-local:
+- Discontinuous: Creates hard shadows and occlusion boundaries
+- Expensive to evaluate: Requires ray-scene intersection
+- Couples all geometry: Changes anywhere affect visibility everywhere
+
+**Kernel Properties**: The transport kernel K(**x**'' → **x**) = f_r G V has important properties:
+- Singular along **x** = **x**'' (requires careful regularization)
+- Discontinuous at occlusion boundaries
+- Satisfies reciprocity: K(**x** → **x**') = K(**x**' → **x**)
+
+**Connection to Heat Equation**: Without visibility, the rendering equation resembles the heat equation with a non-local kernel. This analogy helps understand:
+- Smoothing properties of multiple scattering
+- Diffusion approximation for optically thick media
+- Finite element and multigrid solution methods
 
 ## 1.2 Coordinate Systems and Transformations
 
@@ -205,6 +276,21 @@ For orthonormal tangent frames {**t**, **b**, **n**}:
 - Forward: transform **t** and **b**, then **n** = **t** × **b**
 - Or transform **n** as above, then reconstruct frame
 
+**Area and Volume Elements**: Under transformation **M**, differential elements scale as:
+- Length: dl' = ||**M****v**|| dl (for direction **v**)
+- Area: dA' = |det(**M**)| ||(**M**^{-T})**n**|| dA
+- Volume: dV' = |det(**M**)| dV
+
+**Non-uniform Scaling Issues**: Non-uniform scaling breaks isotropy:
+- Spheres → ellipsoids
+- Isotropic BRDFs → anisotropic BRDFs
+- Care needed for physically-based materials
+
+**Handedness Preservation**: When det(**M**) < 0, the transformation flips orientation:
+- Right-handed → left-handed coordinate system
+- Normal directions must be flipped
+- Critical for consistent front/back face determination
+
 ### Spherical and Solid Angle Parameterizations
 
 Spherical coordinates provide natural parameterization for directions:
@@ -246,6 +332,11 @@ where G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**
 **Hemisphere to disk** (for cosine-weighted sampling):
 Map (θ, φ) → (r, φ) where r = sin θ
 Then p(r, φ) = p(θ, φ) |∂(θ, φ)/∂(r, φ)| = p(θ, φ) / cos θ
+
+**Measure Theory Foundation**: The change of variables formula has measure-theoretic underpinnings:
+- Pushforward measure: μ'(A) = μ(f^{-1}(A))
+- Radon-Nikodym derivative gives the Jacobian
+- Critical for understanding Monte Carlo convergence
 
 ### Projective Transformations and Perspective
 
@@ -296,6 +387,28 @@ At each surface point, we construct a local frame for shading calculations:
 - **t**: tangent (often ∂**p**/∂u normalized)
 - **b**: bitangent (**n** × **t**)
 
+**First Fundamental Form**: The metric tensor describes local surface geometry:
+**I** = [E F]
+      [F G]
+
+where:
+- E = ∂**p**/∂u · ∂**p**/∂u
+- F = ∂**p**/∂u · ∂**p**/∂v
+- G = ∂**p**/∂v · ∂**p**/∂v
+
+Arc length: ds² = E du² + 2F du dv + G dv²
+Area element: dA = √(EG - F²) du dv
+
+**Second Fundamental Form**: Describes surface curvature:
+**II** = [e f]
+       [f g]
+
+where e = **n** · ∂²**p**/∂u², etc.
+
+Principal curvatures κ₁, κ₂ are eigenvalues of **II****I**^{-1}
+- Mean curvature: H = (κ₁ + κ₂)/2
+- Gaussian curvature: K = κ₁κ₂
+
 **Transformation to/from world space**:
 [**t**_world]   [t_x t_y t_z] [**t**_local]
 [**b**_world] = [b_x b_y b_z] [**b**_local]
@@ -307,6 +420,11 @@ This orthonormal matrix can be inverted by transpose.
 Many BRDFs depend on angle relative to tangent:
 - φ_h: azimuthal angle of half-vector in tangent space
 - Enables modeling of brushed metals, fabrics, hair
+
+**Parallel Transport**: When tracing rays on surfaces, tangent frames must be parallel transported:
+- Maintains orientation consistency
+- Preserves anisotropic appearance
+- Related to geometric phase in optics
 
 ## 1.3 BRDF, BSDF, and BSSRDF
 
