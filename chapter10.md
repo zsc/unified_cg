@@ -42,6 +42,44 @@ $$K_h(\mathbf{x}) = \frac{1}{(2\pi h^2)^{3/2}} \exp\left(-\frac{\|\mathbf{x}\|^2
 
 3D高斯溅射可视为各向异性KDE的推广，其中每个点具有独立的带宽矩阵。
 
+**数学基础：从狄拉克测度到高斯测度**
+
+从测度论角度，δ函数定义了点质量测度：
+$$\mu_{\delta} = \sum_{i=1}^{N} \alpha_i \delta_{\mathbf{x}_i}$$
+
+其中$\delta_{\mathbf{x}_i}$是集中在$\mathbf{x}_i$的狄拉克测度。对任意可测集$A$：
+$$\mu_{\delta}(A) = \sum_{i: \mathbf{x}_i \in A} \alpha_i$$
+
+高斯溅射将其推广为绝对连续测度：
+$$\mu_{G} = \sum_{i=1}^{N} \alpha_i \mu_{G_i}$$
+
+其中$\mu_{G_i}$是高斯测度，具有密度：
+$$\frac{d\mu_{G_i}}{d\lambda}(\mathbf{x}) = G_i(\mathbf{x})$$
+
+这里$\lambda$是Lebesgue测度。
+
+**逼近理论视角**
+
+考虑函数空间$L^2(\mathbb{R}^3)$，高斯函数族构成了一个逼近系统。对于紧支撑的连续函数$f$，存在高斯混合：
+$$f_N(\mathbf{x}) = \sum_{i=1}^{N} c_i G_{\sigma_i}(\mathbf{x} - \mathbf{x}_i)$$
+
+使得$\|f - f_N\|_{L^2} \to 0$当$N \to \infty$且$\max_i \sigma_i \to 0$。
+
+**Stone-Weierstrass定理的应用**：高斯函数的线性组合在紧集上稠密，这保证了足够多的高斯可以逼近任意连续场景表示。
+
+**优化理论联系**
+
+从变分角度，3D高斯溅射解决如下优化问题：
+$$\min_{\{\mathbf{x}_i, \mathbf{\Sigma}_i, \alpha_i, \mathbf{c}_i\}} \sum_{j} \|I_j - \mathcal{R}(\rho, \mathbf{c}; \mathbf{P}_j)\|^2 + \mathcal{R}_{reg}$$
+
+其中：
+- $I_j$是观测图像
+- $\mathcal{R}$是渲染算子
+- $\mathbf{P}_j$是相机参数
+- $\mathcal{R}_{reg}$是正则化项
+
+这个非凸优化问题的关键在于高斯参数化使得局部梯度计算变得高效且稳定。
+
 ### 10.1.2 高斯基函数的数学性质
 
 3D高斯函数定义为：
@@ -87,6 +125,43 @@ $$G_i(\mathbf{x}) = \frac{1}{(2\pi)^{3/2}|\mathbf{\Sigma}_i|^{1/2}} \exp\left(-\
 **数值考虑**：
 - 当$\|\mathbf{x} - \mathbf{\mu}\| > 3\sqrt{\lambda_{max}(\mathbf{\Sigma})}$时，高斯值小于$0.01 \times$峰值
 - 可以安全地将高斯截断在$3\sigma$范围内，误差$< 0.3\%$
+
+**高级性质**：
+
+8. **Hermite多项式展开**：高斯函数可以通过Hermite多项式展开：
+   $$\mathbf{x}^{\boldsymbol{\alpha}} G(\mathbf{x}) = \sum_{\boldsymbol{\beta}} c_{\boldsymbol{\alpha}\boldsymbol{\beta}} H_{\boldsymbol{\beta}}(\mathbf{\Sigma}^{-1/2}\mathbf{x}) G(\mathbf{x})$$
+   
+   其中$H_{\boldsymbol{\beta}}$是多维Hermite多项式，$\boldsymbol{\alpha}, \boldsymbol{\beta}$是多重指标。
+
+9. **Wick定理**：高斯随机变量的高阶矩可以通过二阶矩表示：
+   $$\mathbb{E}[x_{i_1}x_{i_2}...x_{i_{2n}}] = \sum_{\text{pairings}} \prod_{\text{pairs}} \mathbb{E}[x_{i_k}x_{i_l}]$$
+   
+   奇数阶矩为零（对于零均值高斯）。
+
+10. **Isserlis定理**：对于多维高斯积分：
+    $$\int_{\mathbb{R}^n} x_{i_1}...x_{i_k} \exp\left(-\frac{1}{2}\mathbf{x}^T\mathbf{A}\mathbf{x}\right) d\mathbf{x} = \begin{cases}
+    0 & \text{if } k \text{ is odd} \\
+    \frac{(2\pi)^{n/2}}{|\mathbf{A}|^{1/2}} \sum_{\text{pairings}} \prod (\mathbf{A}^{-1})_{i_j i_k} & \text{if } k \text{ is even}
+    \end{cases}$$
+
+11. **Cameron-Martin定理**：描述高斯测度在平移下的绝对连续性。对于无限维情况特别重要。
+
+12. **热核联系**：高斯函数是热方程的基本解：
+    $$\frac{\partial u}{\partial t} = \frac{1}{2}\Delta u$$
+    
+    解为$u(\mathbf{x}, t) = (G_{\sqrt{t}} * u_0)(\mathbf{x})$，其中$G_{\sqrt{t}}$是方差为$t\mathbf{I}$的高斯。
+
+**计算技巧**：
+
+1. **对数域计算**：为避免数值下溢，在对数域计算：
+   $$\log G(\mathbf{x}) = -\frac{3}{2}\log(2\pi) - \frac{1}{2}\log|\mathbf{\Sigma}| - \frac{1}{2}\mathbf{d}^T\mathbf{\Sigma}^{-1}\mathbf{d}$$
+
+2. **Cholesky分解加速**：设$\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T$，则：
+   $$\mathbf{d}^T\mathbf{\Sigma}^{-1}\mathbf{d} = \|\mathbf{L}^{-1}\mathbf{d}\|^2$$
+   
+   避免显式计算逆矩阵。
+
+3. **批量计算优化**：对多个点同时计算，利用SIMD指令和矩阵运算库。
 
 ### 10.1.3 高斯混合模型的概率解释
 
@@ -169,6 +244,45 @@ $$\sigma_{coarse}(\mathbf{x}) = \sum_{j} \beta_j G_j^{coarse}(\mathbf{x})$$
 - 避免了MLP的重复计算
 - 更容易并行化
 
+**高斯溅射的特殊形式**：
+
+在实际实现中，3D高斯溅射采用了一种特殊的近似形式。不是沿射线积分，而是：
+
+1. **投影到2D**：将3D高斯投影为2D高斯
+2. **深度排序**：按深度对高斯排序
+3. **α-blending**：使用标准的透明度合成
+
+这等价于假设每个高斯是一个薄片，而不是体积分布。
+
+**数学推导：从体积到表面**
+
+考虑沿射线方向的高斯分布。如果高斯在深度方向上非常窄（$\sigma_z \to 0$），则：
+$$\int_{-\infty}^{\infty} G(\mathbf{r}(t)) dt \approx G_{2D}(\mathbf{r}_{\perp}) \cdot \sqrt{2\pi\sigma_z^2}$$
+
+其中$\mathbf{r}_{\perp}$是射线在高斯中心处的横向位置。
+
+当我们让$\alpha_i' = \alpha_i \sqrt{2\pi\sigma_{z,i}^2}$时，体积渲染简化为表面渲染。
+
+**误差分析**：
+
+薄片近似的误差主要来自：
+1. **深度方向的重叠**：当高斯在深度方向重叠时
+2. **透视畸变**：远离高斯中心的区域
+3. **离散化误差**：有限的采样密度
+
+误差界：
+$$|L_{exact} - L_{approx}| \leq C \cdot \max_i(\sigma_{z,i}/d_i) \cdot \sum_i \alpha_i$$
+
+其中$d_i$是高斯到相机的距离，$C$是常数。
+
+**统一框架的意义**：
+
+3D高斯溅射展示了如何在统一体积渲染框架内，通过特定的近似和优化，实现高效的实时渲染。这种方法的成功证明了：
+
+1. **理论与实践的平衡**：不必完全遵循理论模型，合理的近似可以带来巨大的性能提升
+2. **表示的重要性**：选择合适的基函数（高斯）可以简化计算
+3. **硬件友好性**：设计算法时考虑GPU架构的特点
+
 ## 10.2 各向异性核与协方差
 
 ### 10.2.1 3D高斯的参数化
@@ -201,6 +315,41 @@ $$\mathbf{c}(\mathbf{d}) = \sum_{l=0}^{L} \sum_{m=-l}^{l} c_{lm} Y_l^m(\mathbf{d
 - $L=1$：线性变化（4个系数）
 - $L=2$：二次变化（9个系数）
 - $L=3$：三次变化（16个系数）
+
+**球谐函数的显式形式**：
+
+前几阶球谐函数：
+- $Y_0^0 = \frac{1}{2\sqrt{\pi}}$
+- $Y_1^{-1} = \sqrt{\frac{3}{4\pi}} \frac{y}{r}$, $Y_1^0 = \sqrt{\frac{3}{4\pi}} \frac{z}{r}$, $Y_1^1 = \sqrt{\frac{3}{4\pi}} \frac{x}{r}$
+- $Y_2^0 = \sqrt{\frac{5}{16\pi}} (3\cos^2\theta - 1)$
+
+其中$(r, \theta, \phi)$是球坐标。
+
+**球谐系数的旋转变换**：
+
+当视角方向旋转时，球谐系数按照Wigner D矩阵变换：
+$$c'_{lm} = \sum_{m'} D^l_{mm'}(\mathbf{R}) c_{lm'}$$
+
+其中$\mathbf{R}$是旋转矩阵。
+
+**参数空间的流形结构**：
+
+协方差矩阵的参数空间形成一个6维流形$\mathcal{M} = \{\mathbf{\Sigma} \in \mathbb{R}^{3 \times 3} : \mathbf{\Sigma} = \mathbf{\Sigma}^T, \mathbf{\Sigma} \succ 0\}$。
+
+这个流形具有：
+- **黎曼度量**：$ds^2 = \text{tr}(\mathbf{\Sigma}^{-1}d\mathbf{\Sigma}\mathbf{\Sigma}^{-1}d\mathbf{\Sigma})$
+- **自然梯度**：$\nabla_{\mathbf{\Sigma}} f = \mathbf{\Sigma} \frac{\partial f}{\partial \mathbf{\Sigma}} \mathbf{\Sigma}$
+- **测地线**：连接两个协方差矩阵的最短路径
+
+**信息几何视角**：
+
+协方差矩阵的Fisher信息矩阵：
+$$I_{ij} = \mathbb{E}\left[\frac{\partial \log p(\mathbf{x}; \mathbf{\Sigma})}{\partial \Sigma_{ij}} \frac{\partial \log p(\mathbf{x}; \mathbf{\Sigma})}{\partial \Sigma_{kl}}\right]$$
+
+对于高斯分布：
+$$I(\mathbf{\Sigma})_{ij,kl} = \frac{1}{2}\text{tr}(\mathbf{\Sigma}^{-1}E_{ij}\mathbf{\Sigma}^{-1}E_{kl})$$
+
+其中$E_{ij}$是基本矩阵。
 
 ### 10.2.2 协方差矩阵的几何意义
 
@@ -244,6 +393,50 @@ $$\text{anisotropy} = 1 - \frac{\lambda_{min}}{\lambda_{max}}$$
 $$\kappa(\mathbf{\Sigma}) = \frac{\lambda_{max}}{\lambda_{min}}$$
 
 当$\kappa$很大时，矩阵接近奇异，可能导致数值问题。
+
+**其他各向异性度量**：
+
+1. **分数各向异性（FA）**：
+   $$FA = \sqrt{\frac{3}{2}} \frac{\sqrt{(\lambda_1 - \bar{\lambda})^2 + (\lambda_2 - \bar{\lambda})^2 + (\lambda_3 - \bar{\lambda})^2}}{\sqrt{\lambda_1^2 + \lambda_2^2 + \lambda_3^2}}$$
+   
+   其中$\bar{\lambda} = (\lambda_1 + \lambda_2 + \lambda_3)/3$。
+
+2. **形状指数**：
+   - 线性指数：$C_l = \frac{\lambda_1 - \lambda_2}{\lambda_1}$
+   - 平面指数：$C_p = \frac{2(\lambda_2 - \lambda_3)}{\lambda_1}$
+   - 球形指数：$C_s = \frac{3\lambda_3}{\lambda_1}$
+
+3. **体积比**：
+   $$VR = \frac{\lambda_1 \lambda_2 \lambda_3}{(\lambda_1 + \lambda_2 + \lambda_3)^3/27}$$
+   
+   这测量了椭球与具有相同迹的球体体积之比。
+
+**椭球的表面积**：
+
+使用椭圆积分：
+$$S = 4\pi \left[\frac{(abc)^{1.6} + (a^{1.6}b^{1.6} + a^{1.6}c^{1.6} + b^{1.6}c^{1.6})}{3}\right]^{1/1.6}$$
+
+其中$a = \sqrt{\lambda_1}$, $b = \sqrt{\lambda_2}$, $c = \sqrt{\lambda_3}$。
+
+**椭球的惯性张量**：
+
+对于均匀密度的椭球：
+$$\mathbf{I} = \frac{m}{5} \begin{bmatrix}
+\lambda_2 + \lambda_3 & 0 & 0 \\
+0 & \lambda_1 + \lambda_3 & 0 \\
+0 & 0 & \lambda_1 + \lambda_2
+\end{bmatrix}$$
+
+这在动力学模拟中可能有用。
+
+**几何不变量**：
+
+协方差矩阵的三个基本不变量：
+1. 迹：$\text{tr}(\mathbf{\Sigma}) = \lambda_1 + \lambda_2 + \lambda_3$
+2. 行列式：$\det(\mathbf{\Sigma}) = \lambda_1 \lambda_2 \lambda_3$
+3. Frobenius范数：$\|\mathbf{\Sigma}\|_F = \sqrt{\lambda_1^2 + \lambda_2^2 + \lambda_3^2}$
+
+这些不变量在旋转变换下保持不变。
 
 ### 10.2.3 旋转与缩放的分解
 
@@ -290,6 +483,57 @@ q_z & 0 & -q_x \\
 1. **欧拉角**：简单但存在万向锁
 2. **轴角表示**：$\mathbf{R} = \exp([\mathbf{\omega}]_\times)$
 3. **Cayley变换**：$\mathbf{R} = (\mathbf{I} - \mathbf{K})(\mathbf{I} + \mathbf{K})^{-1}$
+
+**四元数的完整梯度计算**：
+
+对于给定的损失函数$\mathcal{L}$，梯度传播：
+$$\frac{\partial \mathcal{L}}{\partial q_i} = \text{tr}\left(\frac{\partial \mathcal{L}}{\partial \mathbf{\Sigma}} \frac{\partial \mathbf{\Sigma}}{\partial q_i}\right)$$
+
+其中：
+$$\frac{\partial \mathbf{\Sigma}}{\partial q_i} = \frac{\partial \mathbf{R}}{\partial q_i} \mathbf{S}\mathbf{S}^T\mathbf{R}^T + \mathbf{R}\mathbf{S}\mathbf{S}^T \frac{\partial \mathbf{R}^T}{\partial q_i}$$
+
+**四元数的归一化约束处理**：
+
+1. **投影方法**：在每次更新后重新归一化
+   $$\mathbf{q}_{new} = \frac{\mathbf{q}}{\|\mathbf{q}\|}$$
+
+2. **拉格朗日乘数法**：添加约束项
+   $$\mathcal{L}_{aug} = \mathcal{L} + \lambda(\|\mathbf{q}\|^2 - 1)$$
+
+3. **流形优化**：在$S^3$球面上直接优化
+   $$\mathbf{q}_{new} = \exp_{\mathbf{q}}(\eta \cdot \text{grad}_{\mathbf{q}} \mathcal{L})$$
+   
+   其中$\exp_{\mathbf{q}}$是指数映射。
+
+**轴角表示的详细推导**：
+
+给定旋转轴$\mathbf{n}$（单位向量）和角度$\theta$：
+$$\mathbf{R} = \mathbf{I} + \sin\theta [\mathbf{n}]_\times + (1-\cos\theta)[\mathbf{n}]_\times^2$$
+
+其中$[\mathbf{n}]_\times$是反对称矩阵：
+$$[\mathbf{n}]_\times = \begin{bmatrix}
+0 & -n_z & n_y \\
+n_z & 0 & -n_x \\
+-n_y & n_x & 0
+\end{bmatrix}$$
+
+**缩放参数的约束**：
+
+为保证数值稳定性，通常限制：
+$$s_{min} \leq s_i \leq s_{max}$$
+
+典型值：$s_{min} = 10^{-3}$, $s_{max} = 10^{3}$。
+
+**参数化的几何解释**：
+
+$\mathbf{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^T\mathbf{R}^T$可以理解为：
+1. 从各向同性单位球开始
+2. 沿坐标轴缩放$(s_1, s_2, s_3)$
+3. 使用$\mathbf{R}$旋转到最终方向
+
+这种分解与特征分解的关系：
+- $\mathbf{V} = \mathbf{R}$（特征向量矩阵）
+- $\lambda_i = s_i^2$（特征值）
 
 ### 10.2.4 保证正定性的参数化技巧
 
@@ -341,6 +585,55 @@ $$\nabla_{clipped} = \begin{cases}
 $$\eta_{adaptive} = \frac{\eta_{base}}{1 + \beta \cdot (\kappa - \kappa_{target})}$$
 
 其中$\kappa_{target} \approx 100$是目标条件数。
+
+**正定锥的几何结构**：
+
+正定矩阵集合$\mathcal{S}^{++}_n$形成一个凸锥：
+1. **凸性**：$\alpha \mathbf{A} + (1-\alpha)\mathbf{B} \in \mathcal{S}^{++}_n$，$\forall \alpha \in [0,1]$
+2. **开集**：边界由半正定矩阵构成
+3. **连通性**：任意两个正定矩阵可通过连续路径连接
+
+**正定矩阵的对数映射**：
+
+定义矩阵对数：
+$$\log(\mathbf{\Sigma}) = \mathbf{V} \log(\mathbf{\Lambda}) \mathbf{V}^T$$
+
+其中$\log(\mathbf{\Lambda}) = \text{diag}(\log\lambda_1, \log\lambda_2, \log\lambda_3)$。
+
+这提供了一个双射：$\mathcal{S}^{++}_n \leftrightarrow \mathcal{S}_n$（对称矩阵空间）。
+
+**基于流形的优化**：
+
+在正定矩阵流形上的自然梯度：
+$$\text{grad}_{\mathbf{\Sigma}} f = \mathbf{\Sigma} \nabla_{\mathbf{\Sigma}} f \mathbf{\Sigma}$$
+
+更新规则：
+$$\mathbf{\Sigma}_{new} = \mathbf{\Sigma}^{1/2} \exp\left(-\eta \mathbf{\Sigma}^{-1/2} \nabla_{\mathbf{\Sigma}} f \mathbf{\Sigma}^{-1/2}\right) \mathbf{\Sigma}^{1/2}$$
+
+这保证了更新后的矩阵仍然正定。
+
+**实用的分解策略**：
+
+1. **特征值截断**：
+   $$\lambda'_i = \max(\lambda_i, \epsilon)$$
+
+2. **条件数限制**：
+   $$\lambda'_i = \lambda_{min} + (\lambda_i - \lambda_{min}) \cdot \min\left(1, \frac{\kappa_{max} - 1}{\lambda_{max}/\lambda_{min} - 1}\right)$$
+
+3. **平滑过渡**：
+   $$\mathbf{\Sigma}_{smooth} = (1-\alpha)\mathbf{\Sigma}_{old} + \alpha\mathbf{\Sigma}_{new}$$
+   
+   其中$\alpha \in (0,1]$控制更新速度。
+
+**监控指标**：
+
+在优化过程中监控：
+1. 最小特征值：$\lambda_{min}(\mathbf{\Sigma})$
+2. 条件数：$\kappa(\mathbf{\Sigma})$
+3. Frobenius范数：$\|\mathbf{\Sigma}\|_F$
+4. 行列式：$\det(\mathbf{\Sigma})$
+
+这些指标可以帮助识别数值问题。
 
 ## 10.3 可微光栅化
 
