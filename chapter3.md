@@ -28,6 +28,24 @@ To make this precise, consider a thin shell around surface S with thickness ε:
 
 As ε → 0, σ_ε → δ_S in the distributional sense. This connects to level set methods where surfaces are zero-crossings of signed distance functions.
 
+**Weak Convergence and Distribution Theory**: In the sense of distributions, for any test function φ ∈ C₀^∞(ℝ³):
+
+lim_{ε→0} ∫σ_ε(x)φ(x)dx = lim_{ε→0} (1/ε)∫_{|d(x,S)|<ε/2} φ(x)dx = ∫_S φ(x)dS
+
+This is precisely the action of the surface delta function δ_S on φ. The convergence can be understood through the co-area formula:
+
+∫_{ℝ³} f(x)𝟙_{|d(x,S)|<ε}dx = ∫_{-ε}^{ε} ∫_{S_t} f(x)|∇d(x)|⁻¹dS_t dt
+
+where S_t = {x : d(x,S) = t} is the level set at distance t.
+
+**Connection to BRDF**: For a surface with BRDF f_r, the volume emission becomes:
+
+c(x,ω) = f_r(x,ω_i,ω)L_i(x,ω_i)(n·ω_i) / |n·ω|
+
+where the denominator accounts for the projected area. This ensures the volume integral recovers the surface integral:
+
+∫ δ_S(x)c(x,ω)dx = ∫_S f_r(x,ω_i,ω)L_i(x,ω_i)(n·ω_i)dS
+
 ### 3.1.2 Derivation from Radiative Transfer
 
 The radiative transfer equation (RTE) describes light propagation through participating media:
@@ -42,10 +60,26 @@ where:
 - p(x,ω',ω) is the phase function
 - L_e is emission
 
+**Microscopic Derivation**: The RTE emerges from particle physics. Consider a volume element dV with n(x) particles per unit volume, each with cross-sections:
+- σ_a^(p): absorption cross-section
+- σ_s^(p): scattering cross-section
+- f(ω',ω): differential scattering cross-section
+
+Then:
+- σ_a(x) = n(x)σ_a^(p) (macroscopic absorption)
+- σ_s(x) = n(x)σ_s^(p) (macroscopic scattering)
+- p(x,ω',ω) = f(ω',ω)/σ_s^(p) (normalized phase function)
+
 The phase function satisfies normalization: ∫_Ω p(x,ω',ω)dω = 1, ensuring energy conservation. Common phase functions include:
 - Isotropic: p = 1/(4π)
-- Rayleigh: p ∝ 1 + cos²θ
+- Rayleigh: p ∝ 1 + cos²θ (molecular scattering)
 - Henyey-Greenstein: p = (1-g²)/(4π(1+g²-2g·cosθ)^(3/2))
+- Mie theory: Complex oscillatory functions for spherical particles
+
+**Asymmetry Parameter**: The mean cosine of scattering angle:
+g = ∫_Ω (ω'·ω)p(ω',ω)dω'
+
+characterizes forward (g > 0) vs backward (g < 0) scattering. For Henyey-Greenstein, g directly parameterizes asymmetry.
 
 ### 3.1.3 Mathematical Formulation
 
@@ -53,13 +87,27 @@ Integrating along a ray r(t) = o + tω from t=0 to t=T, we solve the RTE using t
 
 τ(s,t) = ∫_s^t σ_t(r(u))du
 
-The transmittance T(s,t) = exp(-τ(s,t)) represents the fraction of light surviving from s to t. Through the integrating factor method:
+The transmittance T(s,t) = exp(-τ(s,t)) represents the fraction of light surviving from s to t. 
+
+**Formal Solution via Integrating Factor**: Multiply the RTE by exp(∫₀ᵗ σ_t(r(u))du):
+
+d/dt[L(r(t),ω)exp(τ(0,t))] = exp(τ(0,t))[σ_s S_s + σ_a L_e]
+
+where S_s(x,ω) = ∫_Ω p(x,ω',ω)L(x,ω')dω' is the in-scattered radiance.
+
+Integrating from 0 to T:
 
 L(o,ω) = ∫₀ᵀ T(0,t)σ_t(r(t))S(r(t),ω)dt + T(0,T)L_bg
 
 where source term S combines emission and in-scattering:
 
 S(x,ω) = σ_a(x)L_e(x,ω)/σ_t(x) + σ_s(x)/σ_t(x)∫_Ω p(x,ω',ω)L(x,ω')dω'
+
+**Single Scattering Approximation**: Assuming L in the in-scattering integral is only direct illumination:
+
+S_s^(1)(x,ω) = ∫_Ω p(x,ω',ω)L_direct(x,ω')dω'
+
+where L_direct(x,ω') = T(x_light,x)L_e(x_light,-ω')V(x,x_light).
 
 For purely emissive media (no scattering), this simplifies to:
 
@@ -71,6 +119,12 @@ where:
 - L_bg is background radiance
 
 This equation unifies all rendering: surfaces have σ as delta functions, volumes have continuous σ.
+
+**Operator Form**: Define the transport operator 𝒯 and scattering operator 𝒮:
+- (𝒯L)(x,ω) = (ω·∇)L(x,ω) + σ_t(x)L(x,ω)
+- (𝒮L)(x,ω) = σ_s(x)∫_Ω p(x,ω',ω)L(x,ω')dω'
+
+Then RTE becomes: 𝒯L = 𝒮L + Q where Q = σ_a L_e is the source.
 
 ### 3.1.4 Connection to Classical Rendering
 
@@ -95,7 +149,30 @@ The volume rendering equation requires boundary conditions for mathematical comp
 2. **Emissive boundary**: L(x,ω) = L_e(x,ω) 
 3. **Reflective boundary**: L(x,ω) = ∫f_r(x,ω',ω)L(x,ω')(n·ω')dω'
 
-The equation is well-posed in L²(Ω×S²) under mild conditions on σ and c. Existence and uniqueness follow from the Fredholm alternative when σ_s/σ_t < 1 (sub-critical).
+**Mathematical Framework**: The RTE with boundary conditions forms an abstract Cauchy problem:
+
+L + 𝒦L = f in Ω×S²
+L|_Γ₋ = g
+
+where:
+- 𝒦 is the integral scattering operator
+- Γ₋ = {(x,ω) ∈ ∂Ω×S² : n(x)·ω < 0} is the inflow boundary
+- f represents sources, g boundary data
+
+The equation is well-posed in L²(Ω×S²) under mild conditions on σ and c. 
+
+**Theorem (Existence and Uniqueness)**: If:
+1. σ_t ∈ L^∞(Ω), σ_t ≥ σ_min > 0
+2. ||σ_s/σ_t||_∞ < 1 (sub-critical condition)
+3. p ∈ L^∞(Ω×S²×S²), p ≥ 0
+
+Then there exists a unique solution L ∈ L²(Ω×S²) satisfying:
+||L||₂ ≤ C(||f||₂ + ||g||_{L²(Γ₋)})
+
+**Fredholm Alternative**: The operator (I - 𝒦) is invertible when the spectral radius ρ(𝒦) < 1. For homogeneous media:
+ρ(𝒦) = σ_s/σ_t
+
+This gives the critical albedo σ_s/σ_t = 1 above which the medium can sustain self-emission through scattering.
 
 ### 3.1.6 Energy Conservation and Reciprocity
 
@@ -104,8 +181,27 @@ The volume rendering equation preserves two fundamental physical principles:
 **Energy Conservation**: Total power in equals total power out
 ∫_∂Ω∫_S² L(x,ω)(n·ω)dωdA = ∫_Ω∫_S² σ_a(x)L_e(x,ω)dωdV
 
+Proof: Multiply RTE by 1 and integrate over Ω×S²:
+∫_Ω∫_S² (ω·∇)L dωdV = -∫_Ω∫_S² σ_t L dωdV + ∫_Ω∫_S² σ_s(∫p L'dω')dωdV + ∫_Ω∫_S² σ_a L_e dωdV
+
+Using divergence theorem on the left:
+∫_∂Ω∫_S² L(n·ω)dωdA = -∫_Ω∫_S² σ_a L dωdV + ∫_Ω∫_S² σ_a L_e dωdV
+
+since ∫∫p(ω',ω)dω = 1 makes the scattering term vanish.
+
 **Helmholtz Reciprocity**: For reciprocal media (p(x,ω',ω) = p(x,ω,ω')):
 If L₁ is the solution with source at x₁ pointing to x₂, and L₂ with source at x₂ pointing to x₁, then L₁(x₂,-ω) = L₂(x₁,-ω).
+
+This follows from the adjoint RTE:
+(-ω·∇)L* + σ_t L* = σ_s ∫p(ω,ω')L*(ω')dω' + Q*
+
+The Green's function G(x,ω;x',ω') satisfying reciprocity enables path integral formulations:
+L(x,ω) = ∫∫G(x,ω;x',ω')Q(x',ω')dx'dω'
+
+**Detailed Balance**: In thermal equilibrium at temperature T:
+σ_a(x)B(T) = σ_a(x)L_e(x,ω)
+
+where B(T) is the Planck function, ensuring microscopic reversibility.
 
 ## 3.2 Point Clouds as Delta Function Distributions
 
@@ -118,11 +214,25 @@ c(x,ω) = Σᵢ₌₁ᴺ (wᵢδ(x - pᵢ))/(Σⱼwⱼδ(x - pⱼ)) · cᵢ(ω)
 
 where wᵢ are weights and cᵢ(ω) encodes the point's appearance.
 
-This representation is rigorous in the sense of distributions (generalized functions). For any test function φ ∈ C₀^∞(ℝ³):
+**Schwartz Distribution Theory**: This representation is rigorous in the sense of distributions (generalized functions). The space of distributions 𝒟'(ℝ³) is the dual of test functions 𝒟(ℝ³) = C₀^∞(ℝ³). For any test function φ ∈ C₀^∞(ℝ³):
 
 ⟨σ, φ⟩ = ∫σ(x)φ(x)dx = Σᵢwᵢφ(pᵢ)
 
-The delta function satisfies the sifting property: ∫δ(x-a)f(x)dx = f(a).
+The delta function satisfies:
+1. **Sifting property**: ∫δ(x-a)f(x)dx = f(a)
+2. **Scaling**: δ(ax) = |a|⁻³δ(x) for a ≠ 0
+3. **Derivatives**: ⟨∂^α δ_a, φ⟩ = (-1)^|α|∂^α φ(a)
+4. **Fourier transform**: ℱ[δ_a](k) = exp(-ik·a)
+
+**Regularization Sequences**: Delta functions arise as limits of regular functions:
+δ(x) = lim_{ε→0} δ_ε(x)
+
+Common regularizations:
+1. Gaussian: δ_ε(x) = (2πε²)^(-3/2)exp(-|x|²/2ε²)
+2. Rectangular: δ_ε(x) = (1/ε³)𝟙_{|x|<ε/2}
+3. Sinc: δ_ε(x) = (1/2π)³∫_{|k|<1/ε} exp(ik·x)dk
+
+Each converges to δ in the weak-* topology of 𝒟'(ℝ³).
 
 ### 3.2.2 Discrete Sampling of Continuous Fields
 
@@ -137,7 +247,23 @@ where V_i is the volume associated with sample i. Common volume assignments:
 3. **Delaunay dual**: V_i = (1/3)Σ_{T∈D(i)} Vol(T) for tetrahedra containing i
 4. **Adaptive sampling**: V_i ∝ local feature size
 
-The sampling operator S maps continuous to discrete: S[σ_c] = Σᵢσ_c(xᵢ)V_iδ(x-xᵢ).
+**Voronoi Volume Computation**: For point pᵢ with neighbors {pⱼ}, the Voronoi cell is:
+V(pᵢ) = ∩ⱼ≠ᵢ {x : (x-pᵢ)·(pⱼ-pᵢ) < |pⱼ-pᵢ|²/2}
+
+The volume integral:
+V_i = ∫_{V(pᵢ)} dx
+
+For Poisson disk distributions with radius r:
+E[V_i] ≈ (4/3)πr³ · 0.74 (optimal packing density)
+
+**Sampling Operator Properties**: The sampling operator S maps continuous to discrete:
+S: L¹(ℝ³) → 𝒟'(ℝ³)
+S[σ_c] = Σᵢσ_c(xᵢ)V_iδ(x-xᵢ)
+
+Properties:
+1. **Linearity**: S[aσ₁ + bσ₂] = aS[σ₁] + bS[σ₂]
+2. **Mass preservation**: ∫S[σ_c]dx = Σᵢσ_c(xᵢ)V_i ≈ ∫σ_c dx (for partition of unity)
+3. **Frequency response**: ℱ[S[σ_c]](k) = Σᵢσ_c(xᵢ)V_i exp(-ik·xᵢ)
 
 ### 3.2.3 Reconstruction Theory
 
@@ -149,12 +275,29 @@ The reconstruction operator R satisfies: R[σ_d] = σ_d * h. The combined sampli
 
 σ_r = R[S[σ_c]] = Σᵢσ_c(xᵢ)V_ih(x - xᵢ)
 
+**Shannon-Whittaker Theorem**: For bandlimited signals σ_c with σ̂_c(k) = 0 for |k| > K:
+
+σ_c(x) = Σᵢ σ_c(xᵢ)sinc(K(x - xᵢ)/π)
+
+when samples are on a grid with spacing Δx = π/K. The sinc kernel:
+sinc(x) = sin(|x|)/|x| (1D), sinc(x) = (sin(|x|) - |x|cos(|x|))/|x|³ (3D)
+
 Perfect reconstruction requires RS = I (identity operator). This happens when:
 1. h is the ideal sinc kernel
-2. Sampling satisfies Nyquist criterion
-3. Signal is bandlimited
+2. Sampling satisfies Nyquist criterion: Δx < π/K
+3. Signal is bandlimited: supp(σ̂_c) ⊂ B_K(0)
 
-In practice, we seek h minimizing ||σ_c - RS[σ_c]|| under constraints (compact support, smoothness).
+**Approximation Theory**: For non-bandlimited signals, we minimize reconstruction error:
+
+E = ||σ_c - RS[σ_c]||²_L²
+
+The optimal kernel in L² sense satisfies the normal equations:
+Σⱼ⟨h(· - xᵢ), h(· - xⱼ)⟩wⱼ = σ_c(xᵢ)
+
+This leads to the dual kernel formulation:
+h̃(x) = Σᵢ αᵢh(x - xᵢ)
+
+where α solves Gα = σ with Gᵢⱼ = h(xᵢ - xⱼ).
 
 ### 3.2.4 Aliasing and Sampling Theorems
 
