@@ -40,6 +40,8 @@ $$L_o = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + \cdots = \sum_{k=0}^{\infty} \
 
 $$(\mathcal{T}L)(\mathbf{x}, \boldsymbol{\omega}_o) = \int_{\Omega} f_r(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L(\mathbf{x}_i, -\boldsymbol{\omega}_i) V(\mathbf{x}, \mathbf{x}_i) (\boldsymbol{\omega}_i \cdot \mathbf{n}) \, d\boldsymbol{\omega}_i$$
 
+传输算子的谱半径 $\rho(\mathcal{T}) < 1$ 保证了Neumann级数的收敛性。这个条件等价于场景中的能量守恒：没有表面能反射超过100%的入射光。
+
 对于体积渲染，我们有：
 
 $$L(\mathbf{r}, \boldsymbol{\omega}) = \int_0^t T(s) \sigma_s(\mathbf{r}(s)) L_s(\mathbf{r}(s), \boldsymbol{\omega}) \, ds + T(t) L_{\text{bg}}$$
@@ -51,6 +53,32 @@ $$L(\mathbf{r}, \boldsymbol{\omega}) = \int_0^t T(s) \sigma_s(\mathbf{r}(s)) L_s
 $$L = \mathcal{V}[L_s, \sigma_s, \sigma_t]$$
 
 这种算子视角为理解逆问题提供了数学框架。
+
+**路径空间表述**
+
+从路径积分角度，像素值可表示为：
+
+$$I_j = \int_{\mathcal{P}} f_j(\bar{\mathbf{x}}) \, d\mu(\bar{\mathbf{x}})$$
+
+其中 $\mathcal{P}$ 是所有可能光路的空间，$\bar{\mathbf{x}} = (\mathbf{x}_0, \mathbf{x}_1, ..., \mathbf{x}_k)$ 是一条光路，$f_j$ 是路径贡献函数：
+
+$$f_j(\bar{\mathbf{x}}) = W_j(\mathbf{x}_0 \leftarrow \mathbf{x}_1) G(\mathbf{x}_0 \leftrightarrow \mathbf{x}_1) \prod_{i=1}^{k-1} f_r(\mathbf{x}_{i-1} \leftarrow \mathbf{x}_i \leftarrow \mathbf{x}_{i+1}) G(\mathbf{x}_i \leftrightarrow \mathbf{x}_{i+1}) L_e(\mathbf{x}_k \rightarrow \mathbf{x}_{k-1})$$
+
+这里 $W_j$ 是像素 $j$ 的重要性函数，$G$ 是几何项。路径空间视角揭示了逆向渲染的核心挑战：从有限的积分值（像素）推断被积函数（场景参数）。
+
+**测量方程的完整形式**
+
+实际的图像形成过程包含更多细节：
+
+$$I_j = \int_{\lambda} \int_t \int_A \int_{\Omega} R_j(\lambda) S(t) W(\mathbf{x}, \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}, t, \lambda) \cos\theta \, d\boldsymbol{\omega} \, dA \, dt \, d\lambda + n_j$$
+
+其中：
+- $R_j(\lambda)$：传感器光谱响应
+- $S(t)$：快门函数
+- $W(\mathbf{x}, \boldsymbol{\omega})$：像素滤波器
+- $n_j$：传感器噪声
+
+这个完整模型对于处理实际捕获的图像至关重要。
 
 ### 逆问题形式化
 
@@ -64,6 +92,42 @@ $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \mathcal{L}(\mathcal{R}
 - $\mathcal{R}_{\text{reg}}$：正则化项
 
 从函数分析角度，渲染算子 $\mathcal{R}: \Theta \rightarrow \mathcal{I}$ 映射参数空间到图像空间。逆问题寻求逆映射 $\mathcal{R}^{-1}$，但这个逆映射通常不存在或不唯一。
+
+**算子的数学性质**
+
+渲染算子 $\mathcal{R}$ 具有以下关键性质：
+
+1. **非线性性**：$\mathcal{R}(\alpha\boldsymbol{\theta}_1 + \beta\boldsymbol{\theta}_2) \neq \alpha\mathcal{R}(\boldsymbol{\theta}_1) + \beta\mathcal{R}(\boldsymbol{\theta}_2)$
+   
+2. **非单射性**：存在 $\boldsymbol{\theta}_1 \neq \boldsymbol{\theta}_2$ 使得 $\mathcal{R}(\boldsymbol{\theta}_1) = \mathcal{R}(\boldsymbol{\theta}_2)$
+
+3. **紧算子性质**：在适当的函数空间中，$\mathcal{R}$ 常表现为紧算子，将有界集映射到预紧集
+
+4. **Fréchet可微性**：在大多数实际情况下，$\mathcal{R}$ 是Fréchet可微的，即存在线性算子 $D\mathcal{R}[\boldsymbol{\theta}]$ 使得：
+   $$\lim_{\|\mathbf{h}\| \to 0} \frac{\|\mathcal{R}(\boldsymbol{\theta} + \mathbf{h}) - \mathcal{R}(\boldsymbol{\theta}) - D\mathcal{R}[\boldsymbol{\theta}]\mathbf{h}\|}{\|\mathbf{h}\|} = 0$$
+
+**损失函数的选择**
+
+不同的损失函数对应不同的统计假设和感知特性：
+
+1. **$L^2$ 损失**：
+   $$\mathcal{L}_{L^2} = \sum_j |\mathcal{R}(\boldsymbol{\theta})_j - I_{\text{obs},j}|^2$$
+   对应高斯噪声假设，但可能过度惩罚异常值。
+
+2. **$L^1$ 损失**：
+   $$\mathcal{L}_{L^1} = \sum_j |\mathcal{R}(\boldsymbol{\theta})_j - I_{\text{obs},j}|$$
+   对异常值更鲁棒，对应拉普拉斯噪声。
+
+3. **感知损失**：
+   $$\mathcal{L}_{\text{perceptual}} = \sum_l \lambda_l \|\phi_l(\mathcal{R}(\boldsymbol{\theta})) - \phi_l(\mathbf{I}_{\text{obs}})\|^2$$
+   其中 $\phi_l$ 是预训练网络的第 $l$ 层特征。
+
+4. **对抗损失**：
+   $$\mathcal{L}_{\text{adv}} = -\log D(\mathcal{R}(\boldsymbol{\theta}))$$
+   其中 $D$ 是判别器网络。
+
+5. **结构相似度(SSIM)**：
+   $$\mathcal{L}_{\text{SSIM}} = 1 - \text{SSIM}(\mathcal{R}(\boldsymbol{\theta}), \mathbf{I}_{\text{obs}})$$
 
 ### 参数空间分解
 
@@ -105,25 +169,48 @@ $$\mathbf{I}_{\text{obs}} = \mathcal{R}(\boldsymbol{\theta}_{\text{true}}) + \bo
 数学上，这对应于零空间的存在：
 $$\mathcal{N}(\mathcal{R}) = \{\Delta\boldsymbol{\theta} : \mathcal{R}(\boldsymbol{\theta} + \Delta\boldsymbol{\theta}) = \mathcal{R}(\boldsymbol{\theta})\}$$
 
+零空间的维度可通过分析渲染算子的雅可比矩阵秩来估计。对于典型场景：
+$$\text{dim}(\mathcal{N}(\mathcal{R})) \geq \text{dim}(\Theta) - \text{dim}(\mathcal{I})$$
+
 **示例2：凹凸贴图vs几何细节**
 表面法线扰动可由以下产生：
 - 真实几何位移：$\mathbf{p}' = \mathbf{p} + h(\mathbf{p})\mathbf{n}$
 - 法线贴图：$\mathbf{n}' = \text{normalize}(\mathbf{n} + \nabla h)$
 - 位移贴图
 
-这些在单视角下可能产生相同的着色。
+这些在单视角下可能产生相同的着色。数学上，对于小位移 $|h| \ll 1$：
+$$\mathbf{n}' \approx \mathbf{n} + (\mathbf{I} - \mathbf{n}\mathbf{n}^T)\nabla h$$
+
+两种方法在一阶近似下等价，导致局部不可区分性。
 
 **示例3：形状-BRDF歧义**
 镜面球和漫反射椭球在特定视角和光照下可能产生相同图像。设球面参数化为 $\mathbf{x}(\theta, \phi)$，BRDF为 $f_r$，则存在椭球参数化 $\mathbf{y}(\theta, \phi)$ 和 BRDF $g_r$ 使得：
 
 $$\int_{\Omega} f_r(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L_i \cos\theta_i \, d\boldsymbol{\omega}_i = \int_{\Omega} g_r(\mathbf{y}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L_i \cos\theta_i' \, d\boldsymbol{\omega}_i$$
 
+这种歧义可通过Helmholtz互易性部分解决：观察位置和光源位置交换应产生相同结果。
+
 **示例4：全局光照中的路径等价**
 多次反射可通过不同路径达到相同结果：
 - 直接光照 + 强环境光
 - 弱直接光 + 多次反射
 
-这在渲染方程的Neumann级数展开中表现为不同截断阶数的等价性。
+这在渲染方程的Neumann级数展开中表现为不同截断阶数的等价性：
+$$L = \sum_{k=0}^{n} \mathcal{T}^k L_e + \mathcal{T}^{n+1} L_{\text{env}}$$
+
+当 $\|\mathcal{T}^{n+1}\|$ 很小时，高阶项可被环境光近似。
+
+**示例5：频率混叠**
+高频纹理细节在有限分辨率下产生混叠：
+$$I_{\text{observed}} = \int_{\Omega} \text{sinc}(f_s(\mathbf{x} - \mathbf{x}_0)) T(\mathbf{x}) \, d\mathbf{x}$$
+
+其中 $f_s$ 是采样频率，$T$ 是纹理函数。当 $T$ 包含频率高于 $f_s/2$ 的成分时，不同的高频纹理可能产生相同的采样结果。
+
+**示例6：体积密度-发射歧义**
+在体积渲染中，沿射线的不同密度和发射分布可产生相同积分：
+$$\int_0^L T_1(t)\sigma_{s,1}(t)c_1(t) \, dt = \int_0^L T_2(t)\sigma_{s,2}(t)c_2(t) \, dt$$
+
+即使 $(\sigma_{s,1}, c_1) \neq (\sigma_{s,2}, c_2)$。这种歧义在单视角下无法解决。
 
 ## 11.2 不适定性与正则化
 
@@ -180,6 +267,28 @@ $$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \|\mathcal{R}(\boldsymb
 - $\mathbf{L} = \nabla$：梯度正则化（平滑性）
 - $\mathbf{L} = \nabla^2$：曲率正则化
 
+**正则化参数选择**
+
+选择最优 $\lambda$ 是关键挑战。常用方法包括：
+
+1. **L曲线方法**：绘制 $\log\|\mathcal{R}(\boldsymbol{\theta}_\lambda) - \mathbf{I}_{\text{obs}}\|$ vs $\log\|\boldsymbol{\theta}_\lambda - \boldsymbol{\theta}_0\|$，选择曲线拐点
+
+2. **广义交叉验证(GCV)**：
+   $$\lambda_{\text{GCV}} = \arg\min_\lambda \frac{\|\mathcal{R}(\boldsymbol{\theta}_\lambda) - \mathbf{I}_{\text{obs}}\|^2}{[1 - \text{tr}(\mathbf{A}_\lambda)/n]^2}$$
+   其中 $\mathbf{A}_\lambda$ 是影响矩阵
+
+3. **Morozov不符原则**：选择 $\lambda$ 使得残差等于噪声水平：
+   $$\|\mathcal{R}(\boldsymbol{\theta}_\lambda) - \mathbf{I}_{\text{obs}}\| = \delta$$
+   其中 $\delta$ 是噪声估计
+
+**分数阶Tikhonov正则化**
+
+对于具有幂律衰减特性的问题：
+$$\boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \|\mathcal{R}(\boldsymbol{\theta}) - \mathbf{I}_{\text{obs}}\|^2 + \lambda \|(-\Delta)^{\alpha/2}(\boldsymbol{\theta} - \boldsymbol{\theta}_0)\|^2$$
+
+其中 $(-\Delta)^{\alpha/2}$ 是分数阶拉普拉斯算子，$0 < \alpha < 2$。在傅里叶域：
+$$\widehat{(-\Delta)^{\alpha/2}f}(\boldsymbol{k}) = |\boldsymbol{k}|^\alpha \hat{f}(\boldsymbol{k})$$
+
 ### 稀疏性先验
 
 **L1正则化**促进稀疏解：
@@ -212,11 +321,20 @@ $$\int_{\Omega} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\
 实际实现中，通过反照率上界约束：
 $$\rho(\lambda) \leq 1, \quad \forall \lambda \in [380\text{nm}, 780\text{nm}]$$
 
+对于参数化BRDF模型，能量守恒可表示为参数空间的约束：
+$$\mathcal{C}_{\text{energy}} = \{\boldsymbol{\alpha} : \rho_{\text{hd}}(\boldsymbol{\omega}_o; \boldsymbol{\alpha}) \leq 1, \forall \boldsymbol{\omega}_o\}$$
+
+其中半球方向反射率：
+$$\rho_{\text{hd}}(\boldsymbol{\omega}_o; \boldsymbol{\alpha}) = \int_{\Omega^+} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o; \boldsymbol{\alpha}) (\boldsymbol{\omega}_i \cdot \mathbf{n}) \, d\boldsymbol{\omega}_i$$
+
 **互易性**：
 $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = f_r(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$$
 
 对于参数化BRDF，这要求参数满足特定对称性。例如，对于微表面模型：
 $$D(\mathbf{h}) G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o, \mathbf{h}) = D(\mathbf{h}) G(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i, \mathbf{h})$$
+
+在优化中，可通过对称化强制互易性：
+$$f_r^{\text{sym}}(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{2}[f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f_r(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
 
 **正定性**：
 $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \geq 0$$
@@ -224,11 +342,23 @@ $$f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \geq 0$$
 这些可作为硬约束或软惩罚项：
 - 硬约束：投影到可行集 $\mathcal{C} = \{\boldsymbol{\theta} : g(\boldsymbol{\theta}) \leq 0\}$
 - 软约束：惩罚项 $\lambda \sum_i \max(0, g_i(\boldsymbol{\theta}))^2$
+- 障碍方法：$-\mu \sum_i \log(-g_i(\boldsymbol{\theta}))$，其中 $\mu \to 0$
 
 **几何约束**：
 - 表面法线单位化：$\|\mathbf{n}\|^2 = 1$
-- 凸性约束：$\nabla^2 f(\mathbf{x}) \succeq 0$
+- 凸性约束：$\nabla^2 f(\mathbf{x}) \succeq 0$（Hessian半正定）
 - 体积保持：$\int_V dV = V_0$
+- 表面积正则化：$\mathcal{R}_{\text{area}} = \int_S \sqrt{1 + |\nabla f|^2} \, dS$
+
+**材质物理约束**：
+- Fresnel约束：反射率随入射角变化遵循Fresnel方程
+- 色散关系：折射率的实部和虚部通过Kramers-Kronig关系相联
+- 微表面法线分布归一化：$\int_{\Omega^+} D(\mathbf{h}) (\mathbf{h} \cdot \mathbf{n}) \, d\mathbf{h} = 1$
+
+**光照约束**：
+- 非负性：$L(\mathbf{x}, \boldsymbol{\omega}) \geq 0$
+- 远场衰减：$L(\mathbf{x}, \boldsymbol{\omega}) = O(1/\|\mathbf{x}\|^2)$ 当 $\|\mathbf{x}\| \to \infty$
+- 球谐系数衰减：$|L_{lm}| \leq C \cdot l^{-\alpha}$，典型 $\alpha > 2$
 
 ## 11.3 梯度计算：伴随法与自动微分
 
