@@ -50,11 +50,11 @@
 
 ## 28.1 鬼成像与关联成像
 
-鬼成像是一种利用光场关联特性重建物体图像的技术，它挑战了传统成像需要光线直接从物体到达探测器的观念。这种技术最初在量子光学中发现，但后来发现经典光源也能实现类似效果。
+鬼成像是一种利用光场关联特性重建物体图像的技术，它挑战了传统成像需要光线直接从物体到达探测器的观念。这种技术最初在量子光学中发现，但后来发现经典光源也能实现类似效果。鬼成像的核心思想是通过强度涨落的关联来恢复空间信息，这与传统成像通过直接记录空间强度分布形成了鲜明对比。
 
 ### 28.1.1 经典关联成像原理
 
-考虑一个分束器将光源分成两路：信号光路和参考光路。信号光照射物体后被桶探测器（无空间分辨率）收集，参考光被具有空间分辨率的探测器阵列记录。
+考虑一个分束器将光源分成两路：信号光路和参考光路。信号光照射物体后被桶探测器（无空间分辨率）收集，参考光被具有空间分辨率的探测器阵列记录。这种配置的精妙之处在于，尽管桶探测器不具备空间分辨能力，但通过与参考光路的关联测量，仍能重建物体的空间结构。
 
 光场的二阶关联函数定义为：
 $$G^{(2)}(\mathbf{r}_1, \mathbf{r}_2, t_1, t_2) = \langle E^*(\mathbf{r}_1, t_1) E^*(\mathbf{r}_2, t_2) E(\mathbf{r}_2, t_2) E(\mathbf{r}_1, t_1) \rangle$$
@@ -63,6 +63,13 @@ $$G^{(2)}(\mathbf{r}_1, \mathbf{r}_2, t_1, t_2) = \langle E^*(\mathbf{r}_1, t_1)
 $$G^{(2)}(\mathbf{r}_1, \mathbf{r}_2) = \langle I(\mathbf{r}_1) I(\mathbf{r}_2) \rangle$$
 
 其中 $I(\mathbf{r}) = |E(\mathbf{r})|^2$ 是光强。
+
+为了理解关联成像的物理基础，我们需要考虑光场的统计性质。对于热光源，光场满足高斯统计，其四阶关联函数可以通过Gaussian moment theorem分解为二阶关联的乘积：
+$$G^{(2)}(\mathbf{r}_1, \mathbf{r}_2) = \langle I(\mathbf{r}_1) \rangle \langle I(\mathbf{r}_2) \rangle + |g^{(1)}(\mathbf{r}_1, \mathbf{r}_2)|^2$$
+
+其中 $g^{(1)}(\mathbf{r}_1, \mathbf{r}_2) = \langle E^*(\mathbf{r}_1) E(\mathbf{r}_2) \rangle / \sqrt{\langle I(\mathbf{r}_1) \rangle \langle I(\mathbf{r}_2) \rangle}$ 是归一化的一阶相干函数。
+
+这个关系揭示了关联成像的本质：强度涨落的关联携带了光场的相干性信息，而这种相干性编码了空间结构。
 
 ### 28.1.2 鬼成像重建算法
 
@@ -76,6 +83,27 @@ $$\langle \Delta I_B \Delta I_R(\mathbf{r}_0) \rangle = \sum_{n=1}^{N} [I_B^{(n)
 
 当光源具有适当的空间关联特性时，这个关联函数能够重建物体图像。
 
+更严格地，我们可以推导重建图像与物体透过率的关系。假设信号和参考光路的光场来自同一个部分相干光源，经过传播后在两个平面上的强度分布满足：
+$$\langle I_S(\mathbf{r}_s) I_R(\mathbf{r}_r) \rangle = \langle I_S(\mathbf{r}_s) \rangle \langle I_R(\mathbf{r}_r) \rangle \cdot [1 + |\mu(\mathbf{r}_s, \mathbf{r}_r)|^2]$$
+
+其中 $\mu(\mathbf{r}_s, \mathbf{r}_r)$ 是归一化的复相干度。对于适当设计的光学系统，$|\mu(\mathbf{r}_s, \mathbf{r}_r)|^2$ 在 $\mathbf{r}_s = M\mathbf{r}_r$ 处达到峰值，其中 $M$ 是系统放大率。
+
+将桶探测器的测量展开：
+$$I_B = \int T(\mathbf{r}_s) I_S(\mathbf{r}_s) d\mathbf{r}_s$$
+
+计算关联函数：
+$$G^{(2)}(\mathbf{r}_r) = \langle I_B I_R(\mathbf{r}_r) \rangle - \langle I_B \rangle \langle I_R(\mathbf{r}_r) \rangle$$
+
+经过代数运算，可以得到：
+$$G^{(2)}(\mathbf{r}_r) \propto \int T(\mathbf{r}_s) |\mu(\mathbf{r}_s, \mathbf{r}_r)|^2 d\mathbf{r}_s$$
+
+当相干度函数足够尖锐时，这个积分近似为 $T(M\mathbf{r}_r)$，从而实现图像重建。
+
+重建质量的关键参数包括：
+1. **相干面积**：$A_c = \int |\mu(\mathbf{r}_1, \mathbf{r}_2)|^2 d\mathbf{r}_1$，决定空间分辨率
+2. **光源带宽**：影响相干时间和纵向分辨率
+3. **测量次数**：$N$ 决定信噪比，典型需要 $N > 10^4$ 获得高质量图像
+
 ### 28.1.3 量子鬼成像：纠缠光子对
 
 在量子鬼成像中，使用自发参量下转换（SPDC）产生的纠缠光子对。对于II型SPDC，产生的双光子态为：
@@ -86,6 +114,27 @@ $$\mathbf{k}_p = \mathbf{k}_s + \mathbf{k}_i$$
 
 纠缠光子对的空间关联特性由以下函数描述：
 $$G^{(2)}(\mathbf{r}_s, \mathbf{r}_i) = |\langle 0 | \hat{E}^{(+)}_s(\mathbf{r}_s) \hat{E}^{(+)}_i(\mathbf{r}_i) | \psi \rangle|^2$$
+
+在薄晶体近似下，联合振幅函数可以写为：
+$$\Phi(\mathbf{k}_s, \mathbf{k}_i) = \alpha(\mathbf{k}_s + \mathbf{k}_i) \cdot \text{sinc}\left(\frac{L}{2}\Delta k_z\right)$$
+
+其中 $\alpha$ 是泵浦光的横向轮廓，$L$ 是晶体厚度，$\Delta k_z$ 是纵向相位失配。
+
+在远场近似下，光子对的联合概率分布呈现独特的关联结构：
+$$P(\mathbf{r}_s, \mathbf{r}_i) \propto \left|\int d\mathbf{q} \alpha(\mathbf{q}) \exp\left[i\mathbf{q} \cdot (\mathbf{r}_s + \mathbf{r}_i)/z\right]\right|^2$$
+
+这表明信号和闲置光子在横向位置上呈现反关联：当一个光子出现在 $+\mathbf{r}$，另一个倾向于出现在 $-\mathbf{r}$。这种EPR型关联是量子鬼成像的物理基础。
+
+量子鬼成像相比经典版本的优势：
+1. **真正的单光子灵敏度**：每个纠缠对都能贡献成像信息
+2. **抗扰动性增强**：量子关联比经典关联更稳健
+3. **亚散粒噪声性能**：利用光子数压缩态可突破经典极限
+4. **多光子干涉效应**：可实现超分辨成像
+
+量子与经典鬼成像的根本区别在于光源的统计性质。对于SPDC光源，二阶关联函数表现为：
+$$g^{(2)}_{si}(\tau = 0) = \frac{\langle \hat{n}_s \hat{n}_i \rangle}{\langle \hat{n}_s \rangle \langle \hat{n}_i \rangle} \gg 1$$
+
+这种超泊松统计是纠缠的标志，而经典热光的 $g^{(2)}(0) = 2$。
 
 ### 28.1.4 计算鬼成像与单像素相机
 
@@ -100,6 +149,40 @@ $$\mathbf{b} = \mathbf{A} \mathbf{t}$$
 对于欠定系统，可使用压缩感知技术：
 $$\hat{\mathbf{t}} = \arg\min_{\mathbf{t}} \|\mathbf{b} - \mathbf{A}\mathbf{t}\|_2^2 + \lambda \|\mathbf{t}\|_1$$
 
+测量矩阵 $\mathbf{A}$ 的选择对重建质量至关重要。常用的测量基包括：
+
+1. **随机二值图案**：$A_{ij} \in \{0, 1\}$，满足Bernoulli分布
+   - 优点：易于实现，满足限制等距性质（RIP）
+   - 缺点：需要大量测量
+
+2. **Hadamard基**：正交完备基，$A_{ij} \in \{-1, +1\}$
+   - 优点：最优信噪比，快速变换算法
+   - 缺点：不适合压缩感知
+
+3. **傅里叶基**：$A_{ij} = \exp(2\pi i \mathbf{k}_i \cdot \mathbf{r}_j / N)$
+   - 优点：对稀疏信号效果好
+   - 缺点：需要复值调制
+
+4. **优化测量基**：通过机器学习设计
+   - 目标函数：$\min_{\mathbf{A}} \mathbb{E}[\|\mathbf{t} - \hat{\mathbf{t}}(\mathbf{A})\|^2]$
+   - 可针对特定图像类别优化
+
+单像素相机的信息论分析表明，对于 $N$ 像素的图像，如果在某个基下是 $K$-稀疏的，则只需要 $M = O(K \log(N/K))$ 次测量即可准确重建。这个结果的实际意义是：
+- 自然图像在小波基下通常是稀疏的
+- 可以实现亚Nyquist采样
+- 测量数与稀疏度成正比，而非图像尺寸
+
+高级重建算法包括：
+1. **迭代软阈值算法（ISTA）**：
+   $$\mathbf{t}^{(k+1)} = \mathcal{S}_{\lambda/L}\left(\mathbf{t}^{(k)} - \frac{1}{L}\mathbf{A}^T(\mathbf{A}\mathbf{t}^{(k)} - \mathbf{b})\right)$$
+   
+2. **全变分正则化**：
+   $$\hat{\mathbf{t}} = \arg\min_{\mathbf{t}} \|\mathbf{b} - \mathbf{A}\mathbf{t}\|_2^2 + \lambda \|\nabla \mathbf{t}\|_1$$
+
+3. **深度学习方法**：
+   - 学习测量到图像的非线性映射
+   - 端到端优化测量和重建
+
 ### 28.1.5 与经典成像的对比
 
 鬼成像的独特优势：
@@ -112,6 +195,44 @@ $$\text{SNR}_{\text{ghost}} \propto \sqrt{N} \cdot \frac{\langle I_s \rangle \la
 
 而经典直接成像：
 $$\text{SNR}_{\text{direct}} \propto \sqrt{N} \cdot \frac{\langle I \rangle}{\sigma}$$
+
+更详细的性能比较需要考虑具体的成像场景。定义对比度噪声比（CNR）为：
+$$\text{CNR} = \frac{|T_{max} - T_{min}|}{\sigma_{noise}}$$
+
+对于鬼成像：
+$$\text{CNR}_{\text{ghost}} = \frac{\sqrt{N} \cdot \eta \cdot \langle n \rangle}{\sqrt{1 + g^{(2)}(0)}} \cdot \frac{|T_{max} - T_{min}|}{1 + \langle T \rangle}$$
+
+其中 $\eta$ 是探测效率，$\langle n \rangle$ 是平均光子数，$g^{(2)}(0)$ 是光源的二阶相干度。
+
+关键性能指标的比较：
+
+1. **空间分辨率**：
+   - 经典成像：$\Delta x = 0.61\lambda/\text{NA}$（Rayleigh判据）
+   - 鬼成像：$\Delta x = \lambda z/D_c$，其中 $D_c$ 是相干直径
+   - 量子鬼成像：可达 $\Delta x = \lambda/(2N \cdot \text{NA})$（N光子纠缠）
+
+2. **时间分辨率**：
+   - 经典成像：受限于探测器帧率
+   - 鬼成像：需要累积多次测量，典型 $>10^3$ 次
+   - 计算鬼成像：可通过压缩感知减少测量次数
+
+3. **动态范围**：
+   - 经典CCD：$\sim 10^3 - 10^4$
+   - 鬼成像：理论上无限（桶探测器无饱和）
+   - 实际受限于ADC位深和积分时间
+
+4. **环境适应性**：
+   - 经典成像：易受大气湍流、散射介质影响
+   - 鬼成像：对信号路径扰动不敏感
+   - 可在强背景光下工作（通过关联滤除背景）
+
+应用场景优化：
+- **远程成像**：利用抗湍流特性，适合大气传输
+- **生物成像**：低光损伤，适合活体样品
+- **3D成像**：结合飞行时间测量实现深度分辨
+- **多光谱成像**：单像素探测器可覆盖宽光谱范围
+
+鬼成像的根本优势在于将空间分辨率从探测端转移到照明端，这种范式转变开启了新的成像可能性。
 
 ## 28.2 量子照明
 
