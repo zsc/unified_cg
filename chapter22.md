@@ -15,60 +15,60 @@
 
 ### 22.1.1 电磁波的偏振现象
 
-光作为横波，其电场矢量 **E** 在垂直于传播方向的平面内振动。考虑沿 z 轴传播的单色平面波，电场可表示为：
+光作为横波，其电场矢量 $\mathbf{E}$ 在垂直于传播方向的平面内振动。考虑沿 z 轴传播的单色平面波，电场可表示为：
 
-**E**(z,t) = **E**₀ exp[i(kz - ωt)]
+$$ \mathbf{E}(z,t) = \mathbf{E}_0 \exp[\mathrm{i}(kz - \omega t)] $$
 
-其中 **E**₀ = (Ex₀, Ey₀, 0) 是复振幅矢量。偏振描述的是电场矢量端点在 xy 平面内的运动轨迹。
+其中 $\mathbf{E}_0 = (Ex_0, Ey_0, 0)$ 是复振幅矢量。偏振描述的是电场矢量端点在 xy 平面内的运动轨迹。
 
 实电场为：
-**E**ᴿ(z,t) = Re[**E**(z,t)] = Re[Ex₀ exp[i(kz - ωt)]]**e**x + Re[Ey₀ exp[i(kz - ωt)]]**e**y
+$$ \mathbf{E}^\mathrm{R}(z,t) = \mathrm{Re}[\mathbf{E}(z,t)] = \mathrm{Re}[Ex_0 \exp[\mathrm{i}(kz - \omega t)]]\mathbf{e}_x + \mathrm{Re}[Ey_0 \exp[\mathrm{i}(kz - \omega t)]]\mathbf{e}_y $$
 
 写成分量形式：
-Ex(z,t) = |Ex₀| cos(kz - ωt + φx)
-Ey(z,t) = |Ey₀| cos(kz - ωt + φy)
+$$ Ex(z,t) = |Ex_0| \cos(kz - \omega t + \varphi_x) $$
+$$ Ey(z,t) = |Ey_0| \cos(kz - \omega t + \varphi_y) $$
 
-其中 φx, φy 是各分量的初相位。相位差 δ = φy - φx 决定了偏振态的性质。
+其中 $\varphi_x, \varphi_y$ 是各分量的初相位。相位差 $\delta = \varphi_y - \varphi_x$ 决定了偏振态的性质。
 
 ### 22.1.2 线偏振、圆偏振与椭圆偏振
 
 通过消去时间参数，可得到电场矢量端点的轨迹方程：
 
-(Ex/|Ex₀|)² + (Ey/|Ey₀|)² - 2(Ex/|Ex₀|)(Ey/|Ey₀|)cos δ = sin² δ
+$$ \left(\frac{Ex}{|Ex_0|}\right)^2 + \left(\frac{Ey}{|Ey_0|}\right)^2 - 2\left(\frac{Ex}{|Ex_0|}\right)\left(\frac{Ey}{|Ey_0|}\right)\cos \delta = \sin^2 \delta $$
 
 这是一般的椭圆方程。根据振幅比和相位差的不同值，可得到不同的偏振态：
 
-**线偏振**（δ = 0 或 π）：
+**线偏振**（$\delta = 0$ 或 $\pi$）：
 - 电场沿固定方向振动
-- 偏振方向与 x 轴夹角：θ = arctan(|Ey₀|/|Ex₀|)
+- 偏振方向与 x 轴夹角：$\theta = \arctan(|Ey_0|/|Ex_0|)$
 - 轨迹为直线
 
-**圆偏振**（|Ex₀| = |Ey₀| = E₀，δ = ±π/2）：
-- 右旋圆偏振（RCP）：δ = -π/2
-- 左旋圆偏振（LCP）：δ = +π/2
-- 电场矢量端点描绘半径为 E₀ 的圆
+**圆偏振**（$|Ex_0| = |Ey_0| = E_0$，$\delta = \pm\pi/2$）：
+- 右旋圆偏振（RCP）：$\delta = -\pi/2$
+- 左旋圆偏振（LCP）：$\delta = +\pi/2$
+- 电场矢量端点描绘半径为 $E_0$ 的圆
 
 **椭圆偏振**（一般情况）：
 - 电场矢量端点描绘椭圆
-- 椭圆长轴与 x 轴夹角：ψ = (1/2)arctan[2|Ex₀||Ey₀|cos δ/(|Ex₀|² - |Ey₀|²)]
-- 椭圆率：e = tan χ，其中 tan 2χ = 2|Ex₀||Ey₀|sin δ/(|Ex₀|² - |Ey₀|²)
+- 椭圆长轴与 x 轴夹角：$\psi = (1/2)\arctan\left[\frac{2|Ex_0||Ey_0|\cos \delta}{|Ex_0|^2 - |Ey_0|^2}\right]$
+- 椭圆率：$e = \tan \chi$，其中 $\tan 2\chi = \frac{2|Ex_0||Ey_0|\sin \delta}{|Ex_0|^2 - |Ey_0|^2}$
 
 ### 22.1.3 偏振态的数学表示
 
 完全偏振光的状态可用以下参数唯一确定：
 
 **几何参数表示**：
-- 方位角 ψ ∈ [-π/2, π/2]：椭圆长轴方向
-- 椭圆率角 χ ∈ [-π/4, π/4]：描述椭圆的"扁平"程度
-- 强度 I = |Ex₀|² + |Ey₀|²
+- 方位角 $\psi \in [-\pi/2, \pi/2]$：椭圆长轴方向
+- 椭圆率角 $\chi \in [-\pi/4, \pi/4]$：描述椭圆的"扁平"程度
+- 强度 $I = |Ex_0|^2 + |Ey_0|^2$
 
 **复振幅表示**：
-- Ex₀ = |Ex₀| exp(iφx)
-- Ey₀ = |Ey₀| exp(iφy)
+- $Ex_0 = |Ex_0| \exp(\mathrm{i}\varphi_x)$
+- $Ey_0 = |Ey_0| \exp(\mathrm{i}\varphi_y)$
 
 两种表示之间的转换关系：
-|Ex₀| = √I cos ψ cos χ - i√I sin ψ sin χ
-|Ey₀| = √I sin ψ cos χ + i√I cos ψ sin χ
+$$ |Ex_0| = \sqrt{I} \cos \psi \cos \chi - \mathrm{i}\sqrt{I} \sin \psi \sin \chi $$
+$$ |Ey_0| = \sqrt{I} \sin \psi \cos \chi + \mathrm{i}\sqrt{I} \cos \psi \sin \chi $$
 
 这些关系构成了后续琼斯矢量和斯托克斯参数描述的基础。
 
@@ -76,77 +76,76 @@ Ey(z,t) = |Ey₀| cos(kz - ωt + φy)
 
 **从瞬时电场到偏振椭圆**：
 
-在固定位置 z = 0，电场矢量随时间的轨迹形成偏振椭圆。设：
-Ex(t) = ax cos(ωt + φx)
-Ey(t) = ay cos(ωt + φy)
+在固定位置 $z = 0$，电场矢量随时间的轨迹形成偏振椭圆。设：
+$$ Ex(t) = a_x \cos(\omega t + \varphi_x) $$
+$$ Ey(t) = a_y \cos(\omega t + \varphi_y) $$
 
-引入无量纲坐标 ξ = Ex/ax，η = Ey/ay，消去时间得椭圆方程：
-ξ² + η² - 2ξη cos δ = sin² δ
+引入无量纲坐标 $\xi = Ex/a_x$，$\eta = Ey/a_y$，消去时间得椭圆方程：
+$$ \xi^2 + \eta^2 - 2\xi\eta \cos \delta = \sin^2 \delta $$
 
-其中 δ = φy - φx。
+其中 $\delta = \varphi_y - \varphi_x$。
 
 **椭圆参数的推导**：
 
-将椭圆方程转换到主轴坐标系 (ξ', η')：
-[ξ'] = [cos ψ   sin ψ][ξ]
-[η']   [-sin ψ  cos ψ][η]
+将椭圆方程转换到主轴坐标系 $(\xi', \eta')$：
+$$ \begin{pmatrix} \xi' \\ \eta' \end{pmatrix} = \begin{pmatrix} \cos \psi & \sin \psi \\ -\sin \psi & \cos \psi \end{pmatrix} \begin{pmatrix} \xi \\ \eta \end{pmatrix} $$
 
-主轴方向 ψ 由下式确定：
-tan 2ψ = (2axay cos δ)/(ax² - ay²)
+主轴方向 $\psi$ 由下式确定：
+$$ \tan 2\psi = \frac{2a_x a_y \cos \delta}{a_x^2 - a_y^2} $$
 
-椭圆半长轴 a 和半短轴 b：
-a² + b² = ax² + ay²
-a²b² = (axay sin δ)²
+椭圆半长轴 $a$ 和半短轴 $b$：
+$$ a^2 + b^2 = a_x^2 + a_y^2 $$
+$$ a^2 b^2 = (a_x a_y \sin \delta)^2 $$
 
 椭圆率（ellipticity）：
-ε = b/a = |tan χ|
+$$ \varepsilon = b/a = |\tan \chi| $$
 
-其中椭圆率角 χ 满足：
-sin 2χ = (2axay sin δ)/(ax² + ay²)
+其中椭圆率角 $\chi$ 满足：
+$$ \sin 2\chi = \frac{2a_x a_y \sin \delta}{a_x^2 + a_y^2} $$
 
 **手性判定**：
 
 偏振光的手性（旋向）由电场矢量的旋转方向决定：
-- 右旋（δ < 0）：从光源看，电场顺时针旋转
-- 左旋（δ > 0）：从光源看，电场逆时针旋转
+- 右旋（$\delta < 0$）：从光源看，电场顺时针旋转
+- 左旋（$\delta > 0$）：从光源看，电场逆时针旋转
 
 手性也可通过角动量密度判定：
-**L** = ε₀**E** × **E**/2iω
+$$ \mathbf{L} = \varepsilon_0 \mathbf{E} \times \mathbf{E}/2\mathrm{i}\omega $$
 
-对于圆偏振光，|**L**| = ε₀E₀²/2ω。
+对于圆偏振光，$|\mathbf{L}| = \varepsilon_0 E_0^2/2\omega$。
 
 ### 22.1.5 偏振态的能量考虑
 
 **能量密度与Poynting矢量**：
 
 电磁场能量密度：
-u = (1/2)(ε₀|**E**|² + μ₀|**H**|²) = ε₀|**E**|²
+$$ u = (1/2)(\varepsilon_0|\mathbf{E}|^2 + \mu_0|\mathbf{H}|^2) = \varepsilon_0|\mathbf{E}|^2 $$
 
 时间平均能量密度：
-⟨u⟩ = (ε₀/2)(|Ex₀|² + |Ey₀|²) = (ε₀/2)I
+$$ \langle u \rangle = (\varepsilon_0/2)(|Ex_0|^2 + |Ey_0|^2) = (\varepsilon_0/2)I $$
 
 Poynting矢量：
-**S** = **E** × **H** = (1/μ₀c)**E** × **B**
+$$ \mathbf{S} = \mathbf{E} \times \mathbf{H} = (1/\mu_0 c)\mathbf{E} \times \mathbf{B} $$
 
 时间平均Poynting矢量：
-⟨**S**⟩ = (cε₀/2)I **ẑ**
+$$ \langle \mathbf{S} \rangle = (c\varepsilon_0/2)I \mathbf{\hat{z}} $$
 
 注意能量流与偏振态无关，但自旋角动量密度依赖于偏振态。
 
 **偏振态的正交性与完备性**：
 
-两个偏振态 **E**₁ 和 **E**₂ 的正交性定义为：
-⟨**E**₁|**E**₂⟩ = Ex₁*Ex₂ + Ey₁*Ey₂ = 0
+两个偏振态 $\mathbf{E}_1$ 和 $\mathbf{E}_2$ 的正交性定义为：
+$$ \langle \mathbf{E}_1|\mathbf{E}_2 \rangle = Ex_1^*Ex_2 + Ey_1^*Ey_2 = 0 $$
 
 任意偏振态可在正交基下展开：
-**E** = α₁**E**₁ + α₂**E**₂
+$$ \mathbf{E} = \alpha_1 \mathbf{E}_1 + \alpha_2 \mathbf{E}_2 $$
 
 其中展开系数：
-α₁ = ⟨**E**₁|**E**⟩/⟨**E**₁|**E**₁⟩
-α₂ = ⟨**E**₂|**E**⟩/⟨**E**₂|**E**₂⟩
+$$ \alpha_1 = \langle \mathbf{E}_1|\mathbf{E} \rangle/\langle \mathbf{E}_1|\mathbf{E}_1 \rangle $$
+$$ \alpha_2 = \langle \mathbf{E}_2|\mathbf{E} \rangle/\langle \mathbf{E}_2|\mathbf{E}_2 \rangle $$
 
 能量守恒要求：
-|α₁|²⟨**E**₁|**E**₁⟩ + |α₂|²⟨**E**₂|**E**₂⟩ = ⟨**E**|**E**⟩
+$$ |\alpha_1|^2\langle \mathbf{E}_1|\mathbf{E}_1 \rangle + |\alpha_2|^2\langle \mathbf{E}_2|\mathbf{E}_2 \rangle = \langle \mathbf{E}|\mathbf{E} \rangle $$
 
 ## 22.2 琼斯矢量与琼斯矩阵
 
@@ -154,99 +153,84 @@ Poynting矢量：
 
 对于完全偏振的单色光，琼斯矢量定义为电场复振幅的归一化列矢量：
 
-**J** = [Ex₀]
-      [Ey₀]
+$$ \mathbf{J} = \begin{pmatrix} Ex_0 \\ Ey_0 \end{pmatrix} $$
 
-通常采用归一化形式，使得 |Ex₀|² + |Ey₀|² = 1。琼斯矢量完全描述了偏振态，但不包含强度信息。
+通常采用归一化形式，使得 $|Ex_0|^2 + |Ey_0|^2 = 1$。琼斯矢量完全描述了偏振态，但不包含强度信息。
 
 琼斯矢量的一般形式可写为：
-**J** = [cos θ exp(iφx)]
-      [sin θ exp(iφy)]
+$$ \mathbf{J} = \begin{pmatrix} \cos \theta \exp(\mathrm{i}\varphi_x) \\ \sin \theta \exp(\mathrm{i}\varphi_y) \end{pmatrix} $$
 
-其中 θ 决定振幅比，φx 和 φy 是相位。利用整体相位的任意性，可选择 φx = 0：
+其中 $\theta$ 决定振幅比，$\varphi_x$ 和 $\varphi_y$ 是相位。利用整体相位的任意性，可选择 $\varphi_x = 0$：
 
-**J** = [cos θ]
-      [sin θ exp(iδ)]
+$$ \mathbf{J} = \begin{pmatrix} \cos \theta \\ \sin \theta \exp(\mathrm{i}\delta) \end{pmatrix} $$
 
-这里 δ = φy - φx 是相位差。
+这里 $\delta = \varphi_y - \varphi_x$ 是相位差。
 
 ### 22.2.2 基本偏振态的琼斯表示
 
 **水平线偏振（H）**：
-**J**H = [1]
-       [0]
+$$ \mathbf{J}_\mathrm{H} = \begin{pmatrix} 1 \\ 0 \end{pmatrix} $$
 
 **垂直线偏振（V）**：
-**J**V = [0]
-       [1]
+$$ \mathbf{J}_\mathrm{V} = \begin{pmatrix} 0 \\ 1 \end{pmatrix} $$
 
 **45° 线偏振（D）**：
-**J**D = (1/√2)[1]
-              [1]
+$$ \mathbf{J}_\mathrm{D} = (1/\sqrt{2})\begin{pmatrix} 1 \\ 1 \end{pmatrix} $$
 
 **-45° 线偏振（A）**：
-**J**A = (1/√2)[1]
-              [-1]
+$$ \mathbf{J}_\mathrm{A} = (1/\sqrt{2})\begin{pmatrix} 1 \\ -1 \end{pmatrix} $$
 
 **右旋圆偏振（R）**：
-**J**R = (1/√2)[1]
-              [-i]
+$$ \mathbf{J}_\mathrm{R} = (1/\sqrt{2})\begin{pmatrix} 1 \\ -\mathrm{i} \end{pmatrix} $$
 
 **左旋圆偏振（L）**：
-**J**L = (1/√2)[1]
-              [i]
+$$ \mathbf{J}_\mathrm{L} = (1/\sqrt{2})\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix} $$
 
-这六个状态构成三组正交基：{H,V}、{D,A}、{R,L}。任意偏振态可在任一组基下展开。
+这六个状态构成三组正交基：$\{\mathrm{H},\mathrm{V}\}$、$\{\mathrm{D},\mathrm{A}\}$、$\{\mathrm{R},\mathrm{L}\}$。任意偏振态可在任一组基下展开。
 
 ### 22.2.3 琼斯矩阵方法
 
-偏振器件对琼斯矢量的作用可用 2×2 复矩阵表示：
+偏振器件对琼斯矢量的作用可用 $2\times2$ 复矩阵表示：
 
-**J**out = **M** **J**in
+$$ \mathbf{J}_\mathrm{out} = \mathbf{M} \mathbf{J}_\mathrm{in} $$
 
-其中 **M** 是琼斯矩阵。对于无损器件，矩阵应满足幺正性：**M**†**M** = **I**。
+其中 $\mathbf{M}$ 是琼斯矩阵。对于无损器件，矩阵应满足幺正性：$\mathbf{M}^\dagger\mathbf{M} = \mathbf{I}$。
 
 **基本琼斯矩阵**：
 
-线偏振器（透振方向与 x 轴夹角 θ）：
-**M**pol(θ) = [cos²θ      cos θ sin θ]
-             [cos θ sin θ  sin²θ     ]
+线偏振器（透振方向与 x 轴夹角 $\theta$）：
+$$ \mathbf{M}_\mathrm{pol}(\theta) = \begin{pmatrix} \cos^2\theta & \cos \theta \sin \theta \\ \cos \theta \sin \theta & \sin^2\theta \end{pmatrix} $$
 
-相位延迟器（快轴沿 x，相位延迟 δ）：
-**M**ret(δ) = [1    0      ]
-             [0    exp(iδ)]
+相位延迟器（快轴沿 x，相位延迟 $\delta$）：
+$$ \mathbf{M}_\mathrm{ret}(\delta) = \begin{pmatrix} 1 & 0 \\ 0 & \exp(\mathrm{i}\delta) \end{pmatrix} $$
 
-旋转器（旋转角 θ）：
-**M**rot(θ) = [cos θ  -sin θ]
-             [sin θ   cos θ]
+旋转器（旋转角 $\theta$）：
+$$ \mathbf{M}_\mathrm{rot}(\theta) = \begin{pmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{pmatrix} $$
 
 ### 22.2.4 级联系统的矩阵运算
 
 多个器件级联时，总的琼斯矩阵为各矩阵的乘积（注意顺序）：
 
-**M**total = **M**n **M**n-1 ... **M**2 **M**1
+$$ \mathbf{M}_\mathrm{total} = \mathbf{M}_n \mathbf{M}_{n-1} \dots \mathbf{M}_2 \mathbf{M}_1 $$
 
 **例：四分之一波片 + 线偏振器**
 
-设四分之一波片快轴沿 x（δ = π/2），后接水平偏振器：
+设四分之一波片快轴沿 x（$\delta = \pi/2$），后接水平偏振器：
 
-**M**total = **M**pol(0) **M**ret(π/2) = [1 0][1  0 ] = [1 0]
-                                        [0 0][0  i ]   [0 0]
+$$ \mathbf{M}_\mathrm{total} = \mathbf{M}_\mathrm{pol}(0) \mathbf{M}_\mathrm{ret}(\pi/2) = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}\begin{pmatrix} 1 & 0 \\ 0 & \mathrm{i} \end{pmatrix} = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix} $$
 
 输入右旋圆偏振光：
-**J**out = **M**total **J**R = [1 0](1/√2)[1 ] = (1/√2)[1]
-                              [0 0]      [-i]         [0]
+$$ \mathbf{J}_\mathrm{out} = \mathbf{M}_\mathrm{total} \mathbf{J}_\mathrm{R} = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}(1/\sqrt{2})\begin{pmatrix} 1 \\ -\mathrm{i} \end{pmatrix} = (1/\sqrt{2})\begin{pmatrix} 1 \\ 0 \end{pmatrix} $$
 
 输出为水平线偏振光，强度减半。
 
 **任意取向相位延迟器的矩阵**：
 
-快轴与 x 轴夹角为 θ 的相位延迟器：
-**M**(θ,δ) = **R**(-θ) **M**ret(δ) **R**(θ)
+快轴与 x 轴夹角为 $\theta$ 的相位延迟器：
+$$ \mathbf{M}(\theta,\delta) = \mathbf{R}(-\theta) \mathbf{M}_\mathrm{ret}(\delta) \mathbf{R}(\theta) $$
 
 展开得：
-**M**(θ,δ) = [cos²θ + sin²θ exp(iδ)        sin θ cos θ(1 - exp(iδ))]
-             [sin θ cos θ(1 - exp(iδ))    sin²θ + cos²θ exp(iδ)    ]
+$$ \mathbf{M}(\theta,\delta) = \begin{pmatrix} \cos^2\theta + \sin^2\theta \exp(\mathrm{i}\delta) & \sin \theta \cos \theta(1 - \exp(\mathrm{i}\delta)) \\ \sin \theta \cos \theta(1 - \exp(\mathrm{i}\delta)) & \sin^2\theta + \cos^2\theta \exp(\mathrm{i}\delta) \end{pmatrix} $$
 
 这个公式在分析复杂偏振系统时非常有用。
 
@@ -256,14 +240,13 @@ Poynting矢量：
 
 问题：设计一个系统将水平线偏振转换为左旋圆偏振。
 
-解：需要找到矩阵 **M** 使得：
-**M**[1, 0]ᵀ = (1/√2)[1, i]ᵀ
+解：需要找到矩阵 $\mathbf{M}$ 使得：
+$$ \mathbf{M}\begin{pmatrix} 1 \\ 0 \end{pmatrix} = (1/\sqrt{2})\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix} $$
 
 一种解决方案：45°取向的四分之一波片
-**M** = **R**(-π/4)**M**ret(π/2)**R**(π/4) = (1/√2)[1+i  1-i]
-                                                    [1-i  1+i]
+$$ \mathbf{M} = \mathbf{R}(-\pi/4)\mathbf{M}_\mathrm{ret}(\pi/2)\mathbf{R}(\pi/4) = (1/\sqrt{2})\begin{pmatrix} 1+\mathrm{i} & 1-\mathrm{i} \\ 1-\mathrm{i} & 1+\mathrm{i} \end{pmatrix} $$
 
-验证：**M**[1, 0]ᵀ = (1/√2)[(1+i), (1-i)]ᵀ = (1/√2)[1, i]ᵀ exp(iπ/4)
+验证：$\mathbf{M}\begin{pmatrix} 1 \\ 0 \end{pmatrix} = (1/\sqrt{2})\begin{pmatrix} 1+\mathrm{i} \\ 1-\mathrm{i} \end{pmatrix} = (1/\sqrt{2})\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix} \exp(\mathrm{i}\pi/4)$
 
 相位因子不影响偏振态。
 
@@ -271,8 +254,8 @@ Poynting矢量：
 
 光纤通信中常需要在TE和TM模式间转换。使用半波片：
 
-TE→TM：**M**HWP(π/4) = [0  1]
-                       [1  0]
+TE→TM：
+$$ \mathbf{M}_\mathrm{HWP}(\pi/4) = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} $$
 
 这实现了x和y分量的交换。
 
@@ -282,33 +265,33 @@ TE→TM：**M**HWP(π/4) = [0  1]
 
 伪消偏振器（Lyot消偏振器）：
 - 两个延迟量不同的波片级联
-- δ₁ = 2π，δ₂ = π
+- $\delta_1 = 2\pi$，$\delta_2 = \pi$
 - 对窄带光源产生快速变化的输出偏振态
 
 ### 22.2.6 琼斯矩阵的数学性质
 
 **特征值与特征矢量**：
 
-任意琼斯矩阵 **M** 的特征方程：
-det(**M** - λ**I**) = 0
+任意琼斯矩阵 $\mathbf{M}$ 的特征方程：
+$$ \det(\mathbf{M} - \lambda\mathbf{I}) = 0 $$
 
 特征矢量代表不变偏振态（eigenpolarizations）。
 
 例：四分之一波片（快轴0°）
-特征值：λ₁ = 1, λ₂ = i
-特征矢量：**v**₁ = [1, 0]ᵀ（水平偏振），**v**₂ = [0, 1]ᵀ（垂直偏振）
+特征值：$\lambda_1 = 1, \lambda_2 = \mathrm{i}$
+特征矢量：$\mathbf{v}_1 = \begin{pmatrix} 1 \\ 0 \end{pmatrix}$（水平偏振），$\mathbf{v}_2 = \begin{pmatrix} 0 \\ 1 \end{pmatrix}$（垂直偏振）
 
 **矩阵分解**：
 
 任意琼斯矩阵可分解为：
-**M** = **U**Λ**U**†
+$$ \mathbf{M} = \mathbf{U}\Lambda\mathbf{U}^\dagger $$
 
-其中 **U** 是幺正矩阵，Λ 是对角矩阵。
+其中 $\mathbf{U}$ 是幺正矩阵，$\Lambda$ 是对角矩阵。
 
 物理意义：
-1. **U**†：转换到特征偏振基
-2. Λ：在特征基下的相位延迟
-3. **U**：转换回原始基
+1. $\mathbf{U}^\dagger$：转换到特征偏振基
+2. $\Lambda$：在特征基下的相位延迟
+3. $\mathbf{U}$：转换回原始基
 
 **群论性质**：
 
@@ -318,11 +301,10 @@ det(**M** - λ**I**) = 0
 - 群运算：矩阵乘法
 
 SU(2)的生成元（Pauli矩阵）：
-σ₁ = [0 1]    σ₂ = [0 -i]    σ₃ = [1  0]
-     [1 0]         [i  0]          [0 -1]
+$$ \sigma_1 = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} \quad \sigma_2 = \begin{pmatrix} 0 & -\mathrm{i} \\ \mathrm{i} & 0 \end{pmatrix} \quad \sigma_3 = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} $$
 
 任意SU(2)元素：
-**M** = exp(i**n**·**σ**θ/2) = cos(θ/2)**I** + i sin(θ/2)**n**·**σ**
+$$ \mathbf{M} = \exp(\mathrm{i}\mathbf{n}\cdot\mathbf{\sigma}\theta/2) = \cos(\theta/2)\mathbf{I} + \mathrm{i} \sin(\theta/2)\mathbf{n}\cdot\mathbf{\sigma} $$
 
 这与量子力学中的旋转算符同构。
 
@@ -332,42 +314,33 @@ SU(2)的生成元（Pauli矩阵）：
 
 斯托克斯参数提供了描述任意偏振态（包括部分偏振光）的完整方法。定义四个实参数：
 
-S₀ = ⟨|Ex|²⟩ + ⟨|Ey|²⟩ = I（总强度）
-S₁ = ⟨|Ex|²⟩ - ⟨|Ey|²⟩
-S₂ = 2⟨Ex*Ey⟩ᴿ = 2⟨|Ex||Ey|cos δ⟩
-S₃ = 2⟨Ex*Ey⟩ᴵ = 2⟨|Ex||Ey|sin δ⟩
+$$ S_0 = \langle|Ex|^2\rangle + \langle|Ey|^2\rangle = I \text{（总强度）} $$
+$$ S_1 = \langle|Ex|^2\rangle - \langle|Ey|^2\rangle $$
+$$ S_2 = 2\langle Ex^*Ey \rangle^\mathrm{R} = 2\langle|Ex||Ey|\cos \delta\rangle $$
+$$ S_3 = 2\langle Ex^*Ey \rangle^\mathrm{I} = 2\langle|Ex||Ey|\sin \delta\rangle $$
 
-其中 ⟨·⟩ 表示时间平均或统计平均。斯托克斯矢量定义为：
+其中 $\langle\cdot\rangle$ 表示时间平均或统计平均。斯托克斯矢量定义为：
 
-**S** = [S₀]
-      [S₁]
-      [S₂]
-      [S₃]
+$$ \mathbf{S} = \begin{pmatrix} S_0 \\ S_1 \\ S_2 \\ S_3 \end{pmatrix} $$
 
 对于完全偏振光，有约束条件：
-S₀² = S₁² + S₂² + S₃²
+$$ S_0^2 = S_1^2 + S_2^2 + S_3^2 $$
 
 ### 22.3.2 部分偏振光的描述
 
 部分偏振光可分解为完全偏振部分和完全非偏振部分：
 
-**S** = **S**pol + **S**unpol
+$$ \mathbf{S} = \mathbf{S}_\mathrm{pol} + \mathbf{S}_\mathrm{unpol} $$
 
 其中：
-**S**unpol = [S₀ - √(S₁² + S₂² + S₃²)]
-            [0]
-            [0]
-            [0]
+$$ \mathbf{S}_\mathrm{unpol} = \begin{pmatrix} S_0 - \sqrt{S_1^2 + S_2^2 + S_3^2} \\ 0 \\ 0 \\ 0 \end{pmatrix} $$
 
-**S**pol = [√(S₁² + S₂² + S₃²)]
-          [S₁]
-          [S₂]
-          [S₃]
+$$ \mathbf{S}_\mathrm{pol} = \begin{pmatrix} \sqrt{S_1^2 + S_2^2 + S_3^2} \\ S_1 \\ S_2 \\ S_3 \end{pmatrix} $$
 
 偏振度定义为：
-P = √(S₁² + S₂² + S₃²) / S₀
+$$ P = \frac{\sqrt{S_1^2 + S_2^2 + S_3^2}}{S_0} $$
 
-满足 0 ≤ P ≤ 1，其中 P = 0 表示完全非偏振光，P = 1 表示完全偏振光。
+满足 $0 \le P \le 1$，其中 $P = 0$ 表示完全非偏振光，$P = 1$ 表示完全偏振光。
 
 ### 22.3.3 偏振度的计算
 
@@ -375,16 +348,16 @@ P = √(S₁² + S₂² + S₃²) / S₀
 
 对于准单色光，偏振度与相干度密切相关：
 
-P² = (S₁² + S₂² + S₃²) / S₀² = 4|⟨Ex*Ey⟩|² / (⟨|Ex|²⟩ + ⟨|Ey|²⟩)²
+$$ P^2 = \frac{S_1^2 + S_2^2 + S_3^2}{S_0^2} = \frac{4|\langle Ex^*Ey \rangle|^2}{(\langle|Ex|^2\rangle + \langle|Ey|^2\rangle)^2} $$
 
-当 Ex 和 Ey 完全相干时，P = 1；完全不相干时，P = 0。
+当 $Ex$ 和 $Ey$ 完全相干时，$P = 1$；完全不相干时，$P = 0$。
 
 **偏振态参数的提取**：
 
 从斯托克斯参数可提取偏振椭圆的参数：
 
-方位角：ψ = (1/2)arctan(S₂/S₁)
-椭圆率角：χ = (1/2)arcsin(S₃/√(S₁² + S₂² + S₃²))
+方位角：$\psi = (1/2)\arctan(S_2/S_1)$
+椭圆率角：$\chi = (1/2)\arcsin\left(S_3/\sqrt{S_1^2 + S_2^2 + S_3^2}\right)$
 
 对于部分偏振光，这些参数描述其偏振部分的性质。
 
@@ -394,43 +367,37 @@ P² = (S₁² + S₂² + S₃²) / S₀² = 4|⟨Ex*Ey⟩|² / (⟨|Ex|²⟩ + �
 
 **基本测量方案**：
 
-S₀ = IH + IV（水平 + 垂直偏振器）
-S₁ = IH - IV
-S₂ = ID - IA（+45° 和 -45° 偏振器）
-S₃ = IR - IL（右旋和左旋圆偏振分析器）
+$S_0 = I_\mathrm{H} + I_\mathrm{V}$（水平 + 垂直偏振器）
+$S_1 = I_\mathrm{H} - I_\mathrm{V}$
+$S_2 = I_\mathrm{D} - I_\mathrm{A}$（+45° 和 -45° 偏振器）
+$S_3 = I_\mathrm{R} - I_\mathrm{L}$（右旋和左旋圆偏振分析器）
 
 其中圆偏振分析器由四分之一波片加线偏振器组成。
 
 **矩阵表示**：
 
 测量可表示为：
-I = (1/2)**a**ᵀ**S**
+$$ I = (1/2)\mathbf{a}^\mathrm{T}\mathbf{S} $$
 
-其中 **a** 是分析器矢量。例如：
-- 水平偏振器：**a**H = [1, 1, 0, 0]ᵀ
-- 右旋圆偏振分析器：**a**R = [1, 0, 0, 1]ᵀ
+其中 $\mathbf{a}$ 是分析器矢量。例如：
+- 水平偏振器：$\mathbf{a}_\mathrm{H} = [1, 1, 0, 0]^\mathrm{T}$
+- 右旋圆偏振分析器：$\mathbf{a}_\mathrm{R} = [1, 0, 0, 1]^\mathrm{T}$
 
 **Mueller 矩阵**：
 
-斯托克斯矢量通过光学元件的变换用 4×4 Mueller 矩阵描述：
+斯托克斯矢量通过光学元件的变换用 $4\times4$ Mueller 矩阵描述：
 
-**S**out = **M** **S**in
+$$ \mathbf{S}_\mathrm{out} = \mathbf{M} \mathbf{S}_\mathrm{in} $$
 
 Mueller 矩阵包含了器件的全部偏振特性，包括偏振相关损耗和去偏振效应。
 
 常见器件的 Mueller 矩阵：
 
 线偏振器（水平）：
-**M**pol = (1/2)[1  1  0  0]
-               [1  1  0  0]
-               [0  0  0  0]
-               [0  0  0  0]
+$$ \mathbf{M}_\mathrm{pol} = (1/2)\begin{pmatrix} 1 & 1 & 0 & 0 \\ 1 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 \end{pmatrix} $$
 
 四分之一波片（快轴水平）：
-**M**QWP = [1  0  0  0]
-          [0  1  0  0]
-          [0  0  0  1]
-          [0  0 -1  0]
+$$ \mathbf{M}_\mathrm{QWP} = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & -1 & 0 \end{pmatrix} $$
 
 ### 22.3.5 Mueller矩阵的深入分析
 
@@ -439,88 +406,80 @@ Mueller 矩阵包含了器件的全部偏振特性，包括偏振相关损耗和
 物理可实现的Mueller矩阵必须满足：
 
 1. **正定性约束**：
-   对任意输入Stokes矢量 **S**in（满足S₀² ≥ S₁² + S₂² + S₃²），
-   输出 **S**out = **M****S**in 也必须满足相同约束。
+   对任意输入Stokes矢量 $\mathbf{S}_\mathrm{in}$（满足$S_0^2 \ge S_1^2 + S_2^2 + S_3^2$），
+   输出 $\mathbf{S}_\mathrm{out} = \mathbf{M}\mathbf{S}_\mathrm{in}$ 也必须满足相同约束。
 
 2. **特征值约束**：
-   相干矩阵 **C** = **M**ᵀ**M** 的特征值必须非负。
+   相干矩阵 $\mathbf{C} = \mathbf{M}^\mathrm{T}\mathbf{M}$ 的特征值必须非负。
 
 3. **Cloude分解**：
    任意Mueller矩阵可分解为：
-   **M** = Σᵢ pᵢ**M**ᵢ
-   其中 pᵢ ≥ 0，Σpᵢ = 1，**M**ᵢ 是非去偏振Mueller矩阵。
+   $$ \mathbf{M} = \sum_i p_i\mathbf{M}_i $$
+   其中 $p_i \ge 0$，$\sum p_i = 1$，$\mathbf{M}_i$ 是非去偏振Mueller矩阵。
 
 **去偏振度的量化**：
 
 Mueller矩阵的去偏振能力可用多个指标描述：
 
 1. **去偏振指数**：
-   DI = √(Σᵢ,ⱼ≠00 M²ᵢⱼ)/√(3M²₀₀)
+   $$ \mathrm{DI} = \sqrt{\sum_{i,j\ne00} M_{ij}^2}/\sqrt{3M_{00}^2} $$
 
 2. **偏振纯度指数**：
-   P₁ = |**m**₁|/m₀₀（第一列）
-   P₂ = |**m**ᵀ|/m₀₀（第一行）
+   $P_1 = |\mathbf{m}_1|/m_{00}$（第一列）
+   $P_2 = |\mathbf{m}^\mathrm{T}|/m_{00}$（第一行）
    
-   其中 **m**₁ = [M₁₀, M₂₀, M₃₀]ᵀ
+   其中 $\mathbf{m}_1 = [M_{10}, M_{20}, M_{30}]^\mathrm{T}$
 
 3. **平均去偏振度**：
-   Δ = 1 - (P₁ + P₂)/2
+   $$ \Delta = 1 - (P_1 + P_2)/2 $$
 
 **Mueller-Jones对应**：
 
 对于非去偏振系统，Mueller矩阵与Jones矩阵的关系：
 
-**M** = **A**(**J** ⊗ **J***)**A**⁻¹
+$$ \mathbf{M} = \mathbf{A}(\mathbf{J} \otimes \mathbf{J}^*)\mathbf{A}^{-1} $$
 
-其中 ⊗ 是Kronecker积，**A** 是变换矩阵：
+其中 $\otimes$ 是Kronecker积，$\mathbf{A}$ 是变换矩阵：
 
-**A** = [1  0   0   1]
-       [1  0   0  -1]
-       [0  1   1   0]
-       [0  i  -i   0]
+$$ \mathbf{A} = \begin{pmatrix} 1 & 0 & 0 & 1 \\ 1 & 0 & 0 & -1 \\ 0 & 1 & 1 & 0 \\ 0 & \mathrm{i} & -\mathrm{i} & 0 \end{pmatrix} $$
 
 逆变换：
-**A**⁻¹ = (1/2)[1  1   0   0]
-               [0  0   1  -i]
-               [0  0   1   i]
-               [1 -1   0   0]
+$$ \mathbf{A}^{-1} = (1/2)\begin{pmatrix} 1 & 1 & 0 & 0 \\ 0 & 0 & 1 & -\mathrm{i} \\ 0 & 0 & 1 & \mathrm{i} \\ 1 & -1 & 0 & 0 \end{pmatrix} $$
 
 ### 22.3.6 偏振态的统计描述
 
 **相干矩阵表示**：
 
-对于部分偏振光，引入2×2相干矩阵：
+对于部分偏振光，引入$2\times2$相干矩阵：
 
-**Φ** = ⟨**E****E**†⟩ = [⟨|Ex|²⟩     ⟨Ex*Ey⟩]
-                      [⟨ExEy*⟩     ⟨|Ey|²⟩]
+$$ \mathbf{\Phi} = \langle\mathbf{E}\mathbf{E}^\dagger\rangle = \begin{pmatrix} \langle|Ex|^2\rangle & \langle Ex^*Ey \rangle \\ \langle ExEy^* \rangle & \langle|Ey|^2\rangle \end{pmatrix} $$
 
 与Stokes参数的关系：
-**Φ** = (1/2)[S₀ + S₁    S₂ - iS₃]
-             [S₂ + iS₃   S₀ - S₁]
+$$ \mathbf{\Phi} = (1/2)\begin{pmatrix} S_0 + S_1 & S_2 - \mathrm{i}S_3 \\ S_2 + \mathrm{i}S_3 & S_0 - S_1 \end{pmatrix} $$
 
 相干矩阵性质：
-- Hermitian：**Φ** = **Φ**†
-- 半正定：特征值 λ₁, λ₂ ≥ 0
-- 迹：Tr(**Φ**) = S₀（总强度）
+- Hermitian：$\mathbf{\Phi} = \mathbf{\Phi}^\dagger$
+- 半正定：特征值 $\lambda_1, \lambda_2 \ge 0$
+- 迹：$\mathrm{Tr}(\mathbf{\Phi}) = S_0$（总强度）
 
 **偏振熵**：
 
 类比信息论，定义偏振熵：
 
-H = -Σᵢ (λᵢ/S₀)log₂(λᵢ/S₀)
+$$ H = -\sum_i (\lambda_i/S_0)\log_2(\lambda_i/S_0) $$
 
-其中 λᵢ 是相干矩阵的特征值。
+其中 $\lambda_i$ 是相干矩阵的特征值。
 
-- H = 0：完全偏振光（纯态）
-- H = 1：完全非偏振光（最大混合态）
+- $H = 0$：完全偏振光（纯态）
+- $H = 1$：完全非偏振光（最大混合态）
 
 **偏振态的概率解释**：
 
 部分偏振光可视为不同偏振态的统计混合：
 
-**Φ** = Σᵢ pᵢ|**E**ᵢ⟩⟨**E**ᵢ|
+$$ \mathbf{\Phi} = \sum_i p_i|\mathbf{E}_i\rangle\langle\mathbf{E}_i| $$
 
-其中 pᵢ 是第i个偏振态的概率权重。
+其中 $p_i$ 是第i个偏振态的概率权重。
 
 这与量子力学的密度矩阵形式完全类似。
 
@@ -533,39 +492,39 @@ H = -Σᵢ (λᵢ/S₀)log₂(λᵢ/S₀)
 **球面坐标与斯托克斯参数**：
 
 对于完全偏振光，归一化斯托克斯参数满足：
-s₁² + s₂² + s₃² = 1
+$$ s_1^2 + s_2^2 + s_3^2 = 1 $$
 
-其中 sᵢ = Sᵢ/S₀（i = 1,2,3）。这定义了三维空间中的单位球面。
+其中 $s_i = S_i/S_0$（$i = 1,2,3$）。这定义了三维空间中的单位球面。
 
 球面上每点的笛卡尔坐标直接对应归一化斯托克斯参数：
-- x = s₁ = cos 2χ cos 2ψ
-- y = s₂ = cos 2χ sin 2ψ  
-- z = s₃ = sin 2χ
+- $x = s_1 = \cos 2\chi \cos 2\psi$
+- $y = s_2 = \cos 2\chi \sin 2\psi$  
+- $z = s_3 = \sin 2\chi$
 
-其中 ψ 是偏振椭圆的方位角，χ 是椭圆率角。
+其中 $\psi$ 是偏振椭圆的方位角，$\chi$ 是椭圆率角。
 
 **球面坐标表示**：
 
-使用球坐标 (θ, φ)：
-- 极角 θ ∈ [0, π]：θ = π/2 - 2χ
-- 方位角 φ ∈ [0, 2π]：φ = 2ψ
+使用球坐标 $(\theta, \varphi)$：
+- 极角 $\theta \in [0, \pi]$：$\theta = \pi/2 - 2\chi$
+- 方位角 $\varphi \in [0, 2\pi]$：$\varphi = 2\psi$
 
 斯托克斯参数的球坐标形式：
-s₁ = sin θ cos φ
-s₂ = sin θ sin φ
-s₃ = cos θ
+$s_1 = \sin \theta \cos \varphi$
+$s_2 = \sin \theta \sin \varphi$
+$s_3 = \cos \theta$
 
 **特殊偏振态的位置**：
 
-- 赤道（θ = π/2）：所有线偏振态
-  - H态：(1,0,0)，φ = 0
-  - V态：(-1,0,0)，φ = π
-  - D态：(0,1,0)，φ = π/2
-  - A态：(0,-1,0)，φ = 3π/2
+- 赤道（$\theta = \pi/2$）：所有线偏振态
+  - H态：$(1,0,0)$，$\varphi = 0$
+  - V态：$(-1,0,0)$，$\varphi = \pi$
+  - D态：$(0,1,0)$，$\varphi = \pi/2$
+  - A态：$(0,-1,0)$，$\varphi = 3\pi/2$
 
 - 极点：圆偏振态
-  - 北极 L态：(0,0,1)，左旋圆偏振
-  - 南极 R态：(0,0,-1)，右旋圆偏振
+  - 北极 L态：$(0,0,1)$，左旋圆偏振
+  - 南极 R态：$(0,0,-1)$，右旋圆偏振
 
 - 一般位置：椭圆偏振态
   - 北半球：左旋椭圆偏振
@@ -575,29 +534,29 @@ s₃ = cos θ
 
 **从琼斯矢量到庞加莱球**：
 
-给定归一化琼斯矢量 **J** = [a, b]ᵀ，其中 |a|² + |b|² = 1，对应的球面坐标为：
+给定归一化琼斯矢量 $\mathbf{J} = \begin{pmatrix} a \\ b \end{pmatrix}$，其中 $|a|^2 + |b|^2 = 1$，对应的球面坐标为：
 
-s₁ = |a|² - |b|² = 2|a||b|cos(arg(b) - arg(a))
-s₂ = 2Re(a*b) = 2|a||b|cos(arg(b/a))
-s₃ = 2Im(a*b) = 2|a||b|sin(arg(b/a))
+$s_1 = |a|^2 - |b|^2 = 2|a||b|\cos(\arg(b) - \arg(a))$
+$s_2 = 2\mathrm{Re}(a^*b) = 2|a||b|\cos(\arg(b/a))$
+$s_3 = 2\mathrm{Im}(a^*b) = 2|a||b|\sin(\arg(b/a))$
 
 **立体投影表示**：
 
 庞加莱球可通过立体投影映射到复平面。从南极向北投影：
 
-ζ = (s₁ + is₂)/(1 + s₃) = tan(θ/2)exp(iφ)
+$$ \zeta = \frac{s_1 + \mathrm{i}s_2}{1 + s_3} = \tan(\theta/2)\exp(\mathrm{i}\varphi) $$
 
-这个复数 ζ 完全确定了偏振态。对于琼斯矢量 [a,b]ᵀ，有：
-ζ = b/a
+这个复数 $\zeta$ 完全确定了偏振态。对于琼斯矢量 $\begin{pmatrix} a \\ b \end{pmatrix}$，有：
+$$ \zeta = b/a $$
 
 这建立了琼斯矢量复数比与庞加莱球的直接联系。
 
 **对径点的物理意义**：
 
 球面上的对径点表示正交偏振态：
-- 若 **S** 和 **S'** 是对径点，则对应的偏振态正交
-- **S'** = -**S**
-- 正交性：⟨**J**|**J'**⟩ = 0
+- 若 $\mathbf{S}$ 和 $\mathbf{S}'$ 是对径点，则对应的偏振态正交
+- $\mathbf{S}' = -\mathbf{S}$
+- 正交性：$\langle\mathbf{J}|\mathbf{J}'\rangle = 0$
 
 这个性质在偏振分析和量子信息中非常重要。
 
@@ -612,26 +571,24 @@ s₃ = 2Im(a*b) = 2|a||b|sin(arg(b/a))
 
 **相位延迟器的作用**：
 
-相位延迟器在庞加莱球上的作用是绕某轴的旋转。设延迟器快轴方向为 α，相位延迟 δ：
+相位延迟器在庞加莱球上的作用是绕某轴的旋转。设延迟器快轴方向为 $\alpha$，相位延迟 $\delta$：
 
-旋转轴：**n** = [cos 2α, sin 2α, 0]ᵀ
-旋转角：δ
+旋转轴：$\mathbf{n} = [\cos 2\alpha, \sin 2\alpha, 0]^\mathrm{T}$
+旋转角：$\delta$
 
 旋转矩阵（Rodrigues公式）：
-**R**(δ,**n**) = **I** + sin δ [**n**]× + (1-cos δ)[**n**]×²
+$$ \mathbf{R}(\delta,\mathbf{n}) = \mathbf{I} + \sin \delta [\mathbf{n}]_\times + (1-\cos \delta)[\mathbf{n}]_\times^2 $$
 
-其中 [**n**]× 是反对称矩阵：
-[**n**]× = [ 0      0     -sin 2α]
-         [ 0      0      cos 2α]
-         [sin 2α -cos 2α    0   ]
+其中 $[\mathbf{n}]_\times$ 是反对称矩阵：
+$$ [\mathbf{n}]_\times = \begin{pmatrix} 0 & 0 & -\sin 2\alpha \\ 0 & 0 & \cos 2\alpha \\ \sin 2\alpha & -\cos 2\alpha & 0 \end{pmatrix} $$
 
 **特殊情况**：
 
-1. 半波片（δ = π）：绕快轴方向旋转 180°
+1. 半波片（$\delta = \pi$）：绕快轴方向旋转 180°
    - 保持与快轴平行的线偏振态不变
    - 反转垂直于快轴的偏振分量
 
-2. 四分之一波片（δ = π/2）：绕快轴方向旋转 90°
+2. 四分之一波片（$\delta = \pi/2$）：绕快轴方向旋转 90°
    - 将与快轴成 45° 的线偏振转为圆偏振
    - 将圆偏振转为线偏振
 
@@ -646,9 +603,9 @@ s₃ = 2Im(a*b) = 2|a||b|sin(arg(b/a))
 **偏振模色散（PMD）的几何描述**：
 
 在光纤中，偏振态演化可表示为庞加莱球上的随机游走：
-d**s**/dz = **Ω**(z) × **s**
+$$ \mathrm{d}\mathbf{s}/\mathrm{d}z = \mathbf{\Omega}(z) \times \mathbf{s} $$
 
-其中 **Ω**(z) 是局部双折射矢量。这导致：
+其中 $\mathbf{\Omega}(z)$ 是局部双折射矢量。这导致：
 - 短距离：确定性旋转
 - 长距离：扩散行为
 - 相关长度：定义偏振保持能力
@@ -659,38 +616,37 @@ d**s**/dz = **Ω**(z) × **s**
 
 **量子态的对应**：
 
-量子比特态：|ψ⟩ = α|0⟩ + β|1⟩，其中 |α|² + |β|² = 1
+量子比特态：$|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$，其中 $|\alpha|^2 + |\beta|^2 = 1$
 
 对应的布洛赫矢量：
-**r** = [2Re(α*β), 2Im(α*β), |α|² - |β|²]ᵀ
+$$ \mathbf{r} = [2\mathrm{Re}(\alpha^*\beta), 2\mathrm{Im}(\alpha^*\beta), |\alpha|^2 - |\beta|^2]^\mathrm{T} $$
 
 与偏振态的对应：
-- |0⟩ ↔ 水平偏振 |H⟩
-- |1⟩ ↔ 垂直偏振 |V⟩
-- (|0⟩ + |1⟩)/√2 ↔ 45°偏振 |D⟩
-- (|0⟩ + i|1⟩)/√2 ↔ 左旋圆偏振 |L⟩
+- $|0\rangle \leftrightarrow$ 水平偏振 $|\mathrm{H}\rangle$
+- $|1\rangle \leftrightarrow$ 垂直偏振 $|\mathrm{V}\rangle$
+- $(|0\rangle + |1\rangle)/\sqrt{2} \leftrightarrow$ 45°偏振 $|\mathrm{D}\rangle$
+- $(|0\rangle + \mathrm{i}|1\rangle)/\sqrt{2} \leftrightarrow$ 左旋圆偏振 $|\mathrm{L}\rangle$
 
 **泡利矩阵与斯托克斯参数**：
 
 密度矩阵表示：
-ρ = (1/2)(σ₀ + s₁σ₁ + s₂σ₂ + s₃σ₃)
+$$ \rho = (1/2)(\sigma_0 + s_1\sigma_1 + s_2\sigma_2 + s_3\sigma_3) $$
 
-其中 σᵢ 是泡利矩阵：
-σ₁ = [0 1]    σ₂ = [0 -i]    σ₃ = [1  0]
-     [1 0]         [i  0]          [0 -1]
+其中 $\sigma_i$ 是泡利矩阵：
+$$ \sigma_1 = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} \quad \sigma_2 = \begin{pmatrix} 0 & -\mathrm{i} \\ \mathrm{i} & 0 \end{pmatrix} \quad \sigma_3 = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} $$
 
 这建立了斯托克斯参数与量子力学密度矩阵的直接联系。
 
 **幺正变换与偏振变换**：
 
-量子门操作 U 对应偏振变换：
-|ψ'⟩ = U|ψ⟩ ↔ **J'** = **U****J**
+量子门操作 $U$ 对应偏振变换：
+$|\psi'\rangle = U|\psi\rangle \leftrightarrow \mathbf{J}' = \mathbf{U}\mathbf{J}$
 
 在布洛赫球上，这表现为旋转：
-**r'** = **R****r**
+$$ \mathbf{r}' = \mathbf{R}\mathbf{r} $$
 
-其中旋转矩阵 **R** 与幺正矩阵 U 通过如下关系联系：
-U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
+其中旋转矩阵 $\mathbf{R}$ 与幺正矩阵 $U$ 通过如下关系联系：
+$$ U = \exp(-\mathrm{i}\theta\mathbf{n}\cdot\mathbf{\sigma}/2) \leftrightarrow \mathbf{R} = \exp(-\theta[\mathbf{n}]_\times) $$
 
 **应用实例**：
 
@@ -714,38 +670,33 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 
 **理想线偏振器的琼斯矩阵**：
 
-透振方向与x轴夹角为θ的线偏振器：
+透振方向与x轴夹角为$\theta$的线偏振器：
 
-**P**(θ) = [cos²θ      cos θ sin θ]
-          [cos θ sin θ  sin²θ     ]
+$$ \mathbf{P}(\theta) = \begin{pmatrix} \cos^2\theta & \cos \theta \sin \theta \\ \cos \theta \theta \sin \theta & \sin^2\theta \end{pmatrix} $$
 
 这可以分解为：
-**P**(θ) = **p̂****p̂**†
+$$ \mathbf{P}(\theta) = \mathbf{\hat{p}}\mathbf{\hat{p}}^\dagger $$
 
-其中 **p̂** = [cos θ, sin θ]ᵀ 是透振方向的单位矢量。
+其中 $\mathbf{\hat{p}} = [\cos \theta, \sin \theta]^\mathrm{T}$ 是透振方向的单位矢量。
 
 **特殊角度的偏振器**：
 
-水平偏振器（θ = 0）：
-**P**H = [1 0]
-        [0 0]
+水平偏振器（$\theta = 0$）：
+$$ \mathbf{P}_\mathrm{H} = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix} $$
 
-垂直偏振器（θ = π/2）：
-**P**V = [0 0]
-        [0 1]
+垂直偏振器（$\theta = \pi/2$）：
+$$ \mathbf{P}_\mathrm{V} = \begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix} $$
 
-45°偏振器（θ = π/4）：
-**P**D = (1/2)[1 1]
-             [1 1]
+45°偏振器（$\theta = \pi/4$）：
+$$ \mathbf{P}_\mathrm{D} = (1/2)\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} $$
 
 **消光比和非理想性**：
 
-实际偏振器存在有限消光比 ε：
+实际偏振器存在有限消光比 $\varepsilon$：
 
-**P**real(θ) = [cos²θ + ε sin²θ     (1-ε)cos θ sin θ]
-              [(1-ε)cos θ sin θ    sin²θ + ε cos²θ ]
+$$ \mathbf{P}_\mathrm{real}(\theta) = \begin{pmatrix} \cos^2\theta + \varepsilon \sin^2\theta & (1-\varepsilon)\cos \theta \sin \theta \\ (1-\varepsilon)\cos \theta \sin \theta & \sin^2\theta + \varepsilon \cos^2\theta \end{pmatrix} $$
 
-消光比定义：ER = 10 log₁₀(1/ε) dB
+消光比定义：$\mathrm{ER} = 10 \log_{10}(1/\varepsilon) \text{ dB}$
 
 典型值：
 - 薄膜偏振器：20-30 dB
@@ -756,10 +707,7 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 
 理想线偏振器的Mueller矩阵：
 
-**M**pol(θ) = (1/2)[1 + cos 2θ    sin 2θ      0  0]
-                   [cos 2θ    cos² 2θ   sin 2θ cos 2θ  0]
-                   [sin 2θ   sin 2θ cos 2θ   sin² 2θ    0]
-                   [0           0           0        0]
+$$ \mathbf{M}_\mathrm{pol}(\theta) = (1/2)\begin{pmatrix} 1 + \cos 2\theta & \sin 2\theta & 0 & 0 \\ \cos 2\theta & \cos^2 2\theta & \sin 2\theta \cos 2\theta & 0 \\ \sin 2\theta & \sin 2\theta \cos 2\theta & \sin^2 2\theta & 0 \\ 0 & 0 & 0 & 0 \end{pmatrix} $$
 
 注意最后一行全零，表示完全去偏振化。
 
@@ -787,44 +735,39 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 
 **一般相位延迟器的琼斯矩阵**：
 
-快轴沿x轴，相位延迟δ：
+快轴沿x轴，相位延迟$\delta$：
 
-**R**₀(δ) = [1      0     ]
-           [0   exp(iδ)]
+$$ \mathbf{R}_0(\delta) = \begin{pmatrix} 1 & 0 \\ 0 & \exp(\mathrm{i}\delta) \end{pmatrix} $$
 
-快轴与x轴夹角θ的一般延迟器：
+快轴与x轴夹角$\theta$的一般延迟器：
 
-**R**(θ,δ) = **T**(-θ)**R**₀(δ)**T**(θ)
+$$ \mathbf{R}(\theta,\delta) = \mathbf{T}(-\theta)\mathbf{R}_0(\delta)\mathbf{T}(\theta) $$
 
 展开得：
-**R**(θ,δ) = [cos²θ + sin²θ e^(iδ)      sin θ cos θ(1 - e^(iδ))]
-            [sin θ cos θ(1 - e^(iδ))   sin²θ + cos²θ e^(iδ)   ]
+$$ \mathbf{R}(\theta,\delta) = \begin{pmatrix} \cos^2\theta + \sin^2\theta \mathrm{e}^{\mathrm{i}\delta} & \sin \theta \cos \theta(1 - \mathrm{e}^{\mathrm{i}\delta}) \\ \sin \theta \cos \theta(1 - \mathrm{e}^{\mathrm{i}\delta}) & \sin^2\theta + \cos^2\theta \mathrm{e}^{\mathrm{i}\delta} \end{pmatrix} $$
 
 其中旋转矩阵：
-**T**(θ) = [cos θ  -sin θ]
-          [sin θ   cos θ]
+$$ \mathbf{T}(\theta) = \begin{pmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{pmatrix} $$
 
 **常用波片**：
 
-1. **四分之一波片（QWP）**，δ = π/2：
+1. **四分之一波片（QWP）**，$\delta = \pi/2$：
    
-   **R**QWP(θ) = [cos²θ + i sin²θ     (1-i)sin θ cos θ]
-                [(1-i)sin θ cos θ    sin²θ + i cos²θ ]
+   $$ \mathbf{R}_\mathrm{QWP}(\theta) = \begin{pmatrix} \cos^2\theta + \mathrm{i} \sin^2\theta & (1-\mathrm{i})\sin \theta \cos \theta \\ (1-\mathrm{i})\sin \theta \cos \theta & \sin^2\theta + \mathrm{i} \cos^2\theta \end{pmatrix} $$
    
    特殊取向：
-   - θ = 0：**R**QWP = diag(1, i)
-   - θ = 45°：线偏振↔圆偏振转换器
+   - $\theta = 0$：$\mathbf{R}_\mathrm{QWP} = \mathrm{diag}(1, \mathrm{i})$
+   - $\theta = 45^\circ$：线偏振$\leftrightarrow$圆偏振转换器
 
-2. **半波片（HWP）**，δ = π：
+2. **半波片（HWP）**，$\delta = \pi$：
    
-   **R**HWP(θ) = [cos 2θ   sin 2θ]
-                [sin 2θ  -cos 2θ]
+   $$ \mathbf{R}_\mathrm{HWP}(\theta) = \begin{pmatrix} \cos 2\theta & \sin 2\theta \\ \sin 2\theta & -\cos 2\theta \end{pmatrix} $$
    
-   作用：将偏振方向旋转2θ
+   作用：将偏振方向旋转$2\theta$
 
-3. **全波片（FWP）**，δ = 2π：
+3. **全波片（FWP）**，$\delta = 2\pi$：
    
-   **R**FWP = **I**（恒等变换）
+   $\mathbf{R}_\mathrm{FWP} = \mathbf{I}$（恒等变换）
    
    用于补偿和相位调节
 
@@ -832,35 +775,32 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 
 实际波片的相位延迟依赖波长和温度：
 
-δ(λ,T) = 2π(nₑ - nₒ)d/λ + α(T - T₀)
+$$ \delta(\lambda,T) = 2\pi(n_\mathrm{e} - n_\mathrm{o})d/\lambda + \alpha(T - T_0) $$
 
 其中：
-- (nₑ - nₒ)：双折射率差
-- d：晶体厚度
-- α：温度系数
+- $(n_\mathrm{e} - n_\mathrm{o})$：双折射率差
+- $d$：晶体厚度
+- $\alpha$：温度系数
 
 **零级、多级和复合波片**：
 
-1. **零级波片**：δ = δ₀（单片，很薄）
+1. **零级波片**：$\delta = \delta_0$（单片，很薄）
    - 优点：色散小
    - 缺点：机械脆弱
 
-2. **多级波片**：δ = 2πm + δ₀
+2. **多级波片**：$\delta = 2\pi m + \delta_0$
    - 优点：机械强度好
    - 缺点：色散大，温度敏感
 
 3. **复合波片**：两片相减
-   δ = δ₁ - δ₂ = δ₀
+   $\delta = \delta_1 - \delta_2 = \delta_0$
    - 平衡了色散和强度
 
 **Mueller矩阵表示**：
 
 相位延迟器的Mueller矩阵：
 
-**M**ret(θ,δ) = [1        0                    0                   0       ]
-                [0   cos²2θ+sin²2θ cos δ   sin 2θ cos 2θ(1-cos δ)  -sin 2θ sin δ]
-                [0   sin 2θ cos 2θ(1-cos δ)  sin²2θ+cos²2θ cos δ    cos 2θ sin δ]
-                [0       sin 2θ sin δ          -cos 2θ sin δ          cos δ    ]
+$$ \mathbf{M}_\mathrm{ret}(\theta,\delta) = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos^22\theta+\sin^22\theta \cos \delta & \sin 2\theta \cos 2\theta(1-\cos \delta) & -\sin 2\theta \sin \delta \\ 0 & \sin 2\theta \cos 2\theta(1-\cos \delta) & \sin^22\theta+\cos^22\theta \cos \delta & \cos 2\theta \sin \delta \\ 0 & \sin 2\theta \sin \delta & -\cos 2\theta \sin \delta & \cos \delta \end{pmatrix} $$
 
 ### 22.5.3 旋光器
 
@@ -870,20 +810,19 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 
 1. **自然旋光性**（石英、糖溶液）：
    - 分子手性导致
-   - 旋转角：α = πΔn·d/λ
-   - Δn = nL - nR（左右圆偏振折射率差）
+   - 旋转角：$\alpha = \pi\Delta n \cdot d/\lambda$
+   - $\Delta n = n_\mathrm{L} - n_\mathrm{R}$（左右圆偏振折射率差）
 
 2. **法拉第旋光**（磁光效应）：
    - 外加磁场诱导
-   - 旋转角：α = V·B·d
-   - V：Verdet常数
+   - 旋转角：$\alpha = V \cdot B \cdot d$
+   - $V$：Verdet常数
 
 **琼斯矩阵表示**：
 
-旋光角为α的旋光器：
+旋光角为$\alpha$的旋光器：
 
-**O**(α) = [cos α  -sin α]
-          [sin α   cos α]
+$$ \mathbf{O}(\alpha) = \begin{pmatrix} \cos \alpha & -\sin \alpha \\ \sin \alpha & \cos \alpha \end{pmatrix} $$
 
 这与坐标旋转矩阵相同，但物理意义不同：
 - 坐标旋转：观察者视角改变
@@ -892,34 +831,30 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 **旋光器的重要性质**：
 
 1. **非互易性**（法拉第旋光）：
-   - 正向传播：旋转+α
-   - 反向传播：再旋转+α（而非-α）
-   - 总旋转：2α
+   - 正向传播：旋转$+\alpha$
+   - 反向传播：再旋转$+\alpha$（而非$-\alpha$）
+   - 总旋转：$2\alpha$
 
 2. **互易性**（自然旋光）：
-   - 正向：+α
-   - 反向：-α
+   - 正向：$+\alpha$
+   - 反向：$-\alpha$
    - 往返后无净旋转
 
 **旋光器与波片的组合**：
 
 旋光器可由圆偏振基下的相位延迟实现：
 
-**O**(α) = **T**cir **R**₀(2α) **T**†cir
+$$ \mathbf{O}(\alpha) = \mathbf{T}_\mathrm{cir} \mathbf{R}_0(2\alpha) \mathbf{T}_\mathrm{cir}^\dagger $$
 
-其中 **T**cir 是从线偏振基到圆偏振基的变换：
+其中 $\mathbf{T}_\mathrm{cir}$ 是从线偏振基到圆偏振基的变换：
 
-**T**cir = (1/√2)[1   1]
-                 [i  -i]
+$$ \mathbf{T}_\mathrm{cir} = (1/\sqrt{2})\begin{pmatrix} 1 & 1 \\ \mathrm{i} & -\mathrm{i} \end{pmatrix} $$
 
 **Mueller矩阵**：
 
-**M**rot(α) = [1    0       0      0]
-             [0  cos 2α  -sin 2α  0]
-             [0  sin 2α   cos 2α  0]
-             [0    0       0      1]
+$$ \mathbf{M}_\mathrm{rot}(\alpha) = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos 2\alpha & -\sin 2\alpha & 0 \\ 0 & \sin 2\alpha & \cos 2\alpha & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix} $$
 
-在庞加莱球上表现为绕S₃轴（z轴）旋转2α。
+在庞加莱球上表现为绕$S_3$轴（z轴）旋转$2\alpha$。
 
 ### 22.5.4 复合器件系统
 
@@ -928,8 +863,8 @@ U = exp(-iθ**n**·**σ**/2) ↔ **R** = exp(-θ[**n**]×)
 **级联系统的矩阵描述**：
 
 N个器件级联：
-- 琼斯矩阵：**J**total = **J**N···**J**₂**J**₁
-- Mueller矩阵：**M**total = **M**N···**M**₂**M**₁
+- 琼斯矩阵：$\mathbf{J}_\mathrm{total} = \mathbf{J}_N\cdots\mathbf{J}_2\mathbf{J}_1$
+- Mueller矩阵：$\mathbf{M}_\mathrm{total} = \mathbf{M}_N\cdots\mathbf{M}_2\mathbf{M}_1$
 
 注意顺序：光先通过器件1，最后通过器件N。
 
@@ -937,59 +872,59 @@ N个器件级联：
 
 **Babinet-Soleil补偿器**：
 - 两个楔形波片，相对滑动
-- 连续可调相位延迟：δ = k(d₁ - d₂)
-- 矩阵：**R**(θ, δ(d))
+- 连续可调相位延迟：$\delta = k(d_1 - d_2)$
+- 矩阵：$\mathbf{R}(\theta, \delta(d))$
 
 **Berek补偿器**：
 - 倾斜波片
-- 延迟量：δ = δ₀/cos φ（φ为倾斜角）
+- 延迟量：$\delta = \delta_0/\cos \varphi$（$\varphi$为倾斜角）
 - 同时改变延迟量和快轴方向
 
 **偏振控制器**：
 
 标准三片式控制器（QWP-HWP-QWP）：
 
-**P**total = **R**QWP(θ₃)**R**HWP(θ₂)**R**QWP(θ₁)
+$$ \mathbf{P}_\mathrm{total} = \mathbf{R}_\mathrm{QWP}(\theta_3)\mathbf{R}_\mathrm{HWP}(\theta_2)\mathbf{R}_\mathrm{QWP}(\theta_1) $$
 
 可实现任意偏振态变换（SU(2)群的任意元素）。
 
 参数与庞加莱球旋转的关系：
-- θ₁：绕S₁轴旋转
-- θ₂：绕变换后的S₃轴旋转
-- θ₃：绕最终S₁轴旋转
+- $\theta_1$：绕$S_1$轴旋转
+- $\theta_2$：绕变换后的$S_3$轴旋转
+- $\theta_3$：绕最终$S_1$轴旋转
 
 **偏振分析器设计**：
 
 **完整Stokes偏振计**：
 
 需要至少4次测量。典型配置：
-1. I₀°：水平偏振器
-2. I₉₀°：垂直偏振器
-3. I₄₅°：45°偏振器
-4. IRCP：QWP + 水平偏振器
+1. $I_{0^\circ}$：水平偏振器
+2. $I_{90^\circ}$：垂直偏振器
+3. $I_{45^\circ}$：45°偏振器
+4. $I_\mathrm{RCP}$：QWP + 水平偏振器
 
 Stokes参数：
-S₀ = I₀° + I₉₀°
-S₁ = I₀° - I₉₀°
-S₂ = 2I₄₅° - S₀
-S₃ = 2IRCP - S₀
+$S_0 = I_{0^\circ} + I_{90^\circ}$
+$S_1 = I_{0^\circ} - I_{90^\circ}$
+$S_2 = 2I_{45^\circ} - S_0$
+$S_3 = 2I_\mathrm{RCP} - S_0$
 
 **旋转波片偏振计**：
 
 连续旋转QWP，固定偏振器：
-I(ω₁t) = (1/2)[S₀ + S₁cos(4ω₁t) + S₂sin(4ω₁t)cos δ - S₃sin(4ω₁t)sin δ]
+$$ I(\omega_1 t) = (1/2)[S_0 + S_1\cos(4\omega_1 t) + S_2\sin(4\omega_1 t)\cos \delta - S_3\sin(4\omega_1 t)\sin \delta] $$
 
 傅里叶分析提取Stokes参数。
 
 **矩阵条件数与误差传播**：
 
 器件组合的数值稳定性：
-κ(**M**) = ||**M**|| · ||**M**⁻¹||
+$$ \kappa(\mathbf{M}) = \|\mathbf{M}\| \cdot \|\mathbf{M}^{-1}\| $$
 
 条件数大表示对输入扰动敏感。优化设计应最小化条件数。
 
 误差传播：
-δ**S**out ≈ **M** δ**S**in + δ**M** **S**in
+$$ \delta\mathbf{S}_\mathrm{out} \approx \mathbf{M} \delta\mathbf{S}_\mathrm{in} + \delta\mathbf{M} \mathbf{S}_\mathrm{in} $$
 
 需要考虑：
 - 器件制造公差
@@ -1008,7 +943,7 @@ I(ω₁t) = (1/2)[S₀ + S₁cos(4ω₁t) + S₂sin(4ω₁t)cos δ - S₃sin(4ω
 最精确的偏振测量方法之一，使用两个同步旋转的延迟器：
 
 探测强度：
-I(t) = a₀ + Σₙ₌₁⁴ [aₙcos(nω₁t) + bₙsin(nω₁t)] + Σₘ₌₁⁴ [cₘcos(mω₂t) + dₘsin(mω₂t)]
+$$ I(t) = a_0 + \sum_{n=1}^4 [a_n\cos(n\omega_1 t) + b_n\sin(n\omega_1 t)] + \sum_{m=1}^4 [c_m\cos(m\omega_2 t) + d_m\sin(m\omega_2 t)] $$
 
 其中系数与Stokes参数的关系通过傅里叶分析确定。
 
@@ -1016,27 +951,24 @@ I(t) = a₀ + Σₙ₌₁⁴ [aₙcos(nω₁t) + bₙsin(nω₁t)] + Σₘ₌₁
 - 自校准能力
 - 消除系统误差
 - 宽光谱范围
-- 精度可达 ΔP/P ~ 10⁻⁵
+- 精度可达 $\Delta P/P \sim 10^{-5}$
 
 **分振幅偏振计**：
 
 使用偏振分束器同时测量两个正交分量：
 
 设计考虑：
-1. 分束器消光比 > 10³:1
+1. 分束器消光比 > $10^3:1$
 2. 探测器匹配：响应度差异 < 0.1%
 3. 同步采集消除时间变化
 
 校准矩阵：
-**A** = [a₁₁ a₁₂ a₁₃ a₁₄]
-       [a₂₁ a₂₂ a₂₃ a₂₄]
-       [a₃₁ a₃₂ a₃₃ a₃₄]
-       [a₄₁ a₄₂ a₄₃ a₄₄]
+$$ \mathbf{A} = \begin{pmatrix} a_{11} & a_{12} & a_{13} & a_{14} \\ a_{21} & a_{22} & a_{23} & a_{24} \\ a_{31} & a_{32} & a_{33} & a_{34} \\ a_{41} & a_{42} & a_{43} & a_{44} \end{pmatrix} $$
 
 Stokes参数反演：
-**S** = **A**⁻¹**I**
+$$ \mathbf{S} = \mathbf{A}^{-1}\mathbf{I} $$
 
-其中 **I** = [I₁, I₂, I₃, I₄]ᵀ 是四个通道的强度。
+其中 $\mathbf{I} = [I_1, I_2, I_3, I_4]^\mathrm{T}$ 是四个通道的强度。
 
 **光谱偏振测量**：
 
@@ -1044,42 +976,42 @@ Stokes参数反演：
 
 利用厚延迟器产生的光谱调制：
 
-I(σ) = (1/2)[S₀(σ) + S₁(σ)cos(2πδ₁σ) + S₂(σ)sin(2πδ₁σ)cos θ₁ - S₃(σ)sin(2πδ₁σ)sin θ₁]
+$$ I(\sigma) = (1/2)[S_0(\sigma) + S_1(\sigma)\cos(2\pi\delta_1\sigma) + S_2(\sigma)\sin(2\pi\delta_1\sigma)\cos \theta_1 - S_3(\sigma)\sin(2\pi\delta_1\sigma)\sin \theta_1] $$
 
-其中 σ = 1/λ 是波数，δ₁ 是延迟器厚度。
+其中 $\sigma = 1/\lambda$ 是波数，$\delta_1$ 是延迟器厚度。
 
 通过傅里叶变换恢复Stokes光谱：
-S₀(σ) = 2∫I(σ')dσ'
-S₁(σ) = 4∫I(σ')cos(2πδ₁σ')dσ'
+$$ S_0(\sigma) = 2\int I(\sigma')\mathrm{d}\sigma' $$
+$$ S_1(\sigma) = 4\int I(\sigma')\cos(2\pi\delta_1\sigma')\mathrm{d}\sigma' $$
 
 分辨率与延迟器厚度的关系：
-Δσ = 1/(2δ₁)
+$$ \Delta\sigma = 1/(2\delta_1) $$
 
 **成像偏振测量**：
 
 **分焦平面偏振相机**：
 
 微偏振器阵列集成在探测器上：
-- 2×2超像素：0°, 45°, 90°, 135°
+- $2\times2$超像素：0°, 45°, 90°, 135°
 - 瞬时Stokes参数计算
 - 空间分辨率降低4倍
 
 插值算法恢复全分辨率：
-S₀(x,y) = I₀° + I₉₀° + 2I_interp
-S₁(x,y) = I₀° - I₉₀°
-S₂(x,y) = I₄₅° - I₁₃₅°
+$S_0(x,y) = I_{0^\circ} + I_{90^\circ} + 2I_\mathrm{interp}$
+$S_1(x,y) = I_{0^\circ} - I_{90^\circ}$
+$S_2(x,y) = I_{45^\circ} - I_{135^\circ}$
 
-其中 I_interp 是邻近像素插值。
+其中 $I_\mathrm{interp}$ 是邻近像素插值。
 
 **液晶可调谐偏振成像**：
 
 使用液晶可变延迟器（LCVR）：
-δ(V) = 2πΔn(V)d/λ
+$$ \delta(V) = 2\pi\Delta n(V)d/\lambda $$
 
 时序控制获取完整Stokes图像：
-1. V₁ → δ = 0（参考）
-2. V₂ → δ = π/2（QWP）
-3. V₃ → δ = π（HWP）
+1. $V_1 \to \delta = 0$（参考）
+2. $V_2 \to \delta = \pi/2$（QWP）
+3. $V_3 \to \delta = \pi$（HWP）
 4. 不同快轴角度
 
 优势：无机械运动，快速切换（~10ms）。
@@ -1091,21 +1023,20 @@ S₂(x,y) = I₄₅° - I₁₃₅°
 测量反射光偏振态变化确定材料光学常数：
 
 反射系数比：
-ρ = rₚ/rₛ = tan ψ exp(iΔ)
+$$ \rho = r_\mathrm{p}/r_\mathrm{s} = \tan \psi \exp(\mathrm{i}\Delta) $$
 
-其中 ψ 和 Δ 是椭偏参数。
+其中 $\psi$ 和 $\Delta$ 是椭偏参数。
 
 与材料参数的关系（各向同性材料）：
-ρ = [(n₂² - n₁²sin²θ₁)^(1/2) - n₁cos θ₁] / [(n₂² - n₁²sin²θ₁)^(1/2) + n₁cos θ₁] × 
-    [n₂²cos θ₁ - n₁(n₂² - n₁²sin²θ₁)^(1/2)] / [n₂²cos θ₁ + n₁(n₂² - n₁²sin²θ₁)^(1/2)]
+$$ \rho = \frac{\sqrt{n_2^2 - n_1^2\sin^2\theta_1} - n_1\cos \theta_1}{\sqrt{n_2^2 - n_1^2\sin^2\theta_1} + n_1\cos \theta_1} \times \frac{n_2^2\cos \theta_1 - n_1\sqrt{n_2^2 - n_1^2\sin^2\theta_1}}{n_2^2\cos \theta_1 + n_1\sqrt{n_2^2 - n_1^2\sin^2\theta_1}} $$
 
 多层结构需要传输矩阵方法：
-**M** = ∏ᵢ **M**ᵢ
+$$ \mathbf{M} = \prod_i \mathbf{M}_i $$
 
 模型拟合提取：
 - 层厚度
-- 折射率 n(λ)
-- 消光系数 k(λ)
+- 折射率 $n(\lambda)$
+- 消光系数 $k(\lambda)$
 - 表面粗糙度
 
 **穆勒矩阵椭偏测量**：
@@ -1113,16 +1044,16 @@ S₂(x,y) = I₄₅° - I₁₃₅°
 完整16元素Mueller矩阵测量：
 
 归一化Mueller矩阵：
-**m** = **M**/M₀₀
+$$ \mathbf{m} = \mathbf{M}/M_{00} $$
 
 去偏振度分析：
-- 偏振纯度：Pᵤ = |**m**₁|（第一列）
-- 双衰减：D = 1 - min(eigenvalues)
+- 偏振纯度：$P_\mathrm{u} = |\mathbf{m}_1|$（第一列）
+- 双衰减：$D = 1 - \min(\text{eigenvalues})$
 
 各向异性参数提取：
-- 线性双折射：LB = |m₁₂ - m₂₁|
-- 圆双折射：CB = |m₁₃ - m₃₁|
-- 线性二向色性：LD' = |m₀₁ - m₁₀|
+- 线性双折射：$\mathrm{LB} = |m_{12} - m_{21}|$
+- 圆双折射：$\mathrm{CB} = |m_{13} - m_{31}|$
+- 线性二向色性：$\mathrm{LD}' = |m_{01} - m_{10}|$
 
 **偏振在各领域的应用**：
 
@@ -1131,64 +1062,63 @@ S₂(x,y) = I₄₅° - I₁₃₅°
 **气溶胶特性反演**：
 
 Mie散射的偏振特征：
-P(θ) = (|S₂(θ)|² - |S₁(θ)|²)/(|S₂(θ)|² + |S₁(θ)|²)
+$$ P(\theta) = \frac{|S_2(\theta)|^2 - |S_1(\theta)|^2}{|S_2(\theta)|^2 + |S_1(\theta)|^2} $$
 
-其中 S₁, S₂ 是散射振幅函数。
+其中 $S_1, S_2$ 是散射振幅函数。
 
 多角度偏振测量反演：
-- 粒径分布 n(r)
-- 复折射率 m = n + ik
+- 粒径分布 $n(r)$
+- 复折射率 $m = n + \mathrm{i}k$
 - 形状因子
 
 反演算法：
-min Σᵢ [P_obs(θᵢ) - P_model(θᵢ,**p**)]²/σᵢ²
+$$ \min \sum_i [P_\mathrm{obs}(\theta_i) - P_\mathrm{model}(\theta_i,\mathbf{p})]^2/\sigma_i^2 $$
 
-其中 **p** 是待反演参数。
+其中 $\mathbf{p}$ 是待反演参数。
 
 **偏振雷达**：
 
 降水粒子识别：
-- 差分反射率：ZDR = 10log(Zhh/Zvv)
-- 相关系数：ρhv = |⟨S*hhSvv⟩|/√(⟨|Shh|²⟩⟨|Svv|²⟩)
-- 比差分相位：KDP = (ΦDP(r₂) - ΦDP(r₁))/(2(r₂-r₁))
+- 差分反射率：$\mathrm{ZDR} = 10\log(Z_\mathrm{hh}/Z_\mathrm{vv})$
+- 相关系数：$\rho_\mathrm{hv} = |\langle S_\mathrm{hh}^*S_\mathrm{vv}\rangle|/\sqrt{\langle|S_\mathrm{hh}|^2\rangle\langle|S_\mathrm{vv}|^2\rangle}$
+- 比差分相位：$\mathrm{KDP} = (\Phi_\mathrm{DP}(r_2) - \Phi_\mathrm{DP}(r_1))/(2(r_2-r_1))$
 
 水凝物分类：
-- 雨滴：ZDR > 0.5 dB, ρhv > 0.97
-- 冰雹：ZDR ~ 0 dB, ρhv < 0.95
-- 融化层：ZDR峰值，ρhv下降
+- 雨滴：$\mathrm{ZDR} > 0.5 \text{ dB}$, $\rho_\mathrm{hv} > 0.97$
+- 冰雹：$\mathrm{ZDR} \sim 0 \text{ dB}$, $\rho_\mathrm{hv} < 0.95$
+- 融化层：ZDR峰值，$\rho_\mathrm{hv}$下降
 
 **生物医学成像**：
 
 **偏振敏感OCT（PS-OCT）**：
 
 组织双折射测量：
-δ(z) = 2k₀∫₀ᶻ Δn(z')dz'
+$$ \delta(z) = 2k_0\int_0^z \Delta n(z')\mathrm{d}z' $$
 
-其中 Δn 是局部双折射。
+其中 $\Delta n$ 是局部双折射。
 
 从Jones矩阵提取：
-**J**(z) = [√R₁₁  √R₁₂ exp(iφ₁₂)]
-          [√R₂₁ exp(iφ₂₁)  √R₂₂]
+$$ \mathbf{J}(z) = \begin{pmatrix} \sqrt{R_{11}} & \sqrt{R_{12}} \exp(\mathrm{i}\varphi_{12}) \\ \sqrt{R_{21}} \exp(\mathrm{i}\varphi_{21}) & \sqrt{R_{22}} \end{pmatrix} $$
 
 相位延迟：
-δ = arg(J₁₁J₂₂) - arg(J₁₂J₂₁)
+$$ \delta = \arg(J_{11}J_{22}) - \arg(J_{12}J_{21}) $$
 
 快轴方向：
-θ = (1/2)arctan[2Re(J₁₂J₂₁)/(|J₁₁|² - |J₂₂|²)]
+$$ \theta = (1/2)\arctan\left[\frac{2\mathrm{Re}(J_{12}J_{21})}{|J_{11}|^2 - |J_{22}|^2}\right] $$
 
 临床应用：
-- 视网膜神经纤维层（双折射 ~0.5°/μm）
+- 视网膜神经纤维层（双折射 $\sim0.5^\circ/\mu\mathrm{m}$）
 - 动脉粥样硬化斑块表征
 - 烧伤深度评估
 
 **穆勒矩阵显微镜**：
 
 组织病理诊断参数：
-1. 线性延迟：δ = arccos[(m₂₂ + m₃₃)/2]
-2. 圆二向色性：ψ = arctan(m₃₄/m₂₄)
-3. 去偏振度：Δ = 1 - |det(**m**₃ₓ₃)|^(1/3)
+1. 线性延迟：$\delta = \arccos[(m_{22} + m_{33})/2]$
+2. 圆二向色性：$\psi = \arctan(m_{34}/m_{24})$
+3. 去偏振度：$\Delta = 1 - |\det(\mathbf{m}_{3\times3})|^{1/3}$
 
-其中 **m**₃ₓ₃ 是3×3子矩阵。
+其中 $\mathbf{m}_{3\times3}$ 是$3\times3$子矩阵。
 
 癌变组织特征：
 - 去偏振度增加（散射增强）
@@ -1200,41 +1130,40 @@ min Σᵢ [P_obs(θᵢ) - P_model(θᵢ,**p**)]²/σᵢ²
 **BB84协议实现**：
 
 四态编码：
-|0⟩_H = |H⟩, |1⟩_H = |V⟩（直线基）
-|0⟩_D = |D⟩, |1⟩_D = |A⟩（对角基）
+$|0\rangle_\mathrm{H} = |\mathrm{H}\rangle$, $|1\rangle_\mathrm{H} = |\mathrm{V}\rangle$（直线基）
+$|0\rangle_\mathrm{D} = |\mathrm{D}\rangle$, $|1\rangle_\mathrm{D} = |\mathrm{A}\rangle$（对角基）
 
 安全性分析：
-- 量子比特错误率（QBER）：e = N_error/N_total
-- 安全阈值：e < 11%（理想情况）
-- 密钥率：R = 1 - h(e) - h(e)（信息论界限）
+- 量子比特错误率（QBER）：$e = N_\mathrm{error}/N_\mathrm{total}$
+- 安全阈值：$e < 11\%$（理想情况）
+- 密钥率：$R = 1 - h(e) - h(e)$（信息论界限）
 
-其中 h(x) = -x log₂x - (1-x)log₂(1-x) 是二元熵函数。
+其中 $h(x) = -x \log_2 x - (1-x)\log_2(1-x)$ 是二元熵函数。
 
 **连续变量QKD**：
 
 使用偏振调制的相干态：
-|α⟩_H + |β⟩_V
+$|\alpha\rangle_\mathrm{H} + |\beta\rangle_\mathrm{V}$
 
 协方差矩阵：
-**V** = [⟨ΔX²⟩   ⟨ΔXΔP⟩]
-       [⟨ΔPΔX⟩  ⟨ΔP²⟩]
+$$ \mathbf{V} = \begin{pmatrix} \langle\Delta X^2\rangle & \langle\Delta X\Delta P\rangle \\ \langle\Delta P\Delta X\rangle & \langle\Delta P^2\rangle \end{pmatrix} $$
 
 安全条件（反向协调）：
-I(A:B) > χ(B:E)
+$I(A:B) > \chi(B:E)$
 
-其中 I 是互信息，χ 是Holevo信息。
+其中 $I$ 是互信息，$\chi$ 是Holevo信息。
 
 **工业检测应用**：
 
 **光弹性应力分析**：
 
 应力诱导双折射：
-Δn = C(σ₁ - σ₂)
+$$ \Delta n = C(\sigma_1 - \sigma_2) $$
 
-其中 C 是光弹性系数，σᵢ 是主应力。
+其中 $C$ 是光弹性系数，$\sigma_i$ 是主应力。
 
 等色线（恒定相位延迟）：
-N = δ/(2π) = (t/λ)C(σ₁ - σ₂)
+$$ N = \delta/(2\pi) = (t/\lambda)C(\sigma_1 - \sigma_2) $$
 
 等倾线（恒定主应力方向）：
 通过圆偏振光照明消除
@@ -1249,17 +1178,17 @@ N = δ/(2π) = (t/λ)C(σ₁ - σ₂)
 偏振散射测量缺陷：
 
 BRDF的偏振分量：
-f_pq = dL_p/(E_q dΩ cos θᵢ)
+$$ f_{pq} = \mathrm{d}L_p/(E_q \mathrm{d}\Omega \cos \theta_i) $$
 
-其中 p,q ∈ {s,p} 表示出射和入射偏振。
+其中 $p,q \in \{\mathrm{s},\mathrm{p}\}$ 表示出射和入射偏振。
 
 表面粗糙度参数提取：
-- RMS高度：σ_h
-- 相关长度：l_c
-- 功率谱密度：PSD(k)
+- RMS高度：$\sigma_\mathrm{h}$
+- 相关长度：$l_\mathrm{c}$
+- 功率谱密度：$\mathrm{PSD}(k)$
 
 与散射的关系（Beckmann模型）：
-f ∝ exp[-(4πσ_h cos θᵢ/λ)²]
+$$ f \propto \exp[-(4\pi\sigma_\mathrm{h} \cos \theta_i/\lambda)^2] $$
 
 缺陷分类：
 - 划痕：强各向异性散射
@@ -1276,9 +1205,9 @@ f ∝ exp[-(4πσ_h cos θᵢ/λ)²]
 - 局部偏振转换
 
 设计原理：
-**J**_out = **T**(x,y)**J**_in
+$$ \mathbf{J}_\mathrm{out} = \mathbf{T}(x,y)\mathbf{J}_\mathrm{in} $$
 
-其中 **T**(x,y) 是空间变化的Jones矩阵。
+其中 $\mathbf{T}(x,y)$ 是空间变化的Jones矩阵。
 
 应用：
 - 偏振全息
@@ -1288,13 +1217,13 @@ f ∝ exp[-(4πσ_h cos θᵢ/λ)²]
 **量子偏振纠缠**：
 
 双光子偏振纠缠态：
-|Ψ⟩ = (1/√2)(|H⟩_A|V⟩_B - |V⟩_A|H⟩_B)
+$$ |\Psi\rangle = (1/\sqrt{2})(|\mathrm{H}\rangle_\mathrm{A}|\mathrm{V}\rangle_\mathrm{B} - |\mathrm{V}\rangle_\mathrm{A}|\mathrm{H}\rangle_\mathrm{B}) $$
 
 Bell不等式测试：
-S = |E(a,b) - E(a,b') + E(a',b) + E(a',b')| ≤ 2（经典）
-S_quantum = 2√2（量子力学预测）
+$$ S = |E(a,b) - E(a,b') + E(a',b) + E(a',b')| \le 2 \text{（经典）} $$
+$S_\mathrm{quantum} = 2\sqrt{2}$（量子力学预测）
 
-其中 E(a,b) 是关联函数。
+其中 $E(a,b)$ 是关联函数。
 
 应用前景：
 - 量子计算
@@ -1308,14 +1237,14 @@ S_quantum = 2√2（量子力学预测）
 1. **偏振态描述**：深入探讨了电磁波的偏振现象，建立了线偏振、圆偏振和椭圆偏振的数学描述。通过偏振椭圆的几何构造，揭示了不同偏振态之间的内在联系。
 
 2. **琼斯矢量方法**：介绍了完全偏振光的复振幅表示，建立了琼斯矩阵演算体系。通过矩阵运算描述偏振器件的作用，为偏振系统设计提供了强大工具。重要公式包括：
-   - 琼斯矢量：**J** = [Ex₀, Ey₀]ᵀ
-   - 器件作用：**J**_out = **M****J**_in
-   - 级联系统：**M**_total = **M**_n···**M**₂**M**₁
+   - 琼斯矢量：$\mathbf{J} = [Ex_0, Ey_0]^\mathrm{T}$
+   - 器件作用：$\mathbf{J}_\mathrm{out} = \mathbf{M}\mathbf{J}_\mathrm{in}$
+   - 级联系统：$\mathbf{M}_\mathrm{total} = \mathbf{M}_n\cdots\mathbf{M}_2\mathbf{M}_1$
 
-3. **斯托克斯参数**：扩展到部分偏振光的描述，定义了四个实参数 S₀, S₁, S₂, S₃。建立了偏振度概念 P = √(S₁² + S₂² + S₃²)/S₀，连接了偏振与相干性。Mueller矩阵方法允许描述去偏振效应。
+3. **斯托克斯参数**：扩展到部分偏振光的描述，定义了四个实参数 $S_0, S_1, S_2, S_3$。建立了偏振度概念 $P = \sqrt{S_1^2 + S_2^2 + S_3^2}/S_0$，连接了偏振与相干性。Mueller矩阵方法允许描述去偏振效应。
 
 4. **庞加莱球表示**：将所有偏振态映射到单位球面，提供了偏振态演化的直观几何图像。揭示了与量子比特的深刻类比，建立了经典偏振光学与量子信息的桥梁。关键关系：
-   - 球面坐标：(s₁, s₂, s₃) = (cos 2χ cos 2ψ, cos 2χ sin 2ψ, sin 2χ)
+   - 球面坐标：$(s_1, s_2, s_3) = (\cos 2\chi \cos 2\psi, \cos 2\chi \sin 2\psi, \sin 2\chi)$
    - 偏振变换：球面旋转
    - 正交态：对径点
 
@@ -1330,94 +1259,90 @@ S_quantum = 2√2（量子力学预测）
 ### 基础题
 
 **练习22.1** 证明任意偏振态可以分解为两个圆偏振态的叠加。
-*提示*：使用圆偏振基 {|R⟩, |L⟩}，其中 |R⟩ = (1/√2)[1, -i]ᵀ，|L⟩ = (1/√2)[1, i]ᵀ。
+*提示*：使用圆偏振基 $\{|\mathrm{R}\rangle, |\mathrm{L}\rangle\}$，其中 $|\mathrm{R}\rangle = (1/\sqrt{2})\begin{pmatrix} 1 \\ -\mathrm{i} \end{pmatrix}$，$|\mathrm{L}\rangle = (1/\sqrt{2})\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix}$。
 
 <details>
 <summary>答案</summary>
 
-任意归一化琼斯矢量 **J** = [a, b]ᵀ，其中 |a|² + |b|² = 1。
+任意归一化琼斯矢量 $\mathbf{J} = \begin{pmatrix} a \\ b \end{pmatrix}$，其中 $|a|^2 + |b|^2 = 1$。
 
 定义圆偏振基：
-|R⟩ = (1/√2)[1, -i]ᵀ，|L⟩ = (1/√2)[1, i]ᵀ
+$|\mathrm{R}\rangle = (1/\sqrt{2})\begin{pmatrix} 1 \\ -\mathrm{i} \end{pmatrix}$，$|\mathrm{L}\rangle = (1/\sqrt{2})\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix}$
 
-验证正交性：⟨R|L⟩ = (1/2)(1 - i²) = 1 ✓
+验证正交性：$\langle\mathrm{R}|\mathrm{L}\rangle = (1/2)(1 - \mathrm{i}^2) = 1 \checkmark$
 
 展开系数：
-αR = ⟨R|J⟩ = (1/√2)(a* + ib*)
-αL = ⟨L|J⟩ = (1/√2)(a* - ib*)
+$\alpha_\mathrm{R} = \langle\mathrm{R}|\mathbf{J}\rangle = (1/\sqrt{2})(a^* + \mathrm{i}b^*)$
+$\alpha_\mathrm{L} = \langle\mathrm{L}|\mathbf{J}\rangle = (1/\sqrt{2})(a^* - \mathrm{i}b^*)$
 
 验证：
-αR|R⟩ + αL|L⟩ = (1/2)[(a* + ib*)[1, -i]ᵀ + (a* - ib*)[1, i]ᵀ]
-              = (1/2)[2a*, -ia* - ib* + ia* - ib*]ᵀ
-              = [a, b]ᵀ = **J** ✓
+$$ \alpha_\mathrm{R}|\mathrm{R}\rangle + \alpha_\mathrm{L}|\mathrm{L}\rangle = (1/2)\left[(a^* + \mathrm{i}b^*)\begin{pmatrix} 1 \\ -\mathrm{i} \end{pmatrix} + (a^* - \mathrm{i}b^*)\begin{pmatrix} 1 \\ \mathrm{i} \end{pmatrix}\right] $$
+$$ = (1/2)\begin{pmatrix} 2a^* \\ -\mathrm{i}a^* - \mathrm{i}^2b^* + \mathrm{i}a^* - \mathrm{i}^2b^* \end{pmatrix} = (1/2)\begin{pmatrix} 2a^* \\ -\mathrm{i}a^* + b^* + \mathrm{i}a^* + b^* \end{pmatrix} = \begin{pmatrix} a \\ b \end{pmatrix} = \mathbf{J} \checkmark $$
 
 物理意义：任意偏振光可视为左旋和右旋圆偏振光的相干叠加。
 </details>
 
-**练习22.2** 一束线偏振光通过两个偏振器，第一个偏振器透振方向与入射光偏振方向夹角30°，第二个与第一个夹角60°。计算最终透射光强度（初始光强为I₀）。
+**练习22.2** 一束线偏振光通过两个偏振器，第一个偏振器透振方向与入射光偏振方向夹角30°，第二个与第一个夹角60°。计算最终透射光强度（初始光强为$I_0$）。
 *提示*：使用Malus定律或琼斯矩阵方法。
 
 <details>
 <summary>答案</summary>
 
 方法1：Malus定律
-第一个偏振器后：I₁ = I₀cos²(30°) = I₀(√3/2)² = 3I₀/4
-第二个偏振器后：I₂ = I₁cos²(60°) = (3I₀/4)(1/2)² = 3I₀/16
+第一个偏振器后：$I_1 = I_0\cos^2(30^\circ) = I_0(\sqrt{3}/2)^2 = 3I_0/4$
+第二个偏振器后：$I_2 = I_1\cos^2(60^\circ) = (3I_0/4)(1/2)^2 = 3I_0/16$
 
 方法2：琼斯矩阵
-设入射光沿x方向偏振：**J**in = [1, 0]ᵀ
+设入射光沿x方向偏振：$\mathbf{J}_\mathrm{in} = \begin{pmatrix} 1 \\ 0 \end{pmatrix}$
 
 第一个偏振器（30°）：
-**P**₁ = [cos²30°    cos30°sin30°] = [3/4    √3/4]
-        [cos30°sin30°  sin²30°   ]   [√3/4    1/4]
+$$ \mathbf{P}_1 = \begin{pmatrix} \cos^230^\circ & \cos30^\circ\sin30^\circ \\ \cos30^\circ\sin30^\circ & \sin^230^\circ \end{pmatrix} = \begin{pmatrix} 3/4 & \sqrt{3}/4 \\ \sqrt{3}/4 & 1/4 \end{pmatrix} $$
 
-第二个偏振器（90°）：
-**P**₂ = [cos²90°    cos90°sin90°] = [1/4    √3/4]
-        [cos90°sin90°  sin²90°   ]   [√3/4    3/4]
+第二个偏振器（与第一个夹角60°，即与x轴夹角90°）：
+$$ \mathbf{P}_2 = \begin{pmatrix} \cos^290^\circ & \cos90^\circ\sin90^\circ \\ \cos90^\circ\sin90^\circ & \sin^290^\circ \end{pmatrix} = \begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix} $$
 
-总矩阵：**M** = **P**₂**P**₁ = [3/8    3√3/16]
-                              [3√3/16  3/8  ]
+总矩阵：$\mathbf{M} = \mathbf{P}_2\mathbf{P}_1 = \begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix}\begin{pmatrix} 3/4 & \sqrt{3}/4 \\ \sqrt{3}/4 & 1/4 \end{pmatrix} = \begin{pmatrix} 0 & 0 \\ \sqrt{3}/4 & 1/4 \end{pmatrix}$
 
-输出：**J**out = **M**[1, 0]ᵀ = [3/8, 3√3/16]ᵀ
+输出：$\mathbf{J}_\mathrm{out} = \mathbf{M}\begin{pmatrix} 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 0 \\ \sqrt{3}/4 \end{pmatrix}$
 
-强度：I = |Jx|² + |Jy|² = 9/64 + 27/256 = 3/16 I₀ ✓
+强度：$I = |J_x|^2 + |J_y|^2 = 0^2 + (\sqrt{3}/4)^2 = 3/16 I_0 \checkmark$
 </details>
 
-**练习22.3** 推导斯托克斯参数与偏振椭圆参数（方位角ψ，椭圆率角χ）之间的关系。
+**练习22.3** 推导斯托克斯参数与偏振椭圆参数（方位角$\psi$，椭圆率角$\chi$）之间的关系。
 *提示*：从电场分量的参数表示开始。
 
 <details>
 <summary>答案</summary>
 
 设归一化电场：
-Ex = cos θ
-Ey = sin θ exp(iδ)
+$Ex = \cos \theta$
+$Ey = \sin \theta \exp(\mathrm{i}\delta)$
 
-其中 θ 决定振幅比，δ 是相位差。
+其中 $\theta$ 决定振幅比，$\delta$ 是相位差。
 
-偏振椭圆参数与(θ,δ)的关系：
-tan 2ψ = tan 2θ cos δ
-sin 2χ = sin 2θ sin δ
+偏振椭圆参数与$(\theta,\delta)$的关系：
+$\tan 2\psi = \tan 2\theta \cos \delta$
+$\sin 2\chi = \sin 2\theta \sin \delta$
 
 计算斯托克斯参数：
-S₀ = |Ex|² + |Ey|² = cos²θ + sin²θ = 1（归一化）
-S₁ = |Ex|² - |Ey|² = cos²θ - sin²θ = cos 2θ
-S₂ = 2Re(Ex*Ey) = 2cos θ sin θ cos δ = sin 2θ cos δ
-S₃ = 2Im(Ex*Ey) = 2cos θ sin θ sin δ = sin 2θ sin δ
+$S_0 = |Ex|^2 + |Ey|^2 = \cos^2\theta + \sin^2\theta = 1$（归一化）
+$S_1 = |Ex|^2 - |Ey|^2 = \cos^2\theta - \sin^2\theta = \cos 2\theta$
+$S_2 = 2\mathrm{Re}(Ex^*Ey) = 2\cos \theta \sin \theta \cos \delta = \sin 2\theta \cos \delta$
+$S_3 = 2\mathrm{Im}(Ex^*Ey) = 2\cos \theta \sin \theta \sin \delta = \sin 2\theta \sin \delta$
 
 从上述关系解出：
-cos 2θ = S₁
-sin 2θ cos δ = S₂
-sin 2θ sin δ = S₃
+$\cos 2\theta = S_1$
+$\sin 2\theta \cos \delta = S_2$
+$\sin 2\theta \sin \delta = S_3$
 
 因此：
-tan 2ψ = S₂/S₁
-sin 2χ = S₃/√(S₁² + S₂² + S₃²) = S₃（完全偏振光）
+$\tan 2\psi = S_2/S_1$
+$\sin 2\chi = S_3/\sqrt{S_1^2 + S_2^2 + S_3^2} = S_3$（完全偏振光）
 
 反解：
-S₁ = cos 2χ cos 2ψ
-S₂ = cos 2χ sin 2ψ
-S₃ = sin 2χ
+$S_1 = \cos 2\chi \cos 2\psi$
+$S_2 = \cos 2\chi \sin 2\psi$
+$S_3 = \sin 2\chi$
 </details>
 
 ### 挑战题
@@ -1431,114 +1356,112 @@ S₃ = sin 2χ
 理论基础：任意偏振变换属于SU(2)群，需要3个独立参数。
 
 最小系统：两个可旋转的延迟器
-1. 第一个延迟器：相位延迟δ₁，快轴角度θ₁
-2. 第二个延迟器：相位延迟δ₂，快轴角度θ₂
+1. 第一个延迟器：相位延迟$\delta_1$，快轴角度$\theta_1$
+2. 第二个延迟器：相位延迟$\delta_2$，快轴角度$\theta_2$
 
 总共4个参数，但由于整体相位任意，实际3个自由度。
 
 通用解：QWP-HWP-QWP组合
-**M** = **R**QWP(θ₃)**R**HWP(θ₂)**R**QWP(θ₁)
+$$ \mathbf{M} = \mathbf{R}_\mathrm{QWP}(\theta_3)\mathbf{R}_\mathrm{HWP}(\theta_2)\mathbf{R}_\mathrm{QWP}(\theta_1) $$
 
 参数确定步骤：
-1. 将输入态**J**in转到庞加莱球坐标(θin, φin)
-2. 将输出态**J**out转到球坐标(θout, φout)
+1. 将输入态$\mathbf{J}_\mathrm{in}$转到庞加莱球坐标$(\theta_\mathrm{in}, \varphi_\mathrm{in})$
+2. 将输出态$\mathbf{J}_\mathrm{out}$转到球坐标$(\theta_\mathrm{out}, \varphi_\mathrm{out})$
 3. 计算所需旋转：
-   - 先绕x轴转θ₁角
-   - 再绕新z轴转θ₂角
-   - 最后绕新x轴转θ₃角
+   - 先绕x轴转$\theta_1$角
+   - 再绕新z轴转$\theta_2$角
+   - 最后绕新x轴转$\theta_3$角
 
 数学表达：
-θ₁ = arctan[sin(θout - θin)/(1 - cos(θout - θin)cos(φout - φin))]
-θ₂ = φout - φin
-θ₃ = arctan[sin(θout - θin)/(cos(θout - θin) - cos(φout - φin))]
+$\theta_1 = \arctan[\sin(\theta_\mathrm{out} - \theta_\mathrm{in})/(1 - \cos(\theta_\mathrm{out} - \theta_\mathrm{in})\cos(\varphi_\mathrm{out} - \varphi_\mathrm{in}))]$
+$\theta_2 = \varphi_\mathrm{out} - \varphi_\mathrm{in}$
+$\theta_3 = \arctan[\sin(\theta_\mathrm{out} - \theta_\mathrm{in})/(\cos(\theta_\mathrm{out} - \theta_\mathrm{in}) - \cos(\varphi_\mathrm{out} - \varphi_\mathrm{in}))]$
 
 特殊情况优化：
-- 线偏振→线偏振：单个HWP
-- 线偏振→圆偏振：单个QWP
+- 线偏振$\to$线偏振：单个HWP
+- 线偏振$\to$圆偏振：单个QWP
 - 相位调节：单个延迟器
 </details>
 
-**练习22.5** 证明部分偏振光的偏振度P与相干矩阵的特征值λ₁、λ₂的关系为：P = |λ₁ - λ₂|/(λ₁ + λ₂)。
+**练习22.5** 证明部分偏振光的偏振度P与相干矩阵的特征值$\lambda_1$、$\lambda_2$的关系为：$P = |\lambda_1 - \lambda_2|/(\lambda_1 + \lambda_2)$。
 *提示*：使用相干矩阵的迹和行列式。
 
 <details>
 <summary>答案</summary>
 
 相干矩阵：
-**Φ** = [⟨|Ex|²⟩     ⟨Ex*Ey⟩]
-       [⟨ExEy*⟩     ⟨|Ey|²⟩]
+$$ \mathbf{\Phi} = \begin{pmatrix} \langle|Ex|^2\rangle & \langle Ex^*Ey \rangle \\ \langle ExEy^* \rangle & \langle|Ey|^2\rangle \end{pmatrix} $$
 
 与斯托克斯参数关系：
-**Φ** = (1/2)[S₀ + S₁    S₂ - iS₃]
-             [S₂ + iS₃   S₀ - S₁]
+$$ \mathbf{\Phi} = (1/2)\begin{pmatrix} S_0 + S_1 & S_2 - \mathrm{i}S_3 \\ S_2 + \mathrm{i}S_3 & S_0 - S_1 \end{pmatrix} $$
 
 计算不变量：
-Tr(**Φ**) = λ₁ + λ₂ = S₀
-det(**Φ**) = λ₁λ₂ = (1/4)[S₀² - S₁² - S₂² - S₃²]
+$\mathrm{Tr}(\mathbf{\Phi}) = \lambda_1 + \lambda_2 = S_0$
+$\det(\mathbf{\Phi}) = \lambda_1\lambda_2 = (1/4)[S_0^2 - S_1^2 - S_2^2 - S_3^2]$
 
 特征方程：
-λ² - S₀λ + (1/4)[S₀² - S₁² - S₂² - S₃²] = 0
+$$ \lambda^2 - S_0\lambda + (1/4)[S_0^2 - S_1^2 - S_2^2 - S_3^2] = 0 $$
 
 解得：
-λ₁,₂ = (S₀/2) ± (1/2)√(S₁² + S₂² + S₃²)
+$$ \lambda_{1,2} = (S_0/2) \pm (1/2)\sqrt{S_1^2 + S_2^2 + S_3^2} $$
 
 因此：
-λ₁ - λ₂ = √(S₁² + S₂² + S₃²)
-λ₁ + λ₂ = S₀
+$\lambda_1 - \lambda_2 = \sqrt{S_1^2 + S_2^2 + S_3^2}$
+$\lambda_1 + \lambda_2 = S_0$
 
 偏振度：
-P = √(S₁² + S₂² + S₃²)/S₀ = |λ₁ - λ₂|/(λ₁ + λ₂) ✓
+$$ P = \frac{\sqrt{S_1^2 + S_2^2 + S_3^2}}{S_0} = \frac{|\lambda_1 - \lambda_2|}{\lambda_1 + \lambda_2} \checkmark $$
 
 物理意义：
-- λ₁ = λ₂：完全非偏振（P = 0）
-- λ₂ = 0：完全偏振（P = 1）
-- 一般情况：P反映两特征值的相对差异
+- $\lambda_1 = \lambda_2$：完全非偏振（$P = 0$）
+- $\lambda_2 = 0$：完全偏振（$P = 1$）
+- 一般情况：$P$反映两特征值的相对差异
 </details>
 
-**练习22.6** 推导通过散射介质后偏振度退化的表达式。假设介质引入随机相位延迟δ，其概率分布为p(δ)。
-*提示*：计算期望值⟨exp(iδ)⟩。
+**练习22.6** 推导通过散射介质后偏振度退化的表达式。假设介质引入随机相位延迟$\delta$，其概率分布为$p(\delta)$。
+*提示*：计算期望值$\langle\exp(\mathrm{i}\delta)\rangle$。
 
 <details>
 <summary>答案</summary>
 
-初始偏振态：**J**₀ = [a, b]ᵀ
+初始偏振态：$\mathbf{J}_0 = \begin{pmatrix} a \\ b \end{pmatrix}$
 
 通过随机延迟器后：
-**J**(δ) = [a, b exp(iδ)]ᵀ
+$$ \mathbf{J}(\delta) = \begin{pmatrix} a \\ b \exp(\mathrm{i}\delta) \end{pmatrix} $$
 
 计算相干矩阵元素：
-Φ₁₁ = ⟨|a|²⟩ = |a|²（不变）
-Φ₂₂ = ⟨|b|²⟩ = |b|²（不变）
-Φ₁₂ = ⟨ab* exp(iδ)⟩ = ab*⟨exp(iδ)⟩
-Φ₂₁ = ⟨a*b exp(-iδ)⟩ = a*b⟨exp(-iδ)⟩
+$\Phi_{11} = \langle|a|^2\rangle = |a|^2$（不变）
+$\Phi_{22} = \langle|b|^2\rangle = |b|^2$（不变）
+$\Phi_{12} = \langle ab^* \exp(\mathrm{i}\delta)\rangle = ab^*\langle\exp(\mathrm{i}\delta)\rangle$
+$\Phi_{21} = \langle a^*b \exp(-\mathrm{i}\delta)\rangle = a^*b\langle\exp(-\mathrm{i}\delta)\rangle$
 
 关键：计算特征函数
-χ(1) = ⟨exp(iδ)⟩ = ∫p(δ)exp(iδ)dδ
+$$ \chi(1) = \langle\exp(\mathrm{i}\delta)\rangle = \int p(\delta)\exp(\mathrm{i}\delta)\mathrm{d}\delta $$
 
 常见分布：
-1. 均匀分布 p(δ) = 1/(2π)，δ ∈ [0, 2π]：
-   χ(1) = 0 → 完全去偏振
+1. 均匀分布 $p(\delta) = 1/(2\pi)$，$\delta \in [0, 2\pi]$：
+   $\chi(1) = 0 \to$ 完全去偏振
 
-2. 高斯分布 p(δ) = (1/√(2πσ²))exp(-δ²/2σ²)：
-   χ(1) = exp(-σ²/2)
+2. 高斯分布 $p(\delta) = (1/\sqrt{2\pi\sigma^2})\exp(-\delta^2/2\sigma^2)$：
+   $\chi(1) = \exp(-\sigma^2/2)$
 
-3. Von Mises分布 p(δ) = exp(κcos δ)/2πI₀(κ)：
-   χ(1) = I₁(κ)/I₀(κ)
+3. Von Mises分布 $p(\delta) = \exp(\kappa\cos \delta)/2\pi I_0(\kappa)$：
+   $\chi(1) = I_1(\kappa)/I_0(\kappa)$
 
 初始和最终斯托克斯参数：
-初始：S₁⁽⁰⁾ = |a|² - |b|²，S₂⁽⁰⁾ = 2Re(ab*)，S₃⁽⁰⁾ = 2Im(ab*)
+初始：$S_1^{(0)} = |a|^2 - |b|^2$，$S_2^{(0)} = 2\mathrm{Re}(ab^*)$，$S_3^{(0)} = 2\mathrm{Im}(ab^*)$
 
 最终：
-S₁ = S₁⁽⁰⁾（不变）
-S₂ = S₂⁽⁰⁾Re[χ(1)]
-S₃ = S₃⁽⁰⁾Re[χ(1)]
+$S_1 = S_1^{(0)}$（不变）
+$S_2 = S_2^{(0)}\mathrm{Re}[\chi(1)]$
+$S_3 = S_3^{(0)}\mathrm{Re}[\chi(1)]$
 
 偏振度变化：
-P_final/P_initial = √[S₁² + (S₂⁽⁰⁾)²|χ(1)|² + (S₃⁽⁰⁾)²|χ(1)|²]/√[S₁² + (S₂⁽⁰⁾)² + (S₃⁽⁰⁾)²]
+$$ P_\mathrm{final}/P_\mathrm{initial} = \frac{\sqrt{S_1^2 + (S_2^{(0)})^2|\chi(1)|^2 + (S_3^{(0)})^2|\chi(1)|^2}}{\sqrt{S_1^2 + (S_2^{(0)})^2 + (S_3^{(0)})^2}} $$
 
 特殊情况：
-- 圆偏振入射（S₁ = 0）：P_final = P_initial|χ(1)|
-- 线偏振入射（S₃ = 0）：部分保持
+- 圆偏振入射（$S_1 = 0$）：$P_\mathrm{final} = P_\mathrm{initial}|\chi(1)|$
+- 线偏振入射（$S_3 = 0$）：部分保持
 </details>
 
 **练习22.7** 分析Pancharatnam-Berry几何相位。当偏振态在庞加莱球上沿闭合路径C演化时，计算获得的几何相位。
@@ -1548,38 +1471,38 @@ P_final/P_initial = √[S₁² + (S₂⁽⁰⁾)²|χ(1)|² + (S₃⁽⁰⁾)²|
 <summary>答案</summary>
 
 偏振态参数化：
-|ψ(t)⟩ = cos(θ/2)|H⟩ + sin(θ/2)exp(iφ)|V⟩
+$|\psi(t)\rangle = \cos(\theta/2)|\mathrm{H}\rangle + \sin(\theta/2)\exp(\mathrm{i}\varphi)|\mathrm{V}\rangle$
 
-对应庞加莱球坐标：(θ, φ)
+对应庞加莱球坐标：$(\theta, \varphi)$
 
 沿闭路C演化后的几何相位：
-γ = (1/2)∮_C A·dl
+$$ \gamma = (1/2)\oint_C \mathbf{A}\cdot\mathrm{d}\mathbf{l} $$
 
-其中A是"矢势"：
-A_θ = 0
-A_φ = cos θ - 1
+其中$\mathbf{A}$是"矢势"：
+$A_\theta = 0$
+$A_\varphi = \cos \theta - 1$
 
 因此：
-γ = (1/2)∮_C (cos θ - 1)dφ = -(1/2)Ω
+$$ \gamma = (1/2)\oint_C (\cos \theta - 1)\mathrm{d}\varphi = -(1/2)\Omega $$
 
-其中Ω是路径所围立体角。
+其中$\Omega$是路径所围立体角。
 
 具体例子：
 
 1. 赤道大圆（所有线偏振态）：
-   路径：θ = π/2，φ ∈ [0, 2π]
-   立体角：Ω = 2π
-   几何相位：γ = -π
+   路径：$\theta = \pi/2$，$\varphi \in [0, 2\pi]$
+   立体角：$\Omega = 2\pi$
+   几何相位：$\gamma = -\pi$
 
 2. 纬线圆（固定椭圆率）：
-   路径：θ = θ₀，φ ∈ [0, 2π]
-   立体角：Ω = 2π(1 - cos θ₀)
-   几何相位：γ = -π(1 - cos θ₀)
+   路径：$\theta = \theta_0$，$\varphi \in [0, 2\pi]$
+   立体角：$\Omega = 2\pi(1 - \cos \theta_0)$
+   几何相位：$\gamma = -\pi(1 - \cos \theta_0)$
 
 3. 测地三角形：
-   顶点：北极、(θ=π/2,φ=0)、(θ=π/2,φ=π/2)
-   立体角：Ω = π/2
-   几何相位：γ = -π/4
+   顶点：北极、$(\theta=\pi/2,\varphi=0)$、$(\theta=\pi/2,\varphi=\pi/2)$
+   立体角：$\Omega = \pi/2$
+   几何相位：$\gamma = -\pi/4$
 
 实验验证：
 使用三个波片序列实现闭合路径
@@ -1598,42 +1521,42 @@ A_φ = cos θ - 1
 <summary>答案</summary>
 
 测量方程：
-I_k = **a**_k^T **M** **s**_k
+$$ I_k = \mathbf{a}_k^\mathrm{T} \mathbf{M} \mathbf{s}_k $$
 
-其中**s**_k是入射Stokes矢量，**a**_k是分析器矢量。
+其中$\mathbf{s}_k$是入射Stokes矢量，$\mathbf{a}_k$是分析器矢量。
 
 最优设计原则：
-1. 输入态集合{**s**_k}应均匀分布在庞加莱球上
-2. 分析器集合{**a**_k}也应均匀分布
-3. 最小化条件数κ(W)，其中W是测量矩阵
+1. 输入态集合$\{\mathbf{s}_k\}$应均匀分布在庞加莱球上
+2. 分析器集合$\{\mathbf{a}_k\}$也应均匀分布
+3. 最小化条件数$\kappa(\mathbf{W})$，其中$\mathbf{W}$是测量矩阵
 
 具体配置：
 
 输入态（4个）：
-- H：[1, 1, 0, 0]^T
-- V：[1, -1, 0, 0]^T  
-- D：[1, 0, 1, 0]^T
-- R：[1, 0, 0, 1]^T
+- H：$[1, 1, 0, 0]^\mathrm{T}$
+- V：$[1, -1, 0, 0]^\mathrm{T}$  
+- D：$[1, 0, 1, 0]^\mathrm{T}$
+- R：$[1, 0, 0, 1]^\mathrm{T}$
 
 分析器（4个）：
 - 同上配置
 
-测量矩阵（16×16）：
-W_ij = (a_i ⊗ s_j)
+测量矩阵（$16\times16$）：
+$W_{ij} = (a_i \otimes s_j)$
 
 Mueller矩阵反演：
-vec(**M**) = W^(-1) **I**
+$$ \mathrm{vec}(\mathbf{M}) = \mathbf{W}^{-1} \mathbf{I} $$
 
-其中**I** = [I_1, I_2, ..., I_16]^T
+其中$\mathbf{I} = [I_1, I_2, \dots, I_{16}]^\mathrm{T}$ 是四个通道的强度。
 
 误差分析：
 
-1. 强度噪声：σ_I
-   Mueller元素误差：σ_M = κ(W)σ_I/√N
+1. 强度噪声：$\sigma_I$
+   Mueller元素误差：$\sigma_M = \kappa(\mathbf{W})\sigma_I/\sqrt{N}$
 
 2. 器件误差：
-   - 延迟器误差δφ → ΔM ∝ sin(2θ)δφ
-   - 方位角误差δθ → ΔM ∝ cos(2θ)δθ
+   - 延迟器误差$\delta\varphi \to \Delta M \propto \sin(2\theta)\delta\varphi$
+   - 方位角误差$\delta\theta \to \Delta M \propto \cos(2\theta)\delta\theta$
 
 3. 系统校准：
    使用已知样品（空气、标准延迟器）
@@ -1643,7 +1566,7 @@ vec(**M**) = W^(-1) **I**
 
 1. 双旋转延迟器：
    - 连续测量，过定系统
-   - 傅里叶分析提取M_ij
+   - 傅里叶分析提取$M_{ij}$
    - 自校准能力
 
 2. 分振幅配置：
@@ -1657,9 +1580,9 @@ vec(**M**) = W^(-1) **I**
    - 光谱分辨率限制
 
 精度极限：
-- 散粒噪声：ΔM/M ~ 1/√(N_photons)
-- 系统稳定性：~0.1%（温控）
-- 最终精度：~10^(-3) - 10^(-4)
+- 散粒噪声：$\Delta M/M \sim 1/\sqrt{N_\mathrm{photons}}$
+- 系统稳定性：$\sim0.1\%$（温控）
+- 最终精度：$\sim10^{-3} - 10^{-4}$
 </details>
 
 ## 常见陷阱与错误
@@ -1671,7 +1594,7 @@ vec(**M**) = W^(-1) **I**
    - 正确：偏振器选择性透过某一偏振分量，不改变光的偏振性质
 
 2. **相位差的符号约定**
-   - 错误：混淆δ = φ_y - φ_x还是φ_x - φ_y
+   - 错误：混淆$\delta = \varphi_y - \varphi_x$还是$\varphi_x - \varphi_y$
    - 正确：保持一致的约定，注意与旋向定义的关系
 
 3. **Jones矢量的归一化**
@@ -1681,15 +1604,15 @@ vec(**M**) = W^(-1) **I**
 ### 计算错误
 
 4. **矩阵乘法顺序**
-   - 错误：**M**_1**M**_2与**M**_2**M**_1混淆
+   - 错误：$\mathbf{M}_1\mathbf{M}_2$与$\mathbf{M}_2\mathbf{M}_1$混淆
    - 正确：光先通过的器件矩阵在右边
 
 5. **坐标系旋转**
    - 错误：混淆器件旋转与坐标系旋转
-   - 正确：**M**' = **R**(-θ)**M****R**(θ)为器件旋转
+   - 正确：$\mathbf{M}' = \mathbf{R}(-\theta)\mathbf{M}\mathbf{R}(\theta)$为器件旋转
 
 6. **庞加莱球角度因子**
-   - 错误：忘记庞加莱球上使用2ψ和2χ
+   - 错误：忘记庞加莱球上使用$2\psi$和$2\chi$
    - 正确：球面角度是偏振椭圆角度的两倍
 
 ### 实验误差

@@ -8,94 +8,93 @@
 
 光子晶体是具有周期性介电常数分布的材料，其电磁波传播遵循类似于电子在晶体中的行为。考虑介电常数的周期分布：
 
-ε(**r**) = ε(**r** + **R**)
+$\varepsilon(\mathbf{r}) = \varepsilon(\mathbf{r} + \mathbf{R})$
 
-其中**R**是任意晶格矢量。Maxwell方程在无源区域：
+其中$\mathbf{R}$是任意晶格矢量。Maxwell方程在无源区域：
 
-∇ × **E** = iω**B**
-∇ × **H** = -iωε(**r**)**E**
-∇ · (ε(**r**)**E**) = 0
-∇ · **H** = 0
+$\nabla \times \mathbf{E} = i\omega\mathbf{B}$
+$\nabla \times \mathbf{H} = -i\omega\varepsilon(\mathbf{r})\mathbf{E}$
+$\nabla \cdot (\varepsilon(\mathbf{r})\mathbf{E}) = 0$
+$\nabla \cdot \mathbf{H} = 0$
 
-消去**B**得到主方程：
+消去$\mathbf{B}$得到主方程：
 
-∇ × (1/ε(**r**))∇ × **H** = (ω/c)²**H**
+$\nabla \times \left(\frac{1}{\varepsilon(\mathbf{r})}\right)\nabla \times \mathbf{H} = \left(\frac{\omega}{c}\right)^2\mathbf{H}$
 
-由于ε(**r**)的周期性，根据Bloch定理，解具有形式：
+由于$\varepsilon(\mathbf{r})$的周期性，根据Bloch定理，解具有形式：
 
-**H**(**r**) = e^(i**k**·**r**)**u**_**k**(**r**)
+$\mathbf{H}(\mathbf{r}) = e^{i\mathbf{k}\cdot\mathbf{r}}\mathbf{u}_{\mathbf{k}}(\mathbf{r})$
 
-其中**u**_**k**(**r** + **R**) = **u**_**k**(**r**)是周期函数。
+其中$\mathbf{u}_{\mathbf{k}}(\mathbf{r} + \mathbf{R}) = \mathbf{u}_{\mathbf{k}}(\mathbf{r})$是周期函数。
 
 #### 本征值问题
 
 将Bloch形式代入主方程：
 
-(∇ + i**k**) × (1/ε(**r**))(∇ + i**k**) × **u**_**k** = (ω_**k**/c)²**u**_**k**
+$(\nabla + i\mathbf{k}) \times \left(\frac{1}{\varepsilon(\mathbf{r})}\right)(\nabla + i\mathbf{k}) \times \mathbf{u}_{\mathbf{k}} = \left(\frac{\omega_{\mathbf{k}}}{c}\right)^2\mathbf{u}_{\mathbf{k}}$
 
-这定义了每个**k**的本征值问题，产生离散的频带ω_n(**k**)。
+这定义了每个$\mathbf{k}$的本征值问题，产生离散的频带$\omega_n(\mathbf{k})$。
 
 #### 光子带隙
 
 对于简单的一维光子晶体，介电常数：
 
-ε(z) = { ε₁, 0 < z < a₁
-       { ε₂, a₁ < z < a₁ + a₂
+$\varepsilon(z) = \begin{cases} \varepsilon_1, & 0 < z < a_1 \\ \varepsilon_2, & a_1 < z < a_1 + a_2 \end{cases}$
 
-周期a = a₁ + a₂。传输矩阵方法给出带隙条件：
+周期$a = a_1 + a_2$。传输矩阵方法给出带隙条件：
 
-cos(ka) = cos(k₁a₁)cos(k₂a₂) - (1/2)(k₁/k₂ + k₂/k₁)sin(k₁a₁)sin(k₂a₂)
+$\cos(ka) = \cos(k_1a_1)\cos(k_2a_2) - \frac{1}{2}\left(\frac{k_1}{k_2} + \frac{k_2}{k_1}\right)\sin(k_1a_1)\sin(k_2a_2)$
 
-其中k₁ = ω√ε₁/c，k₂ = ω√ε₂/c。当|RHS| > 1时，出现带隙。
+其中$k_1 = \omega\sqrt{\varepsilon_1}/c, k_2 = \omega\sqrt{\varepsilon_2}/c$。当$|RHS| > 1$时，出现带隙。
 
 对于二维和三维光子晶体，使用平面波展开：
 
-**u**_**k**(**r**) = Σ_**G** **u**_**k**,**G** e^(i**G**·**r**)
+$\mathbf{u}_{\mathbf{k}}(\mathbf{r}) = \sum_{\mathbf{G}} \mathbf{u}_{\mathbf{k},\mathbf{G}} e^{i\mathbf{G}\cdot\mathbf{r}}$
 
-其中**G**是倒格矢。本征方程变为矩阵形式：
+其中$\mathbf{G}$是倒格矢。本征方程变为矩阵形式：
 
-Σ_**G**' M_**GG**'(**k**)**u**_**k**,**G**' = (ω/c)²**u**_**k**,**G**
+$\sum_{\mathbf{G}'} M_{\mathbf{G}\mathbf{G}'}(\mathbf{k})\mathbf{u}_{\mathbf{k},\mathbf{G}'} = \left(\frac{\omega}{c}\right)^2\mathbf{u}_{\mathbf{k},\mathbf{G}}$
 
 矩阵元素：
-M_**GG**'(**k**) = |**k** + **G**|² ε^(-1)_**G**-**G**'
+$M_{\mathbf{G}\mathbf{G}'}(\mathbf{k}) = |\mathbf{k} + \mathbf{G}|^2 \varepsilon^{-1}_{\mathbf{G}-\mathbf{G}'}$
 
 #### 态密度与局域化
 
 光子态密度（PDOS）定义为：
 
-ρ(ω) = (1/V)Σ_n∫_BZ δ(ω - ω_n(**k**))d³**k**/(2π)³
+$\rho(\omega) = \frac{1}{V}\sum_n\int_{BZ} \delta(\omega - \omega_n(\mathbf{k}))\frac{d^3\mathbf{k}}{(2\pi)^3}$
 
 在带隙边缘，态密度呈现Van Hove奇点：
-- 一维：ρ(ω) ∝ (ω - ω_edge)^(-1/2)
-- 二维：ρ(ω) ∝ log|ω - ω_edge|
-- 三维：ρ(ω) ∝ (ω - ω_edge)^(1/2)
+- 一维：$\rho(\omega) \propto (\omega - \omega_{edge})^{-1/2}$
+- 二维：$\rho(\omega) \propto \log|\omega - \omega_{edge}|$
+- 三维：$\rho(\omega) \propto (\omega - \omega_{edge})^{1/2}$
 
 ### 26.1.2 缺陷态与波导模式
 
 在周期结构中引入缺陷产生局域模式。考虑点缺陷：
 
-ε_defect(**r**) = ε_crystal(**r**) + Δε·δ(**r** - **r**₀)
+$\varepsilon_{defect}(\mathbf{r}) = \varepsilon_{crystal}(\mathbf{r}) + \Delta\varepsilon\cdot\delta(\mathbf{r} - \mathbf{r}_0)$
 
 缺陷态满足：
-∇ × (1/ε_defect)∇ × **H**_d = (ω_d/c)²**H**_d
+$\nabla \times \left(\frac{1}{\varepsilon_{defect}}\right)\nabla \times \mathbf{H}_d = \left(\frac{\omega_d}{c}\right)^2\mathbf{H}_d$
 
 使用格林函数方法：
-**H**_d = **H**₀ + Δε·G(ω_d)·**H**_d(**r**₀)
+$\mathbf{H}_d = \mathbf{H}_0 + \Delta\varepsilon\cdot G(\omega_d)\cdot\mathbf{H}_d(\mathbf{r}_0)$
 
 自洽条件给出缺陷频率：
-1 = Δε·G(**r**₀, **r**₀; ω_d)
+$1 = \Delta\varepsilon\cdot G(\mathbf{r}_0, \mathbf{r}_0; \omega_d)$
 
 #### 线缺陷与光子晶体波导
 
 移除一排柱子形成线缺陷，支持导波模式。色散关系：
 
-ω(k_z) = ω_defect(k_z, k_⊥ = 0)
+$\omega(k_z) = \omega_{defect}(k_z, k_{\perp} = 0)$
 
 群速度：
-v_g = ∂ω/∂k_z
+$v_g = \partial\omega/\partial k_z$
 
 在带隙边缘附近，出现慢光效应：
-v_g/c ∝ (ω - ω_edge)
+$v_g/c \propto (\omega - \omega_{edge})$
 
 慢光因子增强非线性效应和光物质相互作用。
 
@@ -103,7 +102,7 @@ v_g/c ∝ (ω - ω_edge)
 
 光子晶体波导的急弯处，传统波导会有强烈散射。但在完整带隙中，光被强制沿路径传播。弯曲效率：
 
-η_bend = |∫ **E**_out* · **E**_in dA|² / (∫|**E**_in|²dA · ∫|**E**_out|²dA)
+$\eta_{bend} = \frac{|\int \mathbf{E}_{out}^* \cdot \mathbf{E}_{in} dA|^2}{\left(\int|\mathbf{E}_{in}|^2dA\right) \cdot \left(\int|\mathbf{E}_{out}|^2dA\right)}$
 
 优化弯曲设计通过调整角落的介电常数分布。
 
@@ -113,40 +112,40 @@ v_g/c ∝ (ω - ω_edge)
 
 将场和介电常数展开为平面波：
 
-**H**(**r**) = Σ_**G** **H**_**G** e^(i(**k**+**G**)·**r**)
-1/ε(**r**) = Σ_**G** η_**G** e^(i**G**·**r**)
+$\mathbf{H}(\mathbf{r}) = \sum_{\mathbf{G}} \mathbf{H}_{\mathbf{G}} e^{i(\mathbf{k}+\mathbf{G})\cdot\mathbf{r}}$
+$\frac{1}{\varepsilon(\mathbf{r})} = \sum_{\mathbf{G}} \eta_{\mathbf{G}} e^{i\mathbf{G}\cdot\mathbf{r}}$
 
 本征方程成为：
-Σ_**G**' |**k** + **G**|×η_**G**-**G**'×|**k** + **G**'|**H**_**G**' = (ω/c)²**H**_**G**
+$\sum_{\mathbf{G}'} |\mathbf{k} + \mathbf{G}|\times\eta_{\mathbf{G}-\mathbf{G}'}\times|\mathbf{k} + \mathbf{G}'|\mathbf{H}_{\mathbf{G}'} = \left(\frac{\omega}{c}\right)^2\mathbf{H}_{\mathbf{G}}$
 
 矩阵大小由截断的平面波数决定。收敛性：
-|ω_exact - ω_N| ≤ C/N^(2/d)
+$|\omega_{exact} - \omega_N| \le C/N^{2/d}$
 
 #### 时域有限差分法（FDTD）
 
 离散化Maxwell方程：
 
-**E**^(n+1/2) = **E**^(n-1/2) + (Δt/ε)∇×**H**^n
-**H**^(n+1) = **H**^n - (Δt/μ)∇×**E**^(n+1/2)
+$\mathbf{E}^{(n+1/2)} = \mathbf{E}^{(n-1/2)} + (\Delta t/\varepsilon)\nabla\times\mathbf{H}^n$
+$\mathbf{H}^{(n+1)} = \mathbf{H}^n - (\Delta t/\mu)\nabla\times\mathbf{E}^{(n+1/2)}$
 
 稳定性条件（CFL条件）：
-Δt ≤ Δx/(c√d)
+$\Delta t \le \Delta x/(c\sqrt{d})$
 
 完美匹配层（PML）吸收边界：
-σ(x) = σ_max(x/L_PML)^m
+$\sigma(x) = \sigma_{max}(x/L_{PML})^m$
 
-反射系数：R ≈ exp(-2σ_maxL_PML/c)
+反射系数：$R \approx \exp(-2\sigma_{max}L_{PML}/c)$
 
 #### 有限元方法（FEM）
 
 弱形式的波动方程：
 
-∫_Ω (1/ε)∇×**E**·∇×**E**'dV - (ω/c)²∫_Ω **E**·**E**'dV = 0
+$\int_{\Omega} \left(\frac{1}{\varepsilon}\right)\nabla\times\mathbf{E}\cdot\nabla\times\mathbf{E}'dV - \left(\frac{\omega}{c}\right)^2\int_{\Omega} \mathbf{E}\cdot\mathbf{E}'dV = 0$
 
-使用边缘元素（Nédélec元素）保证∇·**E** = 0。误差估计：
-||**E** - **E**_h||_H(curl) ≤ Ch^p||**E**||_{H^(p+1)}
+使用边缘元素（Nédélec元素）保证$\nabla\cdot\mathbf{E} = 0$。误差估计：
+$||\mathbf{E} - \mathbf{E}_h||_{H(curl)} \le Ch^p||\mathbf{E}||_{H^{p+1}}$
 
-其中h是网格尺寸，p是多项式阶数。
+其中$h$是网格尺寸，$p$是多项式阶数。
 
 ## 26.2 拓扑边缘态
 
@@ -154,10 +153,10 @@ v_g/c ∝ (ω - ω_edge)
 
 拓扑光子学的核心是体边对应原理：体材料的拓扑不变量决定了边界上鲁棒传播模式的存在。对于二维系统，关键的拓扑不变量是Chern数：
 
-C_n = (1/2π)∫_BZ Ω_n(**k**)d²**k**
+$C_n = \frac{1}{2\pi}\int_{BZ} \Omega_n(\mathbf{k})d^2\mathbf{k}$
 
 其中Berry曲率：
-Ω_n(**k**) = -Im⟨∂**u**_n/∂k_x|∂**u**_n/∂k_y⟩ + c.c.
+$\Omega_n(\mathbf{k}) = -\text{Im}\langle\partial\mathbf{u}_n/\partial k_x|\partial\mathbf{u}_n/\partial k_y\rangle + c.c.$
 
 对于破缺时间反演对称性的系统（如施加外磁场），非零Chern数保证了手性边缘态的存在。
 
@@ -165,18 +164,18 @@ C_n = (1/2π)∫_BZ Ω_n(**k**)d²**k**
 
 考虑两个拓扑相不同的光子晶体界面。边缘态的色散关系：
 
-ω_edge(k_∥) = ω_0 + v_edge·k_∥
+$\omega_{edge}(k_{\parallel}) = \omega_0 + v_{edge}\cdot k_{\parallel}$
 
-其中k_∥是沿界面的波矢。手性由体材料的Chern数差决定：
-v_edge·sgn(ΔC) > 0
+其中$k_{\parallel}$是沿界面的波矢。手性由体材料的Chern数差决定：
+$v_{edge}\cdot\text{sgn}(\Delta C) > 0$
 
 单向传播性质使得边缘态对缺陷和无序免疫。
 
 #### 拓扑保护的数学刻画
 
-边缘态的鲁棒性可以通过谱流（spectral flow）定理量化。对于参数化的哈密顿量H(λ)：
+边缘态的鲁棒性可以通过谱流（spectral flow）定理量化。对于参数化的哈密顿量$H(\lambda)$：
 
-SF = ∫₀¹ dλ Σ_n ⟨ψ_n|∂H/∂λ|ψ_n⟩δ(E_n)
+$SF = \int_0^1 d\lambda \sum_n \langle\psi_n|\partial H/\partial\lambda|\psi_n\rangle\delta(E_n)$
 
 谱流等于穿越零能的态数，由拓扑不变量保护。
 
@@ -184,11 +183,11 @@ SF = ∫₀¹ dλ Σ_n ⟨ψ_n|∂H/∂λ|ψ_n⟩δ(E_n)
 
 对于保持时间反演对称性的系统，Chern数必为零。但仍可能存在Z₂拓扑相，用spin-Chern数刻画：
 
-C_s = (C_↑ - C_↓)/2
+$C_s = (C_{\uparrow} - C_{\downarrow})/2$
 
-其中↑↓表示两个时间反演伙伴。界面上出现螺旋边缘态：
+其中$\uparrow\downarrow$表示两个时间反演伙伴。界面上出现螺旋边缘态：
 
-|ψ_edge,k⟩ = |↑,k⟩ + |↓,-k⟩
+$|\psi_{edge,k}\rangle = |\uparrow,k\rangle + |\downarrow,-k\rangle$
 
 反向散射被时间反演对称性禁止，实现了"拓扑绝缘体"。
 
@@ -196,11 +195,11 @@ C_s = (C_↑ - C_↓)/2
 
 在蜂窝晶格光子晶体中，K和K'谷具有相反的拓扑性质。定义谷Chern数：
 
-C_v = C_K - C_K'
+$C_v = C_K - C_{K'}$
 
 打破空间反演对称性产生谷依赖的拓扑相。谷边缘态：
 
-ψ_valley = a_K|K⟩ + a_K'|K'⟩
+$\psi_{valley} = a_K|K\rangle + a_{K'}|K'\rangle$
 
 谷间散射被大动量差抑制，提供了另一种鲁棒传输机制。
 
@@ -208,11 +207,11 @@ C_v = C_K - C_K'
 
 除了一维边缘态，高阶拓扑绝缘体支持零维角态。对于C₄对称的二维系统，定义四极矩：
 
-q_xy = (1/2π)∫_BZ A_x^ydk_xdk_y mod 1
+$q_{xy} = \frac{1}{2\pi}\int_{BZ} A_x^y dk_x dk_y \pmod 1$
 
-其中A_x^y = i⟨u_n|∂_x|u_m⟩⟨u_m|y|u_n⟩。非零四极矩导致角态：
+其中$A_x^y = i\langle u_n|\partial_x|u_m\rangle\langle u_m|y|u_n\rangle$。非零四极矩导致角态：
 
-E_corner = E_0·δ_{q_xy,1/2}
+$E_{corner} = E_0\cdot\delta_{q_{xy},1/2}$
 
 这些角态在光子晶体谐振器和激光器中有潜在应用。
 
@@ -228,14 +227,14 @@ E_corner = E_0·δ_{q_xy,1/2}
 2. **能带反转**：
    通过调整结构参数使能带交叉并打开带隙：
    
-   ε(r) = ε_0 + δε·f(r/a)
+   $\varepsilon(r) = \varepsilon_0 + \delta\varepsilon\cdot f(r/a)$
    
-   其中f控制调制深度，临界点发生拓扑相变。
+   其中$f$控制调制深度，临界点发生拓扑相变。
 
 3. **合成维度**：
    利用其他自由度（如轨道角动量）构造高维拓扑相：
    
-   H_synthetic = H_real ⊗ 𝟙_OAM + 𝟙_real ⊗ H_OAM + V_coupling
+   $H_{synthetic} = H_{real} \otimes \mathbb{1}_{OAM} + \mathbb{1}_{real} \otimes H_{OAM} + V_{coupling}$
 
 ## 26.3 手性与单向传播
 
@@ -243,73 +242,71 @@ E_corner = E_0·δ_{q_xy,1/2}
 
 破坏时间反演对称性是实现手性边缘态的关键。在磁光材料中，外加磁场导致介电张量的非对称性：
 
-ε̂ = [ ε_xx   iε_xy   0    ]
-    [-iε_xy   ε_xx   0    ]
-    [ 0       0      ε_zz ]
+$\hat{\varepsilon} = \begin{pmatrix} \varepsilon_{xx} & i\varepsilon_{xy} & 0 \\ -i\varepsilon_{xy} & \varepsilon_{xx} & 0 \\ 0 & 0 & \varepsilon_{zz} \end{pmatrix}$
 
-其中ε_xy ∝ B_z是磁光耦合。这种旋磁性破坏了互易性：
+其中$\varepsilon_{xy} \propto B_z$是磁光耦合。这种旋磁性破坏了互易性：
 
-S_21 ≠ S_12
+$S_{21} \ne S_{12}$
 
 非互易性的强度由Faraday旋转角量化：
-θ_F = (ω/2c)∫(n_+ - n_-)dz
+$\theta_F = (\omega/2c)\int(n_+ - n_-)dz$
 
-其中n_±是左右圆偏振的折射率。
+其中$n_{\pm}$是左右圆偏振的折射率。
 
 #### 单向波导的设计
 
 利用磁光光子晶体的边缘态实现单向传输。考虑YIG（钇铁石榴石）柱子的六角晶格，施加垂直磁场。边缘态的群速度：
 
-v_g = ∂ω/∂k = v_0·sgn(B)
+$v_g = \partial\omega/\partial k = v_0\cdot\text{sgn}(B)$
 
 反向模式位于带隙中，被指数衰减。隔离度：
 
-I = 10log₁₀(|S_21|²/|S_12|²) ≈ 40αL dB
+$I = 10\log_{10}(|S_{21}|^2/|S_{12}|^2) \approx 40\alpha L \text{ dB}$
 
-其中α是反向传播的衰减系数。
+其中$\alpha$是反向传播的衰减系数。
 
 #### 拓扑光学延迟线
 
 手性边缘态的鲁棒性允许设计紧凑的延迟线：
 
-τ_delay = L_path/v_g
+$\tau_{delay} = L_{path}/v_g$
 
 通过蜿蜒路径实现大延迟。与传统波导不同，急弯和缺陷不引起反射：
 
-R_defect < exp(-Δ_gap/k_BT_eff)
+$R_{defect} < \exp(-\Delta_{gap}/k_BT_{eff})$
 
-其中Δ_gap是拓扑带隙，T_eff是有效"温度"（无序强度）。
+其中$\Delta_{gap}$是拓扑带隙，$T_{eff}$是有效"温度"（无序强度）。
 
 ### 26.3.2 非线性拓扑光子学
 
 在强光场下，考虑Kerr非线性：
 
-ε(**r**) = ε_linear(**r**) + χ^(3)|**E**|²
+$\varepsilon(\mathbf{r}) = \varepsilon_{linear}(\mathbf{r}) + \chi^{(3)}|\mathbf{E}|^2$
 
 非线性修改了Bloch态，导致功率依赖的拓扑相变。孤子解：
 
-**E**(**r**,t) = **E**_soliton(**r**)exp(-iω_st)
+$\mathbf{E}(\mathbf{r},t) = \mathbf{E}_{soliton}(\mathbf{r})\exp(-i\omega_st)$
 
 满足非线性本征方程：
-∇×(1/ε_NL)∇×**E**_s = (ω_s/c)²**E**_s
+$\nabla\times(1/\varepsilon_{NL})\nabla\times\mathbf{E}_s = (\omega_s/c)^2\mathbf{E}_s$
 
 #### 拓扑孤子
 
 边缘态的非线性自聚焦产生拓扑保护的孤子：
 
-∂A/∂z + (1/v_g)∂A/∂t + iβ₂∂²A/∂t² + iγ|A|²A = 0
+$\partial A/\partial z + (1/v_g)\partial A/\partial t + i\beta_2\partial^2 A/\partial t^2 + i\gamma|A|^2A = 0$
 
-其中A是慢变振幅，γ是非线性系数。稳定性分析显示拓扑孤子对扰动鲁棒。
+其中$A$是慢变振幅，$\gamma$是非线性系数。稳定性分析显示拓扑孤子对扰动鲁棒。
 
 #### 拓扑激光器
 
 利用边缘态的单模特性和鲁棒性设计激光器。增益介质的速率方程：
 
-∂N/∂t = P - N/τ - σ_eNI/ℏω
+$\partial N/\partial t = P - N/\tau - \sigma_e NI/\hbar\omega$
 
-其中N是反转粒子数，P是泵浦，I是光强。边缘态提供高Q谐振：
+其中$N$是反转粒子数，$P$是泵浦，$I$是光强。边缘态提供高Q谐振：
 
-Q_edge = ω₀/Δω ≈ 10⁶
+$Q_{edge} = \omega_0/\Delta\omega \approx 10^6$
 
 单向传播抑制了空间烧孔，提高了效率。
 
@@ -321,19 +318,19 @@ Q_edge = ω₀/Δω ≈ 10⁶
 
 使用光敏材料，通过光强调控介电常数：
 
-ε(**r**,I) = ε₀(**r**) + Δε·tanh(I/I_sat)
+$\varepsilon(\mathbf{r},I) = \varepsilon_0(\mathbf{r}) + \Delta\varepsilon\cdot\tanh(I/I_{sat})$
 
-在临界光强I_c，发生拓扑相变。相变的动力学：
+在临界光强$I_c$，发生拓扑相变。相变的动力学：
 
-∂ε/∂t = -ε/τ_relax + f(I_pump)
+$\partial\varepsilon/\partial t = -\varepsilon/\tau_{relax} + f(I_{pump})$
 
-响应时间τ_switch ≈ τ_relax·log(Δε/δε_threshold)。
+响应时间$\tau_{switch} \approx \tau_{relax}\cdot\log(\Delta\varepsilon/\delta\varepsilon_{threshold})$。
 
 #### 电控可重构路由
 
 集成液晶或电光材料，通过电压控制拓扑态：
 
-n_LC(V) = n_o + Δn·(V/V_π)²/(1 + (V/V_π)²)
+$n_{LC}(V) = n_o + \Delta n\cdot(V/V_{\pi})^2/(1 + (V/V_{\pi})^2)$
 
 设计可重构的光路由器：
 - 状态0：左边缘→上边缘
@@ -345,10 +342,10 @@ n_LC(V) = n_o + Δn·(V/V_π)²/(1 + (V/V_π)²)
 
 通过机械形变改变晶格常数，诱导拓扑相变：
 
-a(ε) = a₀(1 + ε)
+$a(\varepsilon) = a_0(1 + \varepsilon)$
 
-其中ε是应变。临界应变：
-ε_c ≈ (ω_gap/ω_0)² - 1
+其中$\varepsilon$是应变。临界应变：
+$\varepsilon_c \approx (\omega_{gap}/\omega_0)^2 - 1$
 
 压电驱动实现精确控制，应用于可调谐滤波器和开关。
 
@@ -358,36 +355,36 @@ a(ε) = a₀(1 + ε)
 
 将渲染问题表述为变分问题。定义能量泛函：
 
-J[σ] = ||R[σ] - I_obs||² + λ₁∫|∇σ|²dx + λ₂∫σlog(σ/σ_prior)dx
+$J[\sigma] = ||R[\sigma] - I_{obs}||^2 + \lambda_1\int|\nabla\sigma|^2dx + \lambda_2\int\sigma\log(\sigma/\sigma_{prior})dx$
 
 其中：
-- 第一项：数据拟合（渲染算子R）
+- 第一项：数据拟合（渲染算子$R$）
 - 第二项：平滑正则化（Tikhonov）
 - 第三项：熵正则化（KL散度）
 
 Euler-Lagrange方程给出最优性条件：
-δJ/δσ = 2R^*[R[σ] - I_obs] - λ₁Δσ + λ₂log(σ/σ_prior) = 0
+$\delta J/\delta\sigma = 2R^*[R[\sigma] - I_{obs}] - \lambda_1\Delta\sigma + \lambda_2\log(\sigma/\sigma_{prior}) = 0$
 
 #### 伴随状态方法
 
-为高效计算梯度，引入伴随状态λ(**x**, **ω**)满足：
+为高效计算梯度，引入伴随状态$\lambda(\mathbf{x}, \mathbf{\omega})$满足：
 
-(**ω**·∇ + σ_t)λ = R^*[R[σ] - I_obs]
+$(\mathbf{\omega}\cdot\nabla + \sigma_t)\lambda = R^*[R[\sigma] - I_{obs}]$
 
 则密度梯度：
-∇_σJ = ∫∫ λ(**x**, **ω**)L(**x**, **ω**)d**ω**dt - λ₁Δσ + λ₂log(σ/σ_prior)
+$\nabla_{\sigma}J = \iint \lambda(\mathbf{x}, \mathbf{\omega})L(\mathbf{x}, \mathbf{\omega})d\mathbf{\omega}dt - \lambda_1\Delta\sigma + \lambda_2\log(\sigma/\sigma_{prior})$
 
-这避免了显式计算Fréchet导数R'[σ]。
+这避免了显式计算Fréchet导数$R'[\sigma]$。
 
 #### 非凸性与凸松弛
 
-渲染算子的非线性导致J[σ]非凸。考虑线性化：
+渲染算子的非线性导致$J[\sigma]$非凸。考虑线性化：
 
-R[σ + δσ] ≈ R[σ] + R'[σ]δσ
+$R[\sigma + \delta\sigma] \approx R[\sigma] + R'[\sigma]\delta\sigma$
 
-在当前估计σ₀附近，凸化的子问题：
+在当前估计$\sigma_0$附近，凸化的子问题：
 
-min_{δσ} ||R'[σ₀]δσ - (I_obs - R[σ₀])||² + reg(σ₀ + δσ)
+$\min_{\delta\sigma} ||R'[\sigma_0]\delta\sigma - (I_{obs} - R[\sigma_0])||^2 + \text{reg}(\sigma_0 + \delta\sigma)$
 
 这导致了迭代重加权最小二乘（IRLS）类算法。
 
@@ -396,28 +393,26 @@ min_{δσ} ||R'[σ₀]δσ - (I_obs - R[σ₀])||² + reg(σ₀ + δσ)
 TV正则化的各种变体：
 
 **各向异性TV**：
-TV_aniso(σ) = ∫|∂σ/∂x| + |∂σ/∂y| + |∂σ/∂z|dx
+$TV_{aniso}(\sigma) = \int|\partial\sigma/\partial x| + |\partial\sigma/\partial y| + |\partial\sigma/\partial z|dx$
 
 **各向同性TV**：
-TV_iso(σ) = ∫||∇σ||₂dx
+$TV_{iso}(\sigma) = \int||\nabla\sigma||_2dx$
 
 **高阶TV**：
-TV_k(σ) = ∫||∇^k σ||_pdx
+$TV_k(\sigma) = \int||\nabla^k \sigma||_pdx$
 
 对偶表述允许高效求解：
-TV(σ) = max_{||**p**||_∞≤1} ∫σ∇·**p**dx
+$TV(\sigma) = \max_{||\mathbf{p}||_{\infty}\le 1} \int\sigma\nabla\cdot\mathbf{p}dx$
 
 ### 26.3.2 凸松弛与半定规划
 
 对于某些渲染问题，可以构造凸松弛。考虑可见性问题，定义矩阵：
 
-**V**_ij = visibility(**x**_i, **x**_j)
+$\mathbf{V}_{ij} = \text{visibility}(\mathbf{x}_i, \mathbf{x}_j)$
 
-可见性的传递性约束：V_ik ≥ V_ij + V_jk - 1可以表示为半定约束：
+可见性的传递性约束：$V_{ik} \ge V_{ij} + V_{jk} - 1$可以表示为半定约束：
 
-[1    V_ij  V_ik]
-[V_ij  1    V_jk] ⪰ 0
-[V_ik  V_jk  1  ]
+$\begin{pmatrix} 1 & V_{ij} & V_{ik} \\ V_{ij} & 1 & V_{jk} \\ V_{ik} & V_{jk} & 1 \end{pmatrix} \succeq 0$
 
 这将组合优化问题转化为SDP。
 
@@ -425,33 +420,33 @@ TV(σ) = max_{||**p**||_∞≤1} ∫σ∇·**p**dx
 
 对于多项式优化问题，Lasserre层级提供逐渐收紧的SDP松弛：
 
-min p(**x**)  s.t. g_i(**x**) ≥ 0
+$\min p(\mathbf{x}) \quad \text{s.t.} \quad g_i(\mathbf{x}) \ge 0$
 
-第k阶松弛：
-min ∫p(**x**)dμ  s.t. **M**_k(μ) ⪰ 0, **M**_{k-deg(g_i)}(g_i·μ) ⪰ 0
+第$k$阶松弛：
+$\min \int p(\mathbf{x})d\mu \quad \text{s.t.} \quad \mathbf{M}_k(\mu) \succeq 0, \mathbf{M}_{k-\text{deg}(g_i)}(g_i\cdot\mu) \succeq 0$
 
-其中**M**_k(μ)是矩量矩阵。对于渲染中的几何重建，这提供了全局优化保证。
+其中$\mathbf{M}_k(\mu)$是矩量矩阵。对于渲染中的几何重建，这提供了全局优化保证。
 
 #### 核范数松弛
 
 对于低秩结构（如光场矩阵），核范数提供凸松弛：
 
-rank(**L**) ≤ r  →  ||**L**||_* ≤ √r||**L**||_F
+$\text{rank}(\mathbf{L}) \le r \quad \to \quad ||\mathbf{L}||_* \le \sqrt{r}||\mathbf{L}||_F$
 
 导致优化问题：
-min ||**A**(**L**) - **b**||² + λ||**L**||_*
+$\min ||\mathbf{A}(\mathbf{L}) - \mathbf{b}||^2 + \lambda||\mathbf{L}||_*$
 
-其中**A**是测量算子。这在光场重建和BRDF估计中有应用。
+其中$\mathbf{A}$是测量算子。这在光场重建和BRDF估计中有应用。
 
 #### 对偶理论与最优性证书
 
 强对偶性条件（Slater条件）保证：
 
-p* = d*
+$p^* = d^*$
 
-其中p*是原问题最优值，d*是对偶最优值。对偶证书提供最优性验证：
+其中$p^*$是原问题最优值，$d^*$是对偶最优值。对偶证书提供最优性验证：
 
-∃**y** ≥ 0: ∇f(**x***) + Σᵢ y_i∇g_i(**x***) = 0
+$\exists\mathbf{y} \ge 0: \nabla f(\mathbf{x}^*) + \sum_i y_i\nabla g_i(\mathbf{x}^*) = 0$
 
 在渲染中，这验证了重建的全局最优性。
 
@@ -459,22 +454,22 @@ p* = d*
 
 使用最优传输距离作为正则化项：
 
-J_OT[σ] = ||R[σ] - I_obs||² + λW_2²(σ, σ_prior)
+$J_{OT}[\sigma] = ||R[\sigma] - I_{obs}||^2 + \lambda W_2^2(\sigma, \sigma_{prior})$
 
 Wasserstein距离的梯度：
-∇_σW_2²(σ, σ_prior) = 2(id - T_σ)
+$\nabla_{\sigma}W_2^2(\sigma, \sigma_{prior}) = 2(\text{id} - T_{\sigma})$
 
-其中T_σ是最优传输映射。这促进了空间连贯的重建。
+其中$T_{\sigma}$是最优传输映射。这促进了空间连贯的重建。
 
 #### Kantorovich-Rubinstein对偶
 
 1-Wasserstein距离的对偶表述：
 
-W_1(μ, ν) = sup_{||f||_Lip≤1} ∫f d(μ - ν)
+$W_1(\mu, \nu) = \sup_{||f||_{Lip}\le 1} \int f d(\mu - \nu)$
 
 这提供了计算友好的形式。在实践中，使用神经网络参数化Lipschitz函数：
 
-f_θ(**x**) with ||∇f_θ||_∞ ≤ 1
+$f_{\theta}(\mathbf{x}) \text{ with } ||\nabla f_{\theta}||_{\infty} \le 1$
 
 通过谱归一化或梯度惩罚实现。
 
@@ -482,21 +477,21 @@ f_θ(**x**) with ||∇f_θ||_∞ ≤ 1
 
 Sinkhorn距离提供了平滑近似：
 
-W_ε(μ, ν) = inf_{π∈Π(μ,ν)} ∫c(**x**, **y**)dπ + ε·KL(π||μ⊗ν)
+$W_{\varepsilon}(\mu, \nu) = \inf_{\pi\in\Pi(\mu,\nu)} \int c(\mathbf{x}, \mathbf{y})d\pi + \varepsilon\cdot KL(\pi||\mu\otimes\nu)$
 
 导致迭代算法：
-**u**^(k+1) = μ/(**K****v**^(k))
-**v**^(k+1) = ν/(**K**^T**u**^(k+1))
+$\mathbf{u}^{(k+1)} = \mu/(\mathbf{K}\mathbf{v}^{(k)})$
+$\mathbf{v}^{(k+1)} = \nu/(\mathbf{K}^T\mathbf{u}^{(k+1)})$
 
-其中**K**_ij = exp(-c(**x**_i, **x**_j)/ε)。
+其中$\mathbf{K}_{ij} = \exp(-c(\mathbf{x}_i, \mathbf{x}_j)/\varepsilon)$。
 
 #### 动态公式与测地线
 
 Benamou-Brenier公式将最优传输表述为流体动力学：
 
-W_2²(μ₀, μ₁) = inf_{(μ_t,**v**_t)} ∫₀¹∫||**v**_t||²dμ_tdt
+$W_2^2(\mu_0, \mu_1) = \inf_{(\mu_t,\mathbf{v}_t)} \int_0^1\int||\mathbf{v}_t||^2d\mu_tdt$
 
-s.t. ∂_tμ_t + ∇·(μ_t**v**_t) = 0
+$\text{s.t.} \quad \partial_t\mu_t + \nabla\cdot(\mu_t\mathbf{v}_t) = 0$
 
 这在时变渲染和形变建模中有应用。
 
@@ -504,7 +499,7 @@ s.t. ∂_tμ_t + ∇·(μ_t**v**_t) = 0
 
 允许质量变化的推广：
 
-UOT_λ(μ, ν) = inf_{π} ∫cdπ + λ₁KL(π1||μ) + λ₂KL(π^T1||ν)
+$UOT_{\lambda}(\mu, \nu) = \inf_{\pi} \int cd\pi + \lambda_1 KL(\pi\mathbf{1}||\mu) + \lambda_2 KL(\pi^T\mathbf{1}||\nu)$
 
 适用于部分遮挡和不完整观测的场景。
 
@@ -513,20 +508,20 @@ UOT_λ(μ, ν) = inf_{π} ∫cdπ + λ₁KL(π1||μ) + λ₂KL(π^T1||ν)
 ### 26.4.1 层次数据结构
 
 八叉树加速的复杂度分析：
-- 构建：O(N log N)
-- 查询：O(log N)
-- 内存：O(N)
+- 构建：$O(N \log N)$
+- 查询：$O(\log N)$
+- 内存：$O(N)$
 
 对于非均匀密度分布，自适应结构的效率：
-N_eff = ∫ σ(**x**)^(2/3) dx / (∫ σ(**x**)dx)^(2/3)
+$N_{eff} = \int \sigma(\mathbf{x})^{2/3} dx / (\int \sigma(\mathbf{x})dx)^{2/3}$
 
 ### 26.4.2 蒙特卡洛积分的方差减少
 
 重要性采样的最优分布：
-p_opt(t) ∝ T(t)σ(t)|L_in(t)|
+$p_{opt}(t) \propto T(t)\sigma(t)|L_{in}(t)|$
 
 实践中使用分段常数近似，方差减少比：
-VRR = Var[naive]/Var[IS] ≈ (σ_max/σ_mean)²
+$VRR = \text{Var}[\text{naive}]/\text{Var}[IS] \approx (\sigma_{max}/\sigma_{mean})^2$
 
 ### 26.4.3 GPU并行化策略
 
@@ -536,9 +531,9 @@ VRR = Var[naive]/Var[IS] ≈ (σ_max/σ_mean)²
 3. **混合策略**：自适应选择并行粒度
 
 负载均衡通过工作窃取实现：
-T_total = max_i(T_i) + O(log P)
+$T_{total} = \max_i(T_i) + O(\log P)$
 
-其中P是处理器数。
+其中$P$是处理器数。
 
 ## 26.5 统一框架的应用
 
@@ -546,55 +541,55 @@ T_total = max_i(T_i) + O(log P)
 
 结合不同表示的优势：
 
-σ_hybrid(**x**) = σ_explicit(**x**) + f_θ(**x**) + Σᵢ αᵢG(**x**; **μ**ᵢ, **Σ**ᵢ)
+$\sigma_{hybrid}(\mathbf{x}) = \sigma_{explicit}(\mathbf{x}) + f_{\theta}(\mathbf{x}) + \sum_i \alpha_i G(\mathbf{x}; \mathbf{\mu}_i, \mathbf{\Sigma}_i)$
 
 其中：
-- σ_explicit：稀疏体素捕获主要结构
-- f_θ：神经网络编码细节
+- $\sigma_{explicit}$：稀疏体素捕获主要结构
+- $f_{\theta}$：神经网络编码细节
 - 高斯项：表示高光和小特征
 
 ### 26.5.2 自适应采样与重建
 
 基于信息论的采样密度：
 
-ρ_sample(**x**) ∝ ||∇L(**x**)||² + H[p(**x**)]
+$\rho_{sample}(\mathbf{x}) \propto ||\nabla L(\mathbf{x})||^2 + H[p(\mathbf{x})]$
 
-其中H是局部辐射分布的熵。这导致在边缘和复杂光照区域的密集采样。
+其中$H$是局部辐射分布的熵。这导致在边缘和复杂光照区域的密集采样。
 
 ### 26.5.3 逆向渲染的统一处理
 
-从观察图像I重建场景参数的贝叶斯框架：
+从观察图像$I$重建场景参数的贝叶斯框架：
 
-p(θ|I) ∝ p(I|θ)p(θ)
+$p(\theta|I) \propto p(I|\theta)p(\theta)$
 
 统一体积渲染方程提供似然函数：
-p(I|θ) = N(I; R[σ_θ], Σ_noise)
+$p(I|\theta) = \mathcal{N}(I; R[\sigma_{\theta}], \Sigma_{noise})$
 
-不同表示对应不同的先验p(θ)。
+不同表示对应不同的先验$p(\theta)$。
 
 ### 26.5.4 实时渲染的渐进优化
 
 多分辨率策略的误差界：
-||L_coarse - L_fine||∞ ≤ C·h^k·||∂^k σ/∂x^k||∞
+$||L_{coarse} - L_{fine}||_{\infty} \le C\cdot h^k\cdot||\partial^k \sigma/\partial x^k||_{\infty}$
 
-其中h是体素大小，k是插值阶数。这指导了LOD系统的设计。
+其中$h$是体素大小，$k$是插值阶数。这指导了LOD系统的设计。
 
 ## 本章小结
 
 统一体积渲染框架揭示了看似不同的渲染技术背后的共同数学结构：
 
-1. **统一方程**：L(**o**, **d**) = ∫₀^∞ T(t)σ(t)[...]dt 是所有方法的基础
-2. **表示等价性**：点云、体素、神经网络、高斯都是密度场σ(**x**)的不同基函数展开
-3. **收敛性保证**：不同表示具有明确的逼近误差界 O(N^(-1/d))、O(exp(-cL))等
-4. **优化框架**：变分原理J[σ] = ||R[σ] - I||² + Reg[σ]统一了重建算法
-5. **计算复杂度**：从O(N²)到O(N log N)的加速通过层次结构和解析积分实现
+1. **统一方程**：$L(\mathbf{o}, \mathbf{d}) = \int_0^{\infty} T(t)\sigma(t)[\dots]dt$ 是所有方法的基础
+2. **表示等价性**：点云、体素、神经网络、高斯都是密度场$\sigma(\mathbf{x})$的不同基函数展开
+3. **收敛性保证**：不同表示具有明确的逼近误差界 $O(N^{-1/d})$、$O(\exp(-cL))$等
+4. **优化框架**：变分原理$J[\sigma] = ||R[\sigma] - I||^2 + \text{Reg}[\sigma]$统一了重建算法
+5. **计算复杂度**：从$O(N^2)$到$O(N \log N)$的加速通过层次结构和解析积分实现
 6. **混合策略**：结合不同表示的优势实现最优性能
 
 ## 练习题
 
 ### 基础题
 
-**26.1** 证明对于均匀介质σ(**x**) = σ₀，体积渲染方程简化为Beer-Lambert定律。计算透射率T(t)和最终辐射L。
+**26.1** 证明对于均匀介质$\sigma(\mathbf{x}) = \sigma_0$，体积渲染方程简化为Beer-Lambert定律。计算透射率$T(t)$和最终辐射$L$。
 
 <details>
 <summary>提示</summary>
@@ -603,9 +598,9 @@ p(I|θ) = N(I; R[σ_θ], Σ_noise)
 
 <details>
 <summary>答案</summary>
-透射率：T(t) = exp(-σ₀t)
-无散射情况：L = ∫₀^∞ σ₀exp(-σ₀t)L_e dt + exp(-σ₀t_∞)L_∞
-若L_e常数：L = L_e(1 - exp(-σ₀t_∞)) + exp(-σ₀t_∞)L_∞
+透射率：$T(t) = \exp(-\sigma_0 t)$
+无散射情况：$L = \int_0^{\infty} \sigma_0\exp(-\sigma_0 t)L_e dt + \exp(-\sigma_0 t_{\infty})L_{\infty}$
+若$L_e$常数：$L = L_e(1 - \exp(-\sigma_0 t_{\infty})) + \exp(-\sigma_0 t_{\infty})L_{\infty}$
 </details>
 
 **26.2** 对于N个等权重的3D高斯，推导体积渲染的计算复杂度。考虑深度排序和视锥剔除。
@@ -617,14 +612,14 @@ p(I|θ) = N(I; R[σ_θ], Σ_noise)
 
 <details>
 <summary>答案</summary>
-总复杂度：O(N log N + KN)
-- 深度排序：O(N log N)
-- 视锥剔除：O(N)
-- 光栅化：O(KN)，K是平均覆盖像素数
+总复杂度：$O(N \log N + KN)$
+- 深度排序：$O(N \log N)$
+- 视锥剔除：$O(N)$
+- 光栅化：$O(KN)$，$K$是平均覆盖像素数
 内存访问模式决定实际性能
 </details>
 
-**26.3** 证明位置编码γ(**x**) = [sin(2πB**x**), cos(2πB**x**)]使神经网络能够学习带限函数，其中B是频率矩阵。
+**26.3** 证明位置编码$\gamma(\mathbf{x}) = [\sin(2\pi B\mathbf{x}), \cos(2\pi B\mathbf{x})]$使神经网络能够学习带限函数，其中$B$是频率矩阵。
 
 <details>
 <summary>提示</summary>
@@ -633,10 +628,10 @@ p(I|θ) = N(I; R[σ_θ], Σ_noise)
 
 <details>
 <summary>答案</summary>
-神经正切核（NTK）：K(**x**, **x**') = ⟨∇_θf(**x**), ∇_θf(**x**')⟩
-位置编码后：K_γ(**x**, **x**') = K(γ(**x**), γ(**x**'))
-频谱：K̃_γ(**ω**) 在||**ω**|| ≤ ||B||处非零
-因此可以表示频率up to ||B||的函数
+神经正切核（NTK）：$K(\mathbf{x}, \mathbf{x}') = \langle\nabla_{\theta}f(\mathbf{x}), \nabla_{\theta}f(\mathbf{x}')\rangle$
+位置编码后：$K_{\gamma}(\mathbf{x}, \mathbf{x}') = K(\gamma(\mathbf{x}), \gamma(\mathbf{x}'))$
+频谱：$\tilde{K}_{\gamma}(\mathbf{\omega})$ 在 $||\mathbf{\omega}|| \le ||B||$ 处非零
+因此可以表示频率up to $||B||$的函数
 </details>
 
 ### 挑战题
@@ -645,18 +640,18 @@ p(I|θ) = N(I; R[σ_θ], Σ_noise)
 
 <details>
 <summary>提示</summary>
-Fisher信息I_ij = E[∂log p/∂θᵢ · ∂log p/∂θⱼ]量化参数的信息量。
+Fisher信息$I_{ij} = E[\partial\log p/\partial\theta_i \cdot \partial\log p/\partial\theta_j]$量化参数的信息量。
 </details>
 
 <details>
 <summary>答案</summary>
-局部Fisher信息：F(**x**) = E[(∇L)⊗(∇L)] / Var[L]
-最优采样密度：ρ(**x**) ∝ √det(F(**x**))
-收敛率：ε_N ≤ C∫√det(F)dx / N
-自适应更新：**x**_{n+1} ~ ρ_n(**x**)基于当前估计
+局部Fisher信息：$F(\mathbf{x}) = E[(\nabla L)\otimes(\nabla L)] / \text{Var}[L]$
+最优采样密度：$\rho(\mathbf{x}) \propto \sqrt{\det(F(\mathbf{x}))}$
+收敛率：$\varepsilon_N \le C\int\sqrt{\det(F)}dx / N$
+自适应更新：$\mathbf{x}_{n+1} \sim \rho_n(\mathbf{x})$基于当前估计
 </details>
 
-**26.5** 分析混合表示σ = σ_voxel + f_neural + Σᵢαᵢ𝒢ᵢ的优化landscape。证明在某些条件下局部最小值是全局最优。
+**26.5** 分析混合表示$\sigma = \sigma_{voxel} + f_{neural} + \sum_i\alpha_i\mathcal{G}_i$的优化landscape。证明在某些条件下局部最小值是全局最优。
 
 <details>
 <summary>提示</summary>
@@ -669,11 +664,11 @@ Fisher信息I_ij = E[∂log p/∂θᵢ · ∂log p/∂θⱼ]量化参数的信�
 - 体素更新：凸二次规划
 - 高斯参数：非凸但有闭式EM更新
 - 神经网络：通过过参数化接近凸
-充分条件：||∇²_mixedJ|| < λ_min(∇²_voxelJ)
+充分条件：$||\nabla^2_{mixed}J|| < \lambda_{min}(\nabla^2_{voxel}J)$
 交替优化收敛到驻点，宽网络下接近全局最优
 </details>
 
-**26.6** 推导基于最优传输的多视图一致性正则化。给定K个视图的渲染R_k[σ]，设计保持视图一致的损失函数。
+**26.6** 推导基于最优传输的多视图一致性正则化。给定$K$个视图的渲染$R_k[\sigma]$，设计保持视图一致的损失函数。
 
 <details>
 <summary>提示</summary>
@@ -683,11 +678,11 @@ Fisher信息I_ij = E[∂log p/∂θᵢ · ∂log p/∂θⱼ]量化参数的信�
 <details>
 <summary>答案</summary>
 多视图Wasserstein重心：
-μ* = argmin_μ Σₖ W₂²(μ, R_k[σ])
-一致性损失：L_consist = Σₖ W₂²(R_k[σ], P_k[μ*])
-其中P_k是到视图k的投影
-梯度：∇_σL = Σₖ R_k^*(T_k - id)∘R_k
-T_k是最优传输映射
+$\mu^* = \text{argmin}_{\mu} \sum_k W_2^2(\mu, R_k[\sigma])$
+一致性损失：$L_{consist} = \sum_k W_2^2(R_k[\sigma], P_k[\mu^*])$
+其中$P_k$是到视图$k$的投影
+梯度：$\nabla_{\sigma}L = \sum_k R_k^*(T_k - \text{id})\circ R_k$
+$T_k$是最优传输映射
 </details>
 
 **26.7** 证明在体积渲染中使用分层采样（stratified sampling）相比均匀采样的方差减少因子。考虑密度场的Lipschitz连续性。
@@ -699,12 +694,12 @@ T_k是最优传输映射
 
 <details>
 <summary>答案</summary>
-均匀采样方差：Var_uniform = σ²/N
+均匀采样方差：$\text{Var}_{uniform} = \sigma^2/N$
 分层采样（M层，每层N/M样本）：
-Var_strat = (1/M)ΣₘVar[f|layer_m]
-对Lipschitz连续f：Var[f|layer] ≤ L²(Δt/M)²
-方差减少：Var_strat/Var_uniform ≤ O(1/M)
-最优M ≈ √N平衡偏差和方差
+$\text{Var}_{strat} = (1/M)\sum_m\text{Var}[f|\text{layer}_m]$
+对Lipschitz连续$f$：$\text{Var}[f|\text{layer}] \le L^2(\Delta t/M)^2$
+方差减少：$\text{Var}_{strat}/\text{Var}_{uniform} \le O(1/M)$
+最优$M \approx \sqrt{N}$平衡偏差和方差
 </details>
 
 **26.8** 开放问题：如何将量子计算应用于体积渲染？考虑：(a) 量子采样算法加速蒙特卡洛积分，(b) 量子机器学习用于神经辐射场，(c) 量子优化求解逆渲染。给出可能的量子优势分析。
@@ -717,7 +712,7 @@ Var_strat = (1/M)ΣₘVar[f|layer_m]
 ## 常见陷阱与错误
 
 1. **数值不稳定**
-   - 错误：直接计算T(t) = exp(-∫σds)导致下溢
+   - 错误：直接计算$T(t) = \exp(-\int\sigma ds)$导致下溢
    - 正确：使用log空间计算或分段线性近似
 
 2. **采样偏差**
@@ -750,3 +745,4 @@ Var_strat = (1/M)ΣₘVar[f|layer_m]
 - [ ] 实现渐进式渲染
 - [ ] 考虑硬件特性（缓存、SIMD）
 - [ ] 设计可扩展的混合表示
+
