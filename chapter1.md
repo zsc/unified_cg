@@ -15,27 +15,27 @@
 
 ### 几何光学中的光线
 
-在几何光学中，我们使用光线来建模光的传播——在均匀介质中沿直线传播的无限细光束。当波长 λ << 特征尺寸时，这种近似成立，使我们可以忽略衍射和干涉。光线参数化为：
+在几何光学中，我们使用光线来建模光的传播——在均匀介质中沿直线传播的无限细光束。当波长 $\lambda \ll$ 特征尺寸时，这种近似成立，使我们可以忽略衍射和干涉。光线参数化为：
 
-**r**(t) = **o** + t**d**
+$\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$
 
-其中 **o** ∈ ℝ³ 是原点，**d** ∈ ℝ³ 是方向（||**d**|| = 1），t ≥ 0 是沿光线的参数。
+其中 $\mathbf{o} \in \mathbb{R}^3$ 是原点，$\mathbf{d} \in \mathbb{R}^3$ 是方向（$||\mathbf{d}|| = 1$），$t \ge 0$ 是沿光线的参数。
 
-光线方程源自程函方程 ∇S = n**k̂** 在 λ → 0 极限下的结果，其中 S 是相位，n 是折射率。在非均匀介质中，光线遵循满足以下方程的曲线路径：
+光线方程源自程函方程 $\nabla S = n\mathbf{\hat{k}}$ 在 $\lambda \to 0$ 极限下的结果，其中 $S$ 是相位，$n$ 是折射率。在非均匀介质中，光线遵循满足以下方程的曲线路径：
 
 $\frac{d}{ds}\left(n \frac{d\mathbf{r}}{ds}\right) = \nabla n$
 
-当 n 为常数时，这简化为直线。
+当 $n$ 为常数时，这简化为直线。
 
-**与波动光学的联系**：几何光学近似源自波动方程的WKB（Wentzel-Kramers-Brillouin）近似。当我们将 ψ = A exp(ikS) 代入亥姆霍兹方程并取 k → ∞ 时：
+**与波动光学的联系**：几何光学近似源自波动方程的WKB（Wentzel-Kramers-Brillouin）近似。当我们将 $\psi = A \exp(ikS)$ 代入亥姆霍兹方程并取 $k \to \infty$ 时：
 
-$\nabla^2\psi + k^2n^2\psi = 0 \rightarrow (\nabla S)^2 = n^2$ （程函方程）
+$\nabla^2\psi + k^2n^2\psi = 0 \to (\nabla S)^2 = n^2$ （程函方程）
 
-等相位面 S = const 是波前，光线是这些波前的正交轨迹。当我们在后续章节扩展到波动光学时，这种联系变得至关重要。
+等相位面 $S = \text{const}$ 是波前，光线是这些波前的正交轨迹。当我们在后续章节扩展到波动光学时，这种联系变得至关重要。
 
 **光线光学的有效性**：几何光学近似在以下情况下失效：
-1. 特征尺寸 ~ 波长（衍射变得显著）
-2. 靠近焦散面，光线密度 → ∞
+1. 特征尺寸 $\sim$ 波长（衍射变得显著）
+2. 靠近焦散面，光线密度 $\to \infty$
 3. 存在尖锐边缘或不连续性
 4. 需要相位信息的相干现象
 
@@ -49,23 +49,23 @@ $\delta\int n(\mathbf{r}) ds = 0$
 
 在推导渲染方程之前，我们必须建立辐射度量框架。这些量形成一个层次结构，每个都建立在前一个的基础上：
 
-**辐射能** Q 测量总电磁能量：
-Q [J]
+**辐射能** $Q$ 测量总电磁能量：
+$Q \text{ [J]}$
 
-**辐射通量（功率）** Φ 测量单位时间的能量：
-$\Phi = \frac{dQ}{dt}$ [W]
+**辐射通量（功率）** $\Phi$ 测量单位时间的能量：
+$\Phi = \frac{dQ}{dt} \text{ [W]}$
 
-**辐射强度** I 测量点源单位立体角的通量：
-$I = \frac{d\Phi}{d\omega}$ [W/sr]
+**辐射强度** $I$ 测量点源单位立体角的通量：
+$I = \frac{d\Phi}{d\omega} \text{ [W/sr]}$
 
-**辐照度** E 测量入射单位面积的通量：
-$E = \frac{d\Phi}{dA}$ [W/m²]
+**辐照度** $E$ 测量入射单位面积的通量：
+$E = \frac{d\Phi}{dA} \text{ [W/m}^2\text{]}$
 
-**辐射出射度** M 测量离开单位面积的通量：
-$M = \frac{d\Phi}{dA}$ [W/m²]
+**辐射出射度** $M$ 测量离开单位面积的通量：
+$M = \frac{d\Phi}{dA} \text{ [W/m}^2\text{]}$
 
-**辐射率** L 测量单位面积单位立体角的通量：
-$L = \frac{d^2\Phi}{dA \cos \theta d\omega} = \frac{d^2\Phi}{dA_\perp d\omega}$ [W/(m²·sr)]
+**辐射率** $L$ 测量单位面积单位立体角的通量：
+$L = \frac{d^2\Phi}{dA \cos \theta d\omega} = \frac{d^2\Phi}{dA_\perp d\omega} \text{ [W/(m}^2\text{·sr)]}$
 
 其中 $dA_\perp = dA \cos \theta$ 是垂直于光线方向的投影面积。
 
@@ -75,12 +75,12 @@ $L = \frac{d^2\Phi}{dA \cos \theta d\omega} = \frac{d^2\Phi}{dA_\perp d\omega}$ 
 3. 所有其他辐射度量都可以从它导出
 
 **光度量与辐射度量**：虽然我们关注辐射度量（物理能量），但为人类感知进行渲染时通常使用光度量：
-- 光通量 [lm] = 辐射通量 [W] × 光效能
-- 亮度 [cd/m²] = 辐射率 × 明视觉响应 V(λ)
-- CIE光度函数 V(λ) 在555 nm（绿色）处达到峰值
+- 光通量 [lm] = 辐射通量 [W] $\times$ 光效能
+- 亮度 [cd/m$^2$] = 辐射率 $\times$ 明视觉响应 $V(\lambda)$
+- CIE光度函数 $V(\lambda)$ 在555 nm（绿色）处达到峰值
 
 **光谱辐射率**：实际上，辐射率随波长变化：
-$L(\mathbf{x}, \omega, \lambda)$ [W/(m²·sr·nm)]
+$L(\mathbf{x}, \omega, \lambda) \text{ [W/(m}^2\text{·sr·nm)]}$
 
 对于渲染，我们通常使用：
 - RGB近似：光谱的3个样本
@@ -94,15 +94,15 @@ $I_{\text{total}} = |E_1 + E_2|^2 \neq |E_1|^2 + |E_2|^2$ （一般情况下）
 
 渲染方程由Kajiya（1986）提出，描述场景中光的平衡分布。它源于功率平衡：在任何表面点，输出功率等于发射功率加反射功率。
 
-在具有法线 **n** 的表面点 **x** 处，沿方向 $\omega_o$ 的出射辐射率 $L_o$ 满足：
+在具有法线 $\mathbf{n}$ 的表面点 $\mathbf{x}$ 处，沿方向 $\omega_o$ 的出射辐射率 $L_o$ 满足：
 
 $L_o(\mathbf{x}, \omega_o) = L_e(\mathbf{x}, \omega_o) + \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) L_i(\mathbf{x}, \omega_i) (\omega_i \cdot \mathbf{n}) d\omega_i$
 
 其中：
-- $L_e(\mathbf{x}, \omega_o)$ 是从 **x** 沿方向 $\omega_o$ 的发射辐射率
-- $f_r(\mathbf{x}, \omega_i, \omega_o)$ 是BRDF [sr⁻¹]
-- $L_i(\mathbf{x}, \omega_i)$ 是在 **x** 处来自方向 $\omega_i$ 的入射辐射率
-- Ω 是 **x** 上方的半球（其中 $\omega \cdot \mathbf{n} > 0$）
+- $L_e(\mathbf{x}, \omega_o)$ 是从 $\mathbf{x}$ 沿方向 $\omega_o$ 的发射辐射率
+- $f_r(\mathbf{x}, \omega_i, \omega_o)$ 是BRDF [sr$^{-1}$]
+- $L_i(\mathbf{x}, \omega_i)$ 是在 $\mathbf{x}$ 处来自方向 $\omega_i$ 的入射辐射率
+- $\Omega$ 是 $\mathbf{x}$ 上方的半球（其中 $\omega \cdot \mathbf{n} > 0$）
 - $(\omega_i \cdot \mathbf{n}) = \cos \theta_i$ 考虑了投影面积
 
 积分表示散射积分——对所有入射方向的贡献求和，由BRDF和余弦投影加权。
@@ -111,11 +111,11 @@ $L_o(\mathbf{x}, \omega_o) = L_e(\mathbf{x}, \omega_o) + \int_\Omega f_r(\mathbf
 
 能量守恒约束BRDF。方向-半球反射率（反照率）必须满足：
 
-$\rho(\omega_o) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i d\omega_i \leq 1$ 对所有 $\omega_o$
+$\rho(\omega_o) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i d\omega_i \le 1$ 对所有 $\omega_o$
 
 对于无损表面，等号成立。白炉测试验证能量守恒：在均匀照明环境中（$L_i = L_0$），封闭表面既不应获得也不应失去能量。
 
-**详细能量平衡**：对于表面元素 dA，守恒要求：
+**详细能量平衡**：对于表面元素 $dA$，守恒要求：
 
 $\int_\Omega L_o(\mathbf{x}, \omega) \cos \theta d\omega dA = L_e dA + \int_\Omega L_i(\mathbf{x}, \omega) \cos \theta d\omega dA$
 
@@ -126,7 +126,7 @@ $\varepsilon(\lambda, \theta) = \alpha(\lambda, \theta) = 1 - \rho(\lambda, \the
 
 $I_j = \int_A \int_\Omega W_j(\mathbf{x}, \omega) L(\mathbf{x}, \omega) \cos \theta d\omega dA$
 
-其中 $W_j(\mathbf{x}, \omega)$ 是像素 j 的重要性（灵敏度）函数。辐射率和重要性之间的这种对偶性使双向算法成为可能。
+其中 $W_j(\mathbf{x}, \omega)$ 是像素 $j$ 的重要性（灵敏度）函数。辐射率和重要性之间的这种对偶性使双向算法成为可能。
 
 **重要性传输**：重要性满足伴随方程：
 
@@ -137,7 +137,7 @@ $W(\mathbf{x}, \omega) = W_e(\mathbf{x}, \omega) + \int_\Omega f_r(\mathbf{x}, \
 - 光子映射（正向光，反向重要性）
 - 梯度计算的伴随方法
 
-对于针孔相机，像素 j 从针孔张成立体角 $\Omega_j$：
+对于针孔相机，像素 $j$ 从针孔张成立体角 $\Omega_j$：
 
 $I_j = \int_{\Omega_j} L(\mathbf{x}_{\text{lens}}, \omega) \cos^4 \theta d\omega$
 
@@ -147,13 +147,13 @@ $\cos^4 \theta$ 项考虑了：
 
 **有限孔径相机**：对于具有孔径 $A_{\text{lens}}$ 的真实相机：
 
-$I_j = \frac{1}{A_{\text{lens}}} \int_{A_{\text{lens}}} \int_{A_{\text{pixel}}} L(\mathbf{x}_{\text{lens}} \rightarrow \mathbf{x}_{\text{pixel}}) G(\mathbf{x}_{\text{lens}} \leftrightarrow \mathbf{x}_{\text{pixel}}) dA_{\text{pixel}} dA_{\text{lens}}$
+$I_j = \frac{1}{A_{\text{lens}}} \int_{A_{\text{lens}}} \int_{A_{\text{pixel}}} L(\mathbf{x}_{\text{lens}} \to \mathbf{x}_{\text{pixel}}) G(\mathbf{x}_{\text{lens}} \leftrightarrow \mathbf{x}_{\text{pixel}}) dA_{\text{pixel}} dA_{\text{lens}}$
 
 这导致景深效果并需要仔细的采样策略。
 
 ### 算子形式与诺伊曼级数
 
-渲染方程允许优雅的算子表述。定义传输算子 𝒯：
+渲染方程允许优雅的算子表述。定义传输算子 $\mathcal{T}$：
 
 $(\mathcal{T}L)(\mathbf{x}, \omega) = \int_\Omega f_r(\mathbf{x}, \omega', \omega) L(\mathbf{x}, \omega') (\omega' \cdot \mathbf{n}) d\omega'$
 
@@ -163,7 +163,7 @@ $L = L_e + \mathcal{T}L$
 
 这是第二类弗雷德霍姆方程。通过诺伊曼级数的解：
 
-$L = (I - \mathcal{T})^{-1}L_e = \sum_{k=0}^\infty \mathcal{T}^k L_e = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + ...$
+$L = (I - \mathcal{T})^{-1}L_e = \sum_{k=0}^\infty \mathcal{T}^k L_e = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + \dots$
 
 每项都有物理意义：
 - $L_e$：直接照明（仅发射）
@@ -171,13 +171,13 @@ $L = (I - \mathcal{T})^{-1}L_e = \sum_{k=0}^\infty \mathcal{T}^k L_e = L_e + \ma
 - $\mathcal{T}^2L_e$：两次反弹照明
 - $\mathcal{T}^k L_e$：k次反弹照明
 
-当 $||\mathcal{T}|| < 1$ 时级数收敛，这在最大反照率 < 1 时发生。这种分解自然导致采样路径长度递增的路径追踪算法。
+当 $||\mathcal{T}|| < 1$ 时级数收敛，这在最大反照率 $< 1$ 时发生。这种分解自然导致采样路径长度递增的路径追踪算法。
 
 ### 三点形式与几何耦合
 
 渲染方程可以改写为三点形式，使几何耦合明确：
 
-$L(\mathbf{x} \rightarrow \mathbf{x}') = L_e(\mathbf{x} \rightarrow \mathbf{x}') + \int_M f_r(\mathbf{x}'' \rightarrow \mathbf{x} \rightarrow \mathbf{x}') L(\mathbf{x}'' \rightarrow \mathbf{x}) G(\mathbf{x}'' \leftrightarrow \mathbf{x}) dA(\mathbf{x}'')$
+$L(\mathbf{x} \to \mathbf{x}') = L_e(\mathbf{x} \to \mathbf{x}') + \int_M f_r(\mathbf{x}'' \to \mathbf{x} \to \mathbf{x}') L(\mathbf{x}'' \to \mathbf{x}) G(\mathbf{x}'' \leftrightarrow \mathbf{x}) dA(\mathbf{x}'')$
 
 其中几何因子是：
 
@@ -195,10 +195,10 @@ $G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathb
 - 计算昂贵：需要光线-场景相交
 - 耦合所有几何：任何地方的变化都会影响所有地方的可见性
 
-**核函数性质**：传输核 $K(\mathbf{x}'' \rightarrow \mathbf{x}) = f_r G V$ 具有重要性质：
+**核函数性质**：传输核 $K(\mathbf{x}'' \to \mathbf{x}) = f_r G V$ 具有重要性质：
 - 沿 $\mathbf{x} = \mathbf{x}''$ 奇异（需要仔细正则化）
 - 在遮挡边界处不连续
-- 满足互易性：$K(\mathbf{x} \rightarrow \mathbf{x}') = K(\mathbf{x}' \rightarrow \mathbf{x})$
+- 满足互易性：$K(\mathbf{x} \to \mathbf{x}') = K(\mathbf{x}' \to \mathbf{x})$
 
 **与热方程的联系**：没有可见性时，渲染方程类似于具有非局部核的热方程。这个类比有助于理解：
 - 多重散射的平滑性质
@@ -229,7 +229,7 @@ $G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathb
 
 4. **裁剪空间**：投影后的齐次坐标
    - 透视除法前的4D坐标
-   - 视锥体变为[-1,1]³立方体（NDC）
+   - 视锥体变为[-1,1]$^3$立方体（NDC）
 
 5. **屏幕空间（光栅空间）**：最终的2D图像坐标
    - 整数像素坐标
@@ -237,50 +237,50 @@ $G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathb
 
 ### 齐次坐标与变换
 
-齐次坐标统一了平移和线性变换。3D点 **p** = (x, y, z) 变为 **p̃** = (x, y, z, 1)，而向量使用 **ṽ** = (x, y, z, 0)。
+齐次坐标统一了平移和线性变换。3D点 $\mathbf{p} = (x, y, z)$ 变为 $\mathbf{\tilde{p}} = (x, y, z, 1)$，而向量使用 $\mathbf{\tilde{v}} = (x, y, z, 0)$。
 
 一般仿射变换矩阵：
 
 $\mathbf{M} = \begin{bmatrix} \mathbf{A} & \mathbf{t} \\ \mathbf{0} & 1 \end{bmatrix}$
 
-其中 **A** 是3×3线性部分，**t** 是平移。常见变换：
+其中 $\mathbf{A}$ 是3$\times$3线性部分，$\mathbf{t}$ 是平移。常见变换：
 
-**平移 (tx, ty, tz)：**
+**平移 ($t_x, t_y, t_z$)：**
 $\begin{bmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
-**绕轴 **a** 旋转角度 θ：**
+**绕轴 $\mathbf{a}$ 旋转角度 $\theta$：**
 $\mathbf{R} = \cos \theta \mathbf{I} + (1 - \cos \theta) \mathbf{a}\mathbf{a}^T + \sin \theta [\mathbf{a}]_\times$
 
 其中 $[\mathbf{a}]_\times$ 是反对称叉积矩阵。
 
-**缩放 (sx, sy, sz)：**
+**缩放 ($s_x, s_y, s_z$)：**
 $\begin{bmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
 ### 法线和切线变换
 
-法线必须变换以保持与表面垂直。给定点的变换 **M**：
+法线必须变换以保持与表面垂直。给定点的变换 $\mathbf{M}$：
 
-$\mathbf{n}' = \frac{(\mathbf{M}^{-T})^{3×3} \mathbf{n}}{||(\mathbf{M}^{-T})^{3×3} \mathbf{n}||}$
+$\mathbf{n}' = \frac{(\mathbf{M}^{-T})^{3\times3} \mathbf{n}}{||(\mathbf{M}^{-T})^{3\times3} \mathbf{n}||}$
 
-证明：对于表面上的切线 **t**，$\mathbf{n} \cdot \mathbf{t} = 0$。变换后：
+证明：对于表面上的切线 $\mathbf{t}$，$\mathbf{n} \cdot \mathbf{t} = 0$。变换后：
 $\mathbf{n}' \cdot \mathbf{t}' = (\mathbf{M}^{-T}\mathbf{n}) \cdot (\mathbf{M}\mathbf{t}) = \mathbf{n}^T \mathbf{M}^{-1} \mathbf{M} \mathbf{t} = \mathbf{n} \cdot \mathbf{t} = 0$
 
-对于正交标架 {**t**, **b**, **n**}：
-- 正向：变换 **t** 和 **b**，然后 $\mathbf{n} = \mathbf{t} \times \mathbf{b}$
-- 或如上变换 **n**，然后重建标架
+对于正交标架 $\{\mathbf{t}, \mathbf{b}, \mathbf{n}\}$：
+- 正向：变换 $\mathbf{t}$ 和 $\mathbf{b}$，然后 $\mathbf{n} = \mathbf{t} \times \mathbf{b}$
+- 或如上变换 $\mathbf{n}$，然后重建标架
 
-**面积和体积元素**：在变换 **M** 下，微分元素缩放为：
-- 长度：$dl' = ||\mathbf{M}\mathbf{v}|| dl$（对于方向 **v**）
+**面积和体积元素**：在变换 $\mathbf{M}$ 下，微分元素缩放为：
+- 长度：$dl' = ||\mathbf{M}\mathbf{v}|| dl$（对于方向 $\mathbf{v}$）
 - 面积：$dA' = |\det(\mathbf{M})| ||(\mathbf{M}^{-T})\mathbf{n}|| dA$
 - 体积：$dV' = |\det(\mathbf{M})| dV$
 
 **非均匀缩放问题**：非均匀缩放破坏各向同性：
-- 球体 → 椭球体
-- 各向同性BRDF → 各向异性BRDF
+- 球体 $\to$ 椭球体
+- 各向同性BRDF $\to$ 各向异性BRDF
 - 需要注意基于物理的材质
 
 **手性保持**：当 $\det(\mathbf{M}) < 0$ 时，变换翻转方向：
-- 右手系 → 左手系坐标系统
+- 右手系 $\to$ 左手系坐标系统
 - 法线方向必须翻转
 - 对一致的正面/背面判定至关重要
 
@@ -303,10 +303,10 @@ $d\omega = \left|\frac{\partial(\omega_x, \omega_y)}{\partial(\theta, \phi)}\rig
 用于采样的替代参数化：
 
 **同心圆盘映射**（Shirley-Chiu）：
-$(u, v) \in [-1, 1]^2 \rightarrow (r, \phi) \rightarrow (x, y)$ 在单位圆盘上
+$(u, v) \in [-1, 1]^2 \to (r, \phi) \to (x, y)$ 在单位圆盘上
 
 **八面体映射**：
-单位球面 → 八面体 → 单位正方形
+单位球面 $\to$ 八面体 $\to$ 单位正方形
 比球面坐标更好地保持面积
 
 ### 积分中的变量替换
@@ -323,7 +323,7 @@ $\int_\Omega L(\mathbf{x}, \omega) \cos \theta d\omega = \int_A L(\mathbf{x}, \o
 其中 $G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathbf{x}') \frac{\cos \theta \cos \theta'}{||\mathbf{x} - \mathbf{x}'||^2}$
 
 **半球到圆盘**（用于余弦加权采样）：
-映射 $(\theta, \phi) \rightarrow (r, \phi)$ 其中 $r = \sin \theta$
+映射 $(\theta, \phi) \to (r, \phi)$ 其中 $r = \sin \theta$
 则 $p(r, \phi) = p(\theta, \phi) \left|\frac{\partial(\theta, \phi)}{\partial(r, \phi)}\right| = \frac{p(\theta, \phi)}{\cos \theta}$
 
 **测度论基础**：变量替换公式具有测度论基础：
@@ -335,14 +335,14 @@ $\int_\Omega L(\mathbf{x}, \omega) \cos \theta d\omega = \int_A L(\mathbf{x}, \o
 
 透视投影矩阵将视锥体映射到裁剪空间：
 
-$\mathbf{P} = \begin{bmatrix} 
+$\mathbf{P} = \begin{bmatrix}
 n/r & 0 & 0 & 0 \\
 0 & n/t & 0 & 0 \\
 0 & 0 & -(f+n)/(f-n) & -2fn/(f-n) \\
 0 & 0 & -1 & 0
 \end{bmatrix}$
 
-其中 n, f 是近/远平面，r, t 是近平面的右/顶。
+其中 $n, f$ 是近/远平面，$r, t$ 是近平面的右/顶。
 
 透视除法后：
 - $x_{ndc} = x_{clip} / w_{clip} \in [-1, 1]$
@@ -356,7 +356,7 @@ n/r & 0 & 0 & 0 \\
 
 ### 重心坐标与插值
 
-对于具有顶点 $\mathbf{v}_0, \mathbf{v}_1, \mathbf{v}_2$ 的三角形，重心坐标 (u, v, w) 满足：
+对于具有顶点 $\mathbf{v}_0, \mathbf{v}_1, \mathbf{v}_2$ 的三角形，重心坐标 $(u, v, w)$ 满足：
 
 $\mathbf{p} = u\mathbf{v}_0 + v\mathbf{v}_1 + w\mathbf{v}_2$
 
@@ -365,12 +365,12 @@ $\mathbf{p} = u\mathbf{v}_0 + v\mathbf{v}_1 + w\mathbf{v}_2$
 $u = \frac{\text{Area}(\mathbf{p}, \mathbf{v}_1, \mathbf{v}_2)}{\text{Area}(\mathbf{v}_0, \mathbf{v}_1, \mathbf{v}_2)}$
 
 性质：
-- $u, v, w \in [0, 1]$ 当且仅当 **p** 在三角形内
+- $u, v, w \in [0, 1]$ 当且仅当 $\mathbf{p}$ 在三角形内
 - 线性插值：$f(\mathbf{p}) = uf_0 + vf_1 + wf_2$
-- 透视正确的插值需要 1/z 校正
+- 透视正确的插值需要 $1/z$ 校正
 
 透视正确的属性插值：
-1. 在屏幕空间插值 a/z, b/z, c/z 和 1/z
+1. 在屏幕空间插值 $a/z, b/z, c/z$ 和 $1/z$
 2. 恢复属性：$a = (a/z)/(1/z)$
 
 ### 微分几何与局部标架
@@ -378,9 +378,9 @@ $u = \frac{\text{Area}(\mathbf{p}, \mathbf{v}_1, \mathbf{v}_2)}{\text{Area}(\mat
 在每个表面点，我们构建用于着色计算的局部标架：
 
 **切空间基**：
-- **n**：表面法线（$\frac{\partial\mathbf{p}}{\partial u} \times \frac{\partial\mathbf{p}}{\partial v}$ 归一化）
-- **t**：切线（通常 $\frac{\partial\mathbf{p}}{\partial u}$ 归一化）
-- **b**：副切线（$\mathbf{n} \times \mathbf{t}$）
+- $\mathbf{n}$：表面法线（$\frac{\partial\mathbf{p}}{\partial u} \times \frac{\partial\mathbf{p}}{\partial v}$ 归一化）
+- $\mathbf{t}$：切线（通常 $\frac{\partial\mathbf{p}}{\partial u}$ 归一化）
+- $\mathbf{b}$：副切线（$\mathbf{n} \times \mathbf{t}$）
 
 **第一基本形式**：度量张量描述局部表面几何：
 $\mathbf{I} = \begin{bmatrix} E & F \\ F & G \end{bmatrix}$
@@ -403,7 +403,7 @@ $\mathbf{II} = \begin{bmatrix} e & f \\ f & g \end{bmatrix}$
 - 高斯曲率：$K = \kappa_1\kappa_2$
 
 **世界空间的变换**：
-$\begin{bmatrix} \mathbf{t}_{world} \\ \mathbf{b}_{world} \\ \mathbf{n}_{world} \end{bmatrix} = \begin{bmatrix} t_x & t_y & t_z \\ b_x & b_y & b_z \\ n_x & n_y & n_z \end{bmatrix} \begin{bmatrix} \mathbf{t}_{local} \\ \mathbf{b}_{local} \\ \mathbf{n}_{local} \end{bmatrix}$
+$\begin{bmatrix} \mathbf{t}_{\text{world}} \\ \mathbf{b}_{\text{world}} \\ \mathbf{n}_{\text{world}} \end{bmatrix} = \begin{bmatrix} t_x & t_y & t_z \\ b_x & b_y & b_z \\ n_x & n_y & n_z \end{bmatrix} \begin{bmatrix} \mathbf{t}_{\text{local}} \\ \mathbf{b}_{\text{local}} \\ \mathbf{n}_{\text{local}} \end{bmatrix}$
 
 这个正交矩阵可以通过转置求逆。
 
@@ -423,12 +423,12 @@ $\begin{bmatrix} \mathbf{t}_{world} \\ \mathbf{b}_{world} \\ \mathbf{n}_{world} 
 
 BRDF $f_r$ 量化入射辐照度和反射辐射率之间的微分关系：
 
-$f_r(\mathbf{x}, \omega_i, \omega_o) = \frac{dL_o(\mathbf{x}, \omega_o)}{dE_i(\mathbf{x}, \omega_i)} = \frac{dL_o(\mathbf{x}, \omega_o)}{L_i(\mathbf{x}, \omega_i) \cos \theta_i d\omega_i}$ [sr⁻¹]
+$f_r(\mathbf{x}, \omega_i, \omega_o) = \frac{dL_o(\mathbf{x}, \omega_o)}{dE_i(\mathbf{x}, \omega_i)} = \frac{dL_o(\mathbf{x}, \omega_o)}{L_i(\mathbf{x}, \omega_i) \cos \theta_i d\omega_i} \text{ [sr}^{-1}\text{]}$
 
 物理上，它表示来自方向 $\omega_i$ 的光子散射到方向 $\omega_o$ 的概率密度（归一化后）。
 
 BRDF可以分解为分量：
-$f_r = f_d + f_s + f_g + ...$
+$f_r = f_d + f_s + f_g + \dots$
 
 其中 $f_d$ 是漫反射，$f_s$ 是镜面反射，$f_g$ 是光泽反射等。这种分解有助于重要性采样。
 
@@ -442,14 +442,14 @@ $f_r(\mathbf{x}, \omega_i, \omega_o) = f_r(\mathbf{x}, \omega_o, \omega_i)$
 **能量守恒：**
 方向-半球反射率必须满足：
 
-$\rho(\omega_i) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \leq 1$ 对所有 $\omega_i$
+$\rho(\omega_i) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \le 1$ 对所有 $\omega_i$
 
 对于能量守恒的BRDF，当吸收为零时等号成立。半球-半球反射率：
 
-$\rho_{hh} = \frac{1}{\pi} \int_\Omega \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i \cos \theta_o d\omega_i d\omega_o \leq 1$
+$\rho_{hh} = \frac{1}{\pi} \int_\Omega \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i \cos \theta_o d\omega_i d\omega_o \le 1$
 
 **非负性：**
-$f_r(\mathbf{x}, \omega_i, \omega_o) \geq 0$
+$f_r(\mathbf{x}, \omega_i, \omega_o) \ge 0$
 
 负值将意味着依赖于出射方向的能量吸收，违反因果性。
 
@@ -508,7 +508,7 @@ $n_i^2 f_t(\mathbf{x}, \omega_i, \omega_o) = n_o^2 f_t(\mathbf{x}, \omega_o, \om
 
 双向散射表面反射分布函数将BRDF推广到非局部传输：
 
-$S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) = \frac{dL_o(\mathbf{x}_o, \omega_o)}{d\Phi_i(\mathbf{x}_i, \omega_i)}$ [m⁻²sr⁻¹]
+$S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) = \frac{dL_o(\mathbf{x}_o, \omega_o)}{d\Phi_i(\mathbf{x}_i, \omega_i)} \text{ [m}^{-2}\text{sr}^{-1}\text{]}$
 
 与BRDF的关键区别：
 - 耦合不同的表面点
@@ -533,16 +533,16 @@ $S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) \approx \frac{1}{\pi}F_t(\ome
 1. **互易性**：$f_r(\mathbf{x}, \omega_i, \omega_o) = f_r(\mathbf{x}, \omega_o, \omega_i)$
    - 测试：交换光源和相机渲染场景
 
-2. **能量守恒**：$\forall \omega_i: \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \leq 1$
+2. **能量守恒**：$\forall \omega_i: \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \le 1$
    - 测试：白炉测试（均匀照明）
 
-3. **非负性**：$f_r(\mathbf{x}, \omega_i, \omega_o) \geq 0$
+3. **非负性**：$f_r(\mathbf{x}, \omega_i, \omega_o) \ge 0$
    - 违反会导致能量吸收异常
 
 4. **平滑性**：$f_r$ 应该是 $C^0$ 连续的（$C^1$ 更好）
    - 不连续性导致采样困难
 
-5. **菲涅尔行为**：对于光滑表面，当 $\theta \rightarrow \pi/2$ 时 $f_r \rightarrow 1$
+5. **菲涅尔行为**：对于光滑表面，当 $\theta \to \pi/2$ 时 $f_r \to 1$
    - 所有表面在掠射角度都变成镜面
 
 ### 各向异性BRDF
@@ -618,7 +618,7 @@ L_i/q & \text{以概率 } q \\
 
 蒙特卡洛收敛遵循中心极限定理：
 
-$P(|\hat{I} - I| \leq \varepsilon) \approx 2\Phi(\varepsilon\sqrt{N}/\sigma) - 1$
+$P(|\hat{I} - I| \le \varepsilon) \approx 2\Phi(\varepsilon\sqrt{N}/\sigma) - 1$
 
 其中 $\Phi$ 是正态分布CDF，$\sigma^2$ 是方差。误差以 $O(1/\sqrt{N})$ 递减，与维度无关——这对高维光传输至关重要。
 
@@ -628,7 +628,7 @@ $P(|\hat{I} - I| \leq \varepsilon) \approx 2\Phi(\varepsilon\sqrt{N}/\sigma) - 1
 
 我们可以将渲染方程重新表述为对所有可能光路径的积分。长度为k的路径是：
 
-$\bar{\mathbf{x}} = \mathbf{x}_0\mathbf{x}_1...\mathbf{x}_k$
+$\bar{\mathbf{x}} = \mathbf{x}_0\mathbf{x}_1\dots\mathbf{x}_k$
 
 其中 $\mathbf{x}_0$ 在光源上，$\mathbf{x}_k$ 在相机传感器上。
 
@@ -640,7 +640,7 @@ $d\mu(\bar{\mathbf{x}}) = dA(\mathbf{x}_0) \prod_{i=1}^{k} dA(\mathbf{x}_i)$
 
 路径的贡献是：
 
-$f(\bar{\mathbf{x}}) = L_e(\mathbf{x}_0 \rightarrow \mathbf{x}_1) \left(\prod_{i=1}^{k-1} f_s(\mathbf{x}_{i-1} \rightarrow \mathbf{x}_i \rightarrow \mathbf{x}_{i+1}) G(\mathbf{x}_i \leftrightarrow \mathbf{x}_{i+1})\right) W(\mathbf{x}_{k-1} \rightarrow \mathbf{x}_k)$
+$f(\bar{\mathbf{x}}) = L_e(\mathbf{x}_0 \to \mathbf{x}_1) \left(\prod_{i=1}^{k-1} f_s(\mathbf{x}_{i-1} \to \mathbf{x}_i \to \mathbf{x}_{i+1}) G(\mathbf{x}_i \leftrightarrow \mathbf{x}_{i+1})\right) W(\mathbf{x}_{k-1} \to \mathbf{x}_k)$
 
 其中G是几何因子：
 
@@ -658,11 +658,11 @@ $I = \sum_{k=2}^\infty \int_{\bar{\Omega}_k} f(\bar{\mathbf{x}}) d\mu(\bar{\math
 
 点上的值满足递归关系：
 
-$L(\mathbf{x}, \omega) = L_e(\mathbf{x}, \omega) + \int_M f_s(\mathbf{y} \rightarrow \mathbf{x} \rightarrow \omega) L(\mathbf{y}, \mathbf{x} - \mathbf{y}) G(\mathbf{y} \leftrightarrow \mathbf{x}) dA(\mathbf{y})$
+$L(\mathbf{x}, \omega) = L_e(\mathbf{x}, \omega) + \int_M f_s(\mathbf{y} \to \mathbf{x} \to \omega) L(\mathbf{y}, \mathbf{x} - \mathbf{y}) G(\mathbf{y} \leftrightarrow \mathbf{x}) dA(\mathbf{y})$
 
 这导致诺伊曼级数解：
 
-$L = L^{(0)} + L^{(1)} + L^{(2)} + ...$
+$L = L^{(0)} + L^{(1)} + L^{(2)} + \dots$
 
 其中 $L^{(k)}$ 代表k次反弹照明。
 
@@ -691,246 +691,247 @@ $L(\mathbf{x}, \omega) = \int_0^\infty T(0,t) \left[\sigma_a L_e + \sigma_s \int
 ## 练习题
 
 ### 练习 1.1：沿光线的辐射率
-Prove that radiance remains constant along a ray in vacuum. Start from the definition of radiance and use the inverse square law.
+证明在真空中沿光线辐射率保持恒定。从辐射率的定义开始，并使用平方反比定律。
 
-**Hint:** Consider two differential areas dA₁ and dA₂ along the ray and show that L₁ = L₂.
-
-<details>
-<summary>Solution</summary>
-
-Consider differential areas dA₁ and dA₂ at distances r₁ and r₂ along a ray. The solid angles subtended are:
-
-dω₁ = dA₂ cos θ₂ / r₁₂²
-dω₂ = dA₁ cos θ₁ / r₁₂²
-
-The flux leaving dA₁ toward dA₂ is:
-dΦ = L₁ dA₁ cos θ₁ dω₁ = L₁ dA₁ cos θ₁ dA₂ cos θ₂ / r₁₂²
-
-By energy conservation, this equals the flux arriving at dA₂:
-dΦ = L₂ dA₂ cos θ₂ dω₂ = L₂ dA₂ cos θ₂ dA₁ cos θ₁ / r₁₂²
-
-Therefore L₁ = L₂, proving radiance invariance.
-</details>
-
-### Exercise 1.2: BRDF Energy Conservation
-Prove that a Lambertian BRDF f_r = ρ/π satisfies energy conservation for any albedo ρ ≤ 1.
-
-**Hint:** Integrate over the hemisphere using spherical coordinates.
+**提示：** 考虑沿光线的两个微分面积 $dA_1$ 和 $dA_2$，并证明 $L_1 = L_2$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For Lambertian BRDF f_r = ρ/π, the directional-hemispherical reflectance is:
+考虑沿光线距离 $r_1$ 和 $r_2$ 处的微分面积 $dA_1$ 和 $dA_2$。所张的立体角为：
 
-∫_Ω f_r cos θ_o dω_o = (ρ/π) ∫₀^{2π} ∫₀^{π/2} cos θ sin θ dθ dφ
+$d\omega_1 = dA_2 \cos \theta_2 / r_{12}^2$
+$d\omega_2 = dA_1 \cos \theta_1 / r_{12}^2$
 
-= (ρ/π) · 2π · ∫₀^{π/2} cos θ sin θ dθ
+离开 $dA_1$ 朝向 $dA_2$ 的通量为：
+$d\Phi = L_1 dA_1 \cos \theta_1 d\omega_1 = L_1 dA_1 \cos \theta_1 dA_2 \cos \theta_2 / r_{12}^2$
 
-= (ρ/π) · 2π · [sin² θ/2]₀^{π/2}
+根据能量守恒，这等于到达 $dA_2$ 的通量：
+$d\Phi = L_2 dA_2 \cos \theta_2 d\omega_2 = L_2 dA_2 \cos \theta_2 dA_1 \cos \theta_1 / r_{12}^2$
 
-= (ρ/π) · 2π · (1/2) = ρ
-
-Since ρ ≤ 1, energy conservation is satisfied.
+因此 $L_1 = L_2$，证明了辐射率不变性。
 </details>
 
-### Exercise 1.3: Monte Carlo Variance
-Derive the optimal importance sampling distribution for estimating ∫₀¹ √x dx and calculate the resulting variance.
+### 练习 1.2: BRDF能量守恒
+证明朗伯BRDF $f_r = \rho/\pi$ 对于任何反照率 $\rho \le 1$ 都满足能量守恒。
 
-**Hint:** The optimal PDF is proportional to |f(x)|.
+**提示：** 使用球面坐标在半球上积分。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For f(x) = √x on [0,1], the optimal PDF is:
+对于朗伯BRDF $f_r = \rho/\pi$，方向-半球反射率为：
 
-p*(x) = √x / ∫₀¹ √x dx = √x / (2/3) = (3/2)√x
+$\int_\Omega f_r \cos \theta_o d\omega_o = (\rho/\pi) \int_0^{2\pi} \int_0^{\pi/2} \cos \theta \sin \theta d\theta d\phi$
 
-To sample: X = F⁻¹(U) where F(x) = ∫₀ˣ (3/2)√t dt = x^{3/2}
+$= (\rho/\pi) \cdot 2\pi \cdot \int_0^{\pi/2} \cos \theta \sin \theta d\theta$
 
-Therefore X = U^{2/3}
+$= (\rho/\pi) \cdot 2\pi \cdot [\sin^2 \theta/2]_0^{\pi/2}$
 
-With this sampling, the estimator becomes:
-f(X)/p*(X) = √X / ((3/2)√X) = 2/3
+$= (\rho/\pi) \cdot 2\pi \cdot (1/2) = \rho$
 
-Since the estimator is constant, the variance is 0—perfect importance sampling eliminates variance.
+由于 $\rho \le 1$，能量守恒得到满足。
 </details>
 
-### Exercise 1.4: Path Integral Convergence (Challenge)
-Show that the Neumann series for the rendering equation converges when the maximum albedo in the scene is less than 1.
+### 练习 1.3: 蒙特卡洛方差
+推导估计 $\int_0^1 \sqrt{x} dx$ 的最优重要性采样分布，并计算由此产生的方差。
 
-**Hint:** Use the operator norm ||𝒯|| ≤ ρ_max < 1.
+**提示：** 最优PDF与 $|f(x)|$ 成比例。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-The transport operator 𝒯 satisfies:
+对于 $[0,1]$ 上的 $f(x) = \sqrt{x}$，最优PDF为：
 
-||(𝒯L)||_∞ ≤ ρ_max ||L||_∞
+$p^*(x) = \sqrt{x} / \int_0^1 \sqrt{x} dx = \sqrt{x} / (2/3) = (3/2)\sqrt{x}$
 
-where ρ_max = max_{x,ω} ∫_Ω f_r(x,ω',ω) cos θ' dω' < 1
+要采样：$X = F^{-1}(U)$ 其中 $F(x) = \int_0^x (3/2)\sqrt{t} dt = x^{3/2}$
 
-By induction: ||𝒯^k L_e||_∞ ≤ ρ_max^k ||L_e||_∞
+因此 $X = U^{2/3}$
 
-The Neumann series converges:
-||∑_{k=0}^∞ 𝒯^k L_e||_∞ ≤ ∑_{k=0}^∞ ρ_max^k ||L_e||_∞ = ||L_e||_∞/(1-ρ_max)
+使用这种采样，估计器变为：
+$f(X)/p^*(X) = \sqrt{X} / ((3/2)\sqrt{X}) = 2/3$
 
-This proves convergence for ρ_max < 1.
+由于估计器是常数，方差为0——完美的重要性采样消除了方差。
 </details>
 
-### Exercise 1.5: Coordinate Transform Jacobian
-Derive the Jacobian for converting the rendering equation from integration over solid angle to integration over surface area.
+### 练习 1.4: 路径积分收敛性（挑战）
+证明当场景中的最大反照率小于1时，渲染方程的诺伊曼级数收敛。
 
-**Hint:** Start with dω = dA cos θ'/r².
+**提示：** 使用算子范数 $||\mathcal{T}|| \le \rho_{\text{max}} < 1$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Given points x and x' with connecting vector r = x' - x:
+传输算子 $\mathcal{T}$ 满足：
 
-dω = dA' cos θ' / ||r||²
+$||(\mathcal{T}L)||_\infty \le \rho_{\text{max}} ||L||_\infty$
 
-The rendering equation becomes:
+其中 $\rho_{\text{max}} = \max_{x,\omega} \int_\Omega f_r(x,\omega',\omega) \cos \theta' d\omega' < 1$
 
-L_o(x,ω_o) = L_e(x,ω_o) + ∫_M f_r(x,ω(x'),ω_o) L_i(x',−ω(x')) V(x↔x') (cos θ cos θ')/||r||² dA'
+通过归纳法：$||\mathcal{T}^k L_e||_\infty \le \rho_{\text{max}}^k ||L_e||_\infty$
 
-where:
-- ω(x') = (x' - x)/||x' - x|| 
-- cos θ = n(x) · ω(x')
-- cos θ' = -n(x') · ω(x')
-- V(x↔x') is the visibility function
+诺伊曼级数收敛：
+$||\sum_{k=0}^\infty \mathcal{T}^k L_e||_\infty \le \sum_{k=0}^\infty \rho_{\text{max}}^k ||L_e||_\infty = ||L_e||_\infty/(1-\rho_{\text{max}})$
 
-The Jacobian is |∂ω/∂x'| = cos θ'/||r||².
+这证明了当 $\rho_{\text{max}} < 1$ 时的收敛性。
 </details>
 
-### Exercise 1.6: BSDF Reciprocity with Refraction (Challenge)
-Derive the generalized reciprocity relation for BSDF with refraction between media with refractive indices n₁ and n₂.
+### 练习 1.5: 坐标变换雅可比
+推导将渲染方程从立体角积分转换为表面面积积分的雅可比。
 
-**Hint:** Use radiance in phase space L̃ = L/n².
+**提示：** 从 $d\omega = dA \cos \theta'/r^2$ 开始。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Define phase space radiance L̃ = L/n². In a medium with index n:
+给定点 $\mathbf{x}$ 和 $\mathbf{x}'$ 以及连接向量 $\mathbf{r} = \mathbf{x}' - \mathbf{x}$：
 
-L̃ is invariant along rays (generalized radiance theorem)
+$d\omega = dA' \cos \theta' / ||\mathbf{r}||^2$
 
-At an interface, power conservation requires:
+渲染方程变为：
 
-L̃₁(x,ω_i) dω_i = L̃₂(x,ω_t) dω_t
+$L_o(\mathbf{x},\omega_o) = L_e(\mathbf{x},\omega_o) + \int_M f_r(\mathbf{x},\omega(\mathbf{x}'),\omega_o) L_i(\mathbf{x}',-\omega(\mathbf{x}')) V(\mathbf{x}\leftrightarrow\mathbf{x}') (\cos \theta \cos \theta')/||\mathbf{r}||^2 dA'$
 
-Using Snell's law: n₁ sin θ_i = n₂ sin θ_t
+其中：
+- $\omega(\mathbf{x}') = (\mathbf{x}' - \mathbf{x})/||\mathbf{x}' - \mathbf{x}||$
+- $\cos \theta = \mathbf{n}(\mathbf{x}) \cdot \omega(\mathbf{x}')$
+- $\cos \theta' = -\mathbf{n}(\mathbf{x}') \cdot \omega(\mathbf{x}')$
+- $V(\mathbf{x}\leftrightarrow\mathbf{x}')$ 是可见性函数
 
-The solid angle ratio is: dω_t/dω_i = (n₁/n₂)² cos θ_t/cos θ_i
-
-For the BTDF: f_t(ω_i→ω_t) = dL₂/dE₁ = (n₂²/n₁²) dL̃₂/dẼ₁
-
-By time-reversal symmetry of Maxwell's equations:
-
-n₁² f_t(x,ω_i→ω_t) = n₂² f_t(x,ω_t→ω_i)
+雅可比是 $|\partial\omega/\partial\mathbf{x}'| = \cos \theta'/||\mathbf{r}||^2$。
 </details>
 
-### Exercise 1.7: Russian Roulette Bias
-Prove that Russian roulette with continuation probability q creates an unbiased estimator.
+### 练习 1.6: BSDF折射互易性（挑战）
+推导折射率分别为 $n_1$ 和 $n_2$ 的介质之间BSDF的广义互易关系。
 
-**Hint:** Use the law of total expectation.
+**提示：** 使用相空间辐射率 $\tilde{L} = L/n^2$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Let L be the true value and L' be the Russian roulette estimator:
+定义相空间辐射率 $\tilde{L} = L/n^2$。在折射率为 $n$ 的介质中：
 
-L' = {
-  L/q  with probability q
-  0    with probability 1-q
-}
+$\tilde{L}$ 沿光线不变（广义辐射率定理）
 
-The expected value is:
+在界面处，功率守恒要求：
 
-E[L'] = q · (L/q) + (1-q) · 0 = L
+$\tilde{L}_1(\mathbf{x},\omega_i) d\omega_i = \tilde{L}_2(\mathbf{x},\omega_t) d\omega_t$
 
-Therefore E[L'] = L, proving the estimator is unbiased.
+使用斯涅尔定律：$n_1 \sin \theta_i = n_2 \sin \theta_t$
 
-The variance is:
-Var[L'] = E[L'²] - (E[L'])² = q(L/q)² - L² = L²/q - L² = L²(1-q)/q
+立体角比率为：$d\omega_t/d\omega_i = (n_1/n_2)^2 \cos \theta_t/\cos \theta_i$
 
-Note that variance increases as q decreases, showing the bias-variance tradeoff.
+对于BTDF：$f_t(\omega_i\to\omega_t) = dL_2/dE_1 = (n_2^2/n_1^2) d\tilde{L}_2/d\tilde{E}_1$
+
+根据麦克斯韦方程的时间反演对称性：
+
+$n_1^2 f_t(\mathbf{x},\omega_i\to\omega_t) = n_2^2 f_t(\mathbf{x},\omega_t\to\omega_i)$
 </details>
 
-### Exercise 1.8: Volume Rendering Convergence (Open Problem)
-Consider the volume rendering equation with spatially varying extinction. Under what conditions does the path integral formulation converge? Discuss the relationship between optical thickness and convergence rate.
+### 练习 1.7: 俄罗斯轮盘赌偏差
+证明具有延续概率 $q$ 的俄罗斯轮盘赌创建了一个无偏估计器。
 
-**Hint:** Consider the maximum optical thickness τ_max along any ray.
+**提示：** 使用全期望定律。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For volumes with bounded extinction σ_t ≤ σ_max and albedo α = σ_s/σ_t ≤ α_max < 1:
+设 $L$ 为真实值，$L'$ 为俄罗斯轮盘赌估计器：
 
-The k-th scattering term is bounded by:
-||L^{(k)}||_∞ ≤ ||L_e||_∞ α_max^k
+$L' = \begin{cases}
+L/q & \text{以概率 } q \\
+0 & \text{以概率 } 1-q
+\end{cases}$
 
-This ensures geometric convergence.
+期望值为：
 
-For optical thickness τ = ∫ σ_t ds along a ray:
-- Low τ: Single scattering dominates, fast convergence
-- High τ: Multiple scattering important, slower convergence
-- τ → ∞: Diffusion regime, may need specialized methods
+$E[L'] = q \cdot (L/q) + (1-q) \cdot 0 = L$
 
-Open questions:
-1. Optimal importance sampling for heterogeneous media
-2. Convergence rate vs. spatial frequency of σ_t
-3. Connection to transport mean free path in multiple scattering
+因此 $E[L'] = L$，证明了估计器是无偏的。
+
+方差为：
+$\text{Var}[L'] = E[L'^2] - (E[L'])^2 = q(L/q)^2 - L^2 = L^2/q - L^2 = L^2(1-q)/q$
+
+请注意，方差随 $q$ 的减小而增加，这表明了偏差-方差权衡。
 </details>
 
-## Common Pitfalls and Errors (Gotchas)
+### 练习 1.8: 体积渲染收敛性（开放问题）
+考虑具有空间变化消光的体积渲染方程。在什么条件下路径积分公式收敛？讨论光学厚度与收敛速率之间的关系。
 
-1. **Radiance vs. Irradiance Confusion**
-   - Radiance has units W/(m²·sr), irradiance has W/m²
-   - Always check dimensional consistency in equations
-   - Remember: cameras measure irradiance (integrated radiance)
+**提示：** 考虑沿任何光线的最大光学厚度 $\tau_{\text{max}}$。
 
-2. **Incorrect Normal Transformation**
-   - Normals transform by inverse transpose, not the direct matrix
-   - Failing to renormalize after transformation
-   - Sign errors when transforming between coordinate systems
+<details>
+<summary>解答</summary>
 
-3. **BRDF Energy Conservation Violations**
-   - Forgetting the cosine term in the integral
-   - Not accounting for Fresnel effects at grazing angles
-   - Incorrect normalization of analytical BRDF models
+对于具有有界消光 $\sigma_t \le \sigma_{\text{max}}$ 和反照率 $\alpha = \sigma_s/\sigma_t \le \alpha_{\text{max}} < 1$ 的体积：
 
-4. **Monte Carlo Bias from PDF Errors**
-   - PDF must be > 0 wherever integrand is non-zero
-   - Normalization errors in importance sampling
-   - Forgetting Jacobian when changing variables
+第k次散射项有界：
+$||L^{(k)}||_\infty \le ||L_e||_\infty \alpha_{\text{max}}^k$
 
-5. **Numerical Precision Issues**
-   - Ray-sphere intersection can fail due to catastrophic cancellation
-   - Small denominators in geometry factor G(x↔x')
-   - Accumulated error in long ray paths
+这确保了几何收敛。
 
-## Best Practices Checklist
+对于沿光线的光学厚度 $\tau = \int \sigma_t ds$：
+- 低 $\tau$：单次散射占主导，收敛快
+- 高 $\tau$：多次散射重要，收敛慢
+- $\tau \to \infty$：扩散机制，可能需要专门方法
 
-### Design Review
+开放问题：
+1. 异构介质的最优重要性采样
+2. 收敛速率与 $\sigma_t$ 的空间频率关系
+3. 多次散射中与传输平均自由程的联系
+</details>
 
-- [ ] **Verify Physical Units**: Check all equations for dimensional consistency
-- [ ] **Energy Conservation**: Ensure BRDFs satisfy ∫ f_r cos θ dω ≤ 1
-- [ ] **Reciprocity**: Verify f_r(ω_i, ω_o) = f_r(ω_o, ω_i)
-- [ ] **Coordinate System Consistency**: Document and verify all coordinate conventions
-- [ ] **Sampling Strategy**: Match importance sampling to dominant contributions
+## 常见陷阱和错误（Gotchas）
 
-### Implementation Review
+1. **辐射率与辐照度混淆**
+   - 辐射率单位为 W/(m$^2$·sr)，辐照度单位为 W/m$^2$
+   - 始终检查方程中的量纲一致性
+   - 记住：相机测量辐照度（积分辐射率）
 
-- [ ] **Robust Ray-Primitive Intersection**: Use numerically stable algorithms
-- [ ] **PDF Validation**: Assert p(x) > 0 and ∫ p(x) dx = 1
-- [ ] **Variance Reduction**: Implement MIS for multiple sampling strategies
-- [ ] **Floating Point Hygiene**: Check for NaN/Inf propagation
-- [ ] **Termination Criteria**: Use Russian roulette for infinite recursion
+2. **法线变换不正确**
+   - 法线通过逆转置矩阵变换，而不是直接矩阵
+   - 变换后未能重新归一化
+   - 在坐标系之间变换时的符号错误
 
-### Debugging Checklist
+3. **BRDF能量守恒违规**
+   - 忘记积分中的余弦项
+   - 未考虑掠射角处的菲涅尔效应
+   - 分析BRDF模型归一化不正确
 
-- [ ] **White Furnace Test**: Uniform emission should produce uniform radiance
-- [ ] **Reciprocity Test**: Swap light and camera, verify same result
-- [ ] **Energy Audit**: Track total flux in = total flux out
-- [ ] **Convergence Analysis**: Plot variance vs. sample count
-- [ ] **Reference Comparison**: Validate against analytical solutions when available
+4. **PDF错误导致的蒙特卡洛偏差**
+   - PDF必须在被积函数非零的任何地方都大于0
+   - 重要性采样中的归一化错误
+   - 改变变量时忘记雅可比
+
+5. **数值精度问题**
+   - 光线-球体交点可能因灾难性抵消而失败
+   - 几何因子 $G(\mathbf{x}\leftrightarrow\mathbf{x}')$ 中的小分母
+   - 长光线路径中累积的误差
+
+## 最佳实践清单
+
+### 设计评审
+
+- [ ] **验证物理单位**：检查所有方程的量纲一致性
+- [ ] **能量守恒**：确保BRDF满足 $\int f_r \cos \theta d\omega \le 1$
+- [ ] **互易性**：验证 $f_r(\omega_i, \omega_o) = f_r(\omega_o, \omega_i)$
+- [ ] **坐标系一致性**：记录并验证所有坐标约定
+- [ ] **采样策略**：将重要性采样与主要贡献匹配
+
+### 实现评审
+
+- [ ] **鲁棒的光线-图元交点**：使用数值稳定的算法
+- [ ] **PDF验证**：断言 $p(x) > 0$ 且 $\int p(x) dx = 1$
+- [ ] **方差减少**：为多种采样策略实现MIS
+- [ ] **浮点卫生**：检查NaN/Inf传播
+- [ ] **终止标准**：使用俄罗斯轮盘赌进行无限递归
+
+### 调试清单
+
+- [ ] **白炉测试**：均匀发射应产生均匀辐射率
+- [ ] **互易性测试**：交换光源和相机，验证结果相同
+- [ ] **能量审计**：跟踪总输入通量 = 总输出通量
+- [ ] **收敛分析**：绘制方差与样本数的关系
+- [ ] **参考比较**：在可用时与解析解进行验证
+
