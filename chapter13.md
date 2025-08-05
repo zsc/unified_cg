@@ -31,7 +31,7 @@ $$L(\mathbf{x}, \boldsymbol{\omega}_o) = \int_{\Omega} \rho(\mathbf{x}, \boldsym
 
 为了使问题适定，我们引入正则化项：
 
-$$\mathcal{L}[\rho] = \sum_{\mathbf{x}} \left\| I(\mathbf{x}) - \mathcal{R}[\rho](\mathbf{x}) \right\|^2 + \lambda \mathcal{R}_{prior}[\rho]$$
+$$\mathcal{L}[\rho] = \sum_{\mathbf{x}} \left\| I(\mathbf{x}) - \mathcal{R}[\rho]  (\mathbf{x}) \right\|^2 + \lambda \mathcal{R}_{prior}[\rho]$$
 
 其中 $\mathcal{R}[\rho]$ 表示渲染算子，$\mathcal{R}_{prior}$ 为先验正则化。
 
@@ -219,7 +219,7 @@ $$R_d(r) = \frac{\alpha'}{4\pi} \left[ \frac{z_r(1 + \sigma_{tr}d_r)e^{-\sigma_{
 **参数化优化**：
 我们优化材质参数 $\boldsymbol{\phi} = [\sigma_a, \sigma_s, g, \eta]$：
 
-$$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left\| I(\mathbf{x}) - \int_A S[\boldsymbol{\phi}](\mathbf{x}, \mathbf{x}') L(\mathbf{x}') dA' \right\|^2$$
+$$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left\| I(\mathbf{x}) - \int_A S[\boldsymbol{\phi}]  (\mathbf{x}, \mathbf{x}') L(\mathbf{x}') dA' \right\|^2$$
 
 **梯度计算**：
 对于扩散参数的导数：
@@ -590,7 +590,7 @@ $$E[\mathcal{G}, \mathcal{M}] = E_{photo}[\mathcal{G}, \mathcal{M}] + \lambda_g 
 **详细的能量项**：
 
 1. **光度一致性**：
-   $$E_{photo} = \sum_{i} \int_{\Omega} V_i(\mathbf{x}) \|I_i(\pi_i(\mathbf{x})) - \mathcal{R}[\mathcal{G}, \mathcal{M}](\mathbf{x}, \boldsymbol{\omega}_i)\|^2 d\mathbf{x}$$
+   $$E_{photo} = \sum_{i} \int_{\Omega} V_i(\mathbf{x}) \|I_i(\pi_i(\mathbf{x})) - \mathcal{R}[\mathcal{G}, \mathcal{M}]  (\mathbf{x}, \boldsymbol{\omega}_i)\|^2 d\mathbf{x}$$
    
    其中 $\mathcal{R}$ 为渲染算子，考虑几何和材质。
 
@@ -948,7 +948,7 @@ $$\Pi[f] = \arg\min_{\rho \in \mathcal{R}} \int_{\Omega^2} |f(\boldsymbol{\omega
 其中 $\mathcal{R}$ 为互易BRDF集合。
 
 解为对称化：
-$$\Pi[f](\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{2}[f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
+$$\Pi[f]  (\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{2}[f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
 
 证明最优性：设 $\rho \in \mathcal{R}$，则：
 $$\|f - \rho\|^2 = \|\frac{f + f^T}{2} - \rho\|^2 + \|\frac{f - f^T}{2}\|^2 \geq \|f - \Pi[f]\|^2$$

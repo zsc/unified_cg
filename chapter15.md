@@ -920,7 +920,7 @@ $\tilde{L}_o(\mathbf{k},\omega_o) = \int \rho(\omega_o,\omega_i)\mathcal{F}\{L(\
 
 对于纹理表面，其中 $\rho$ 随 $\mathbf{x}$ 变化：
 
-$\tilde{L}_o(\mathbf{k},\omega_o) = \int [\tilde{\rho}(\mathbf{k},\omega_o,\omega_i) \otimes \tilde{L}(\mathbf{k},\omega_i)](\omega_o \cdot \mathbf{n})d\omega_i$
+$\tilde{L}_o(\mathbf{k},\omega_o) = \int [\tilde{\rho}(\mathbf{k},\omega_o,\omega_i) \otimes \tilde{L}(\mathbf{k},\omega_i)]  (\omega_o \cdot \mathbf{n})d\omega_i$
 
 这表明空间纹理变化会导致频域卷积，如果采样不当，会导致模糊和混叠。
 </details>

@@ -132,7 +132,7 @@ $$dL = L(s,t,u,v) ds\,dt\,du\,dv$$
 $$dV = \sigma(\mathbf{x})c(\mathbf{x},\omega) d\mathbf{x}\,d\omega$$
 
 通过Radon变换建立联系：
-$$\mathcal{R}[\sigma c](s,t,u,v) = \int_{\mathbb{R}} \sigma(\mathbf{x}(\lambda))c(\mathbf{x}(\lambda),\omega) d\lambda = L(s,t,u,v)$$
+$$\mathcal{R}[\sigma c]  (s,t,u,v) = \int_{\mathbb{R}} \sigma(\mathbf{x}(\lambda))c(\mathbf{x}(\lambda),\omega) d\lambda = L(s,t,u,v)$$
 
 体积渲染方程变为：
 

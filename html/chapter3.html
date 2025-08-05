@@ -202,7 +202,7 @@ $c(\mathbf{x},\omega) = \frac{\sum_{i=1}^N w_i\delta(\mathbf{x} - \mathbf{p}_i)}
 <li><strong>筛选性质</strong>：$\int\delta(\mathbf{x}-\mathbf{a})f(\mathbf{x})d\mathbf{x} = f(\mathbf{a})$</li>
 <li><strong>缩放</strong>：$\delta(a\mathbf{x}) = |a|^{-3}\delta(\mathbf{x})$ 对于 $a \neq 0$</li>
 <li><strong>导数</strong>：$\langle\partial^\alpha \delta_\mathbf{a}, \varphi\rangle = (-1)^{|\alpha|}\partial^\alpha \varphi(\mathbf{a})$</li>
-<li><strong>傅里叶变换</strong>：$\mathcal{F}<a href="\mathbf{k}">\delta_\mathbf{a}</a> = \exp(-i\mathbf{k}\cdot\mathbf{a})$</li>
+<li><strong>傅里叶变换</strong>：$\mathcal{F}[\delta_\mathbf{a}]  (\mathbf{k}) = \exp(-i\mathbf{k}\cdot\mathbf{a})$</li>
 </ol>
 <p><strong>正则化序列</strong>：狄拉克函数是正则函数的极限：
 $\delta(\mathbf{x}) = \lim_{\varepsilon\to0} \delta_\varepsilon(\mathbf{x})$</p>
@@ -236,7 +236,7 @@ $S[\sigma_c] = \sum_i\sigma_c(\mathbf{x}_i)V_i\delta(\mathbf{x}-\mathbf{x}_i)$</
 <ol>
 <li><strong>线性</strong>：$S[a\sigma_1 + b\sigma_2] = aS[\sigma_1] + bS[\sigma_2]$</li>
 <li><strong>质量守恒</strong>：$\int S[\sigma_c]d\mathbf{x} = \sum_i\sigma_c(\mathbf{x}_i)V_i \approx \int\sigma_c d\mathbf{x}$ (对于单位分解)</li>
-<li><strong>频率响应</strong>：$\mathcal{F}<a href="\mathbf{k}">S[\sigma_c]</a> = \sum_i\sigma_c(\mathbf{x}_i)V_i \exp(-i\mathbf{k}\cdot\mathbf{x}_i)$</li>
+<li><strong>频率响应</strong>：$\mathcal{F}[S[\sigma_c]]  (\mathbf{k}) = \sum_i\sigma_c(\mathbf{x}_i)V_i \exp(-i\mathbf{k}\cdot\mathbf{x}_i)$</li>
 </ol>
 <h3 id="323">3.2.3 重建理论</h3>
 <p>为了渲染点云，我们必须从离散样本重建连续场。重建使用与核 $h$ 的卷积：</p>

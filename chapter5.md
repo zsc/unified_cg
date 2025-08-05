@@ -74,7 +74,7 @@ $$\frac{1}{c} \frac{\partial L}{\partial t} + (\boldsymbol{\omega} \cdot \nabla)
 
 定义传输算子 $\mathcal{T}$ 和散射算子 $\mathcal{S}$：
 $$\mathcal{T} = -(\boldsymbol{\omega} \cdot \nabla) - \sigma_t$$
-$$\mathcal{S}[L](\mathbf{x}, \boldsymbol{\omega}) = \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+$$\mathcal{S}[L]  (\mathbf{x}, \boldsymbol{\omega}) = \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
 
 RTE可写作：
 $$\mathcal{T}[L] = -\sigma_a L_e - \mathcal{S}[L]$$

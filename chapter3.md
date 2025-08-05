@@ -222,7 +222,7 @@ $\langle\sigma, \varphi\rangle = \int\sigma(\mathbf{x})\varphi(\mathbf{x})d\math
 1. **筛选性质**：$\int\delta(\mathbf{x}-\mathbf{a})f(\mathbf{x})d\mathbf{x} = f(\mathbf{a})$
 2. **缩放**：$\delta(a\mathbf{x}) = |a|^{-3}\delta(\mathbf{x})$ 对于 $a \neq 0$
 3. **导数**：$\langle\partial^\alpha \delta_\mathbf{a}, \varphi\rangle = (-1)^{|\alpha|}\partial^\alpha \varphi(\mathbf{a})$
-4. **傅里叶变换**：$\mathcal{F}[\delta_\mathbf{a}](\mathbf{k}) = \exp(-i\mathbf{k}\cdot\mathbf{a})$
+4. **傅里叶变换**：$\mathcal{F}[\delta_\mathbf{a}]  (\mathbf{k}) = \exp(-i\mathbf{k}\cdot\mathbf{a})$
 
 **正则化序列**：狄拉克函数是正则函数的极限：
 $\delta(\mathbf{x}) = \lim_{\varepsilon\to0} \delta_\varepsilon(\mathbf{x})$
@@ -263,7 +263,7 @@ $S[\sigma_c] = \sum_i\sigma_c(\mathbf{x}_i)V_i\delta(\mathbf{x}-\mathbf{x}_i)$
 性质：
 1. **线性**：$S[a\sigma_1 + b\sigma_2] = aS[\sigma_1] + bS[\sigma_2]$
 2. **质量守恒**：$\int S[\sigma_c]d\mathbf{x} = \sum_i\sigma_c(\mathbf{x}_i)V_i \approx \int\sigma_c d\mathbf{x}$ (对于单位分解)
-3. **频率响应**：$\mathcal{F}[S[\sigma_c]](\mathbf{k}) = \sum_i\sigma_c(\mathbf{x}_i)V_i \exp(-i\mathbf{k}\cdot\mathbf{x}_i)$
+3. **频率响应**：$\mathcal{F}[S[\sigma_c]]  (\mathbf{k}) = \sum_i\sigma_c(\mathbf{x}_i)V_i \exp(-i\mathbf{k}\cdot\mathbf{x}_i)$
 
 ### 3.2.3 重建理论
 

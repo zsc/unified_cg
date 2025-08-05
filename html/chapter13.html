@@ -67,7 +67,7 @@ $$L(\mathbf{x}, \boldsymbol{\omega}_o) = \int_{\Omega} \rho(\mathbf{x}, \boldsym
 <li><strong>不完备性</strong>：有限视角无法观察到所有反射方向</li>
 </ol>
 <p>为了使问题适定，我们引入正则化项：
-$$\mathcal{L}[\rho] = \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \mathcal{R}<a href="\mathbf{x}">\rho</a> \right|^2 + \lambda \mathcal{R}_{prior}[\rho]$$
+$$\mathcal{L}[\rho] = \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \mathcal{R}[\rho]  (\mathbf{x}) \right|^2 + \lambda \mathcal{R}_{prior}[\rho]$$
 其中 $\mathcal{R}[\rho]$ 表示渲染算子，$\mathcal{R}_{prior}$ 为先验正则化。</p>
 <h3 id="1312-brdf">13.1.2 参数化BRDF模型</h3>
 <p>实际应用中，我们通常采用参数化BRDF模型：</p>
@@ -220,7 +220,7 @@ $$R_{PBD}(r, \theta) = \int_0^{\infty} J_0(sr) \tilde{R}(s) e^{-\mu_0 s \cos\the
 </ol>
 <p><strong>参数化优化</strong>：
 我们优化材质参数 $\boldsymbol{\phi} = [\sigma_a, \sigma_s, g, \eta]$：
-$$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \int_A S<a href="\mathbf{x}, \mathbf{x}" title=") L(\mathbf{x}">\boldsymbol{\phi}</a> dA' \right|^2$$
+$$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \int_A S[\boldsymbol{\phi}]  (\mathbf{x}, \mathbf{x}') L(\mathbf{x}') dA' \right|^2$$
 <strong>梯度计算</strong>：
 对于扩散参数的导数：
 $$\frac{\partial R_d}{\partial \sigma_a} = R_d \left[ \frac{\partial \ln \alpha'}{\partial \sigma_a} + \sum_{i \in {r,v}} \frac{\partial \ln T_i}{\partial \sigma_a} \right]$$
@@ -530,7 +530,7 @@ $$E[\mathcal{G}, \mathcal{M}] = E_{photo}[\mathcal{G}, \mathcal{M}] + \lambda_g 
 <ol>
 <li>
 <p><strong>光度一致性</strong>：
-$$E_{photo} = \sum_{i} \int_{\Omega} V_i(\mathbf{x}) |I_i(\pi_i(\mathbf{x})) - \mathcal{R}<a href="\mathbf{x}, \boldsymbol{\omega}_i">\mathcal{G}, \mathcal{M}</a>|^2 d\mathbf{x}$$
+$$E_{photo} = \sum_{i} \int_{\Omega} V_i(\mathbf{x}) |I_i(\pi_i(\mathbf{x})) - \mathcal{R}[\mathcal{G}, \mathcal{M}]  (\mathbf{x}, \boldsymbol{\omega}_i)|^2 d\mathbf{x}$$
 其中 $\mathcal{R}$ 为渲染算子，考虑几何和材质。</p>
 </li>
 <li>
@@ -807,7 +807,7 @@ $$p(\alpha) = \frac{1}{Z} \exp(-\lambda_1 \alpha - \lambda_2 \log\alpha) = \frac
 $$\Pi[f] = \arg\min_{\rho \in \mathcal{R}} \int_{\Omega^2} |f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) - \rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o)|^2 d\boldsymbol{\omega}_i d\boldsymbol{\omega}_o$$
 其中 $\mathcal{R}$ 为互易BRDF集合。</p>
 <p>解为对称化：
-$$\Pi<a href="\boldsymbol{\omega}_i, \boldsymbol{\omega}_o">f</a> = \frac{1}{2}[f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
+$$\Pi[f]  (\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{2}[f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
 证明最优性：设 $\rho \in \mathcal{R}$，则：
 $$|f - \rho|^2 = |\frac{f + f^T}{2} - \rho|^2 + |\frac{f - f^T}{2}|^2 \geq |f - \Pi[f]|^2$$</p>
 <p>因为 $\rho$ 与 $(f - f^T)/2$ 正交。</p>

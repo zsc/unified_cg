@@ -76,10 +76,10 @@ $$T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$$
    这提供了处理不连续密度场（如表面）的严格框架。
 
 3. **算子理论视角**：定义渲染算子 $\mathcal{R}$：
-   $$\mathcal{R}[\sigma, \mathbf{c}](\mathbf{r}) = \int_{t_n}^{t_f} \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+   $$\mathcal{R}[\sigma, \mathbf{c}]  (\mathbf{r}) = \int_{t_n}^{t_f} \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
    
    这是一个非线性算子，其Fréchet导数为：
-   $$D\mathcal{R}[\sigma, \mathbf{c}][\delta\sigma, \delta\mathbf{c}] = \int_{t_n}^{t_f} T(t) \left[\delta\sigma(t) \mathbf{c}(t) + \sigma(t) \delta\mathbf{c}(t) - \sigma(t) \mathbf{c}(t) \int_{t_n}^t \delta\sigma(s) ds\right] dt$$
+   $$D\mathcal{R}[\sigma, \mathbf{c}]  [\delta\sigma, \delta\mathbf{c}] = \int_{t_n}^{t_f} T(t) \left[\delta\sigma(t) \mathbf{c}(t) + \sigma(t) \delta\mathbf{c}(t) - \sigma(t) \mathbf{c}(t) \int_{t_n}^t \delta\sigma(s) ds\right] dt$$
    
    这对理解梯度传播至关重要。
 
@@ -155,7 +155,7 @@ $$T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$$
 5. **与逆向渲染的联系**（第11-14章）：NeRF的可微性使其成为逆向问题的理想表示。
    
    逆向渲染可表述为变分问题：
-   $$\min_\Theta \sum_{i} \|\mathcal{R}[F_\Theta](\mathbf{r}_i) - I_i\|^2 + \mathcal{R}_{\text{reg}}(\Theta)$$
+   $$\min_\Theta \sum_{i} \|\mathcal{R}[F_\Theta]  (\mathbf{r}_i) - I_i\|^2 + \mathcal{R}_{\text{reg}}(\Theta)$$
    
    其中 $\mathcal{R}$ 是渲染算子，$I_i$ 是观测图像。
 
@@ -318,7 +318,7 @@ $$\mathbf{c} = \text{sigmoid}(W_c \mathbf{f}_c + \mathbf{b}_c) = \frac{1}{1 + \e
    $$\mathbf{c}(\mathbf{x}, \mathbf{d}) \approx \int_{\Omega} f_r(\mathbf{x}, \mathbf{d}_i \rightarrow \mathbf{d}) L_i(\mathbf{x}, \mathbf{d}_i) (\mathbf{n} \cdot \mathbf{d}_i) d\mathbf{d}_i$$
 
 3. **跳跃连接**：在第 $l^*$ 层重新注入位置编码
-   $$\mathbf{h}_{l^*+1} = \phi(W_{l^*} [\mathbf{h}_{l^*}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
+   $$\mathbf{h}_{l^{*}+1} = \phi(W_{l^*} [\mathbf{h}_{l^*}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
    
    这改善了梯度流并保留了高频信息。
    
@@ -457,7 +457,7 @@ $$\frac{\partial f(\mathbf{x}; \Theta_t)}{\partial t} = -\eta \int K(\mathbf{x},
 $$K(\mathbf{x}, \mathbf{x}') = \lim_{w \to \infty} \frac{1}{w} \sum_{i=1}^w \frac{\partial f(\mathbf{x}; \Theta)}{\partial \Theta_i} \frac{\partial f(\mathbf{x}'; \Theta)}{\partial \Theta_i}$$
 
 对于ReLU网络，NTK具有特定的频谱特性：
-$$\hat{K}(\mathbf{k}, \mathbf{k}') = \mathcal{F}[K](\mathbf{k}, \mathbf{k}') \propto \exp(-c|\mathbf{k}|^\alpha)$$
+$$\hat{K}(\mathbf{k}, \mathbf{k}') = \mathcal{F}[K]  (\mathbf{k}, \mathbf{k}') \propto \exp(-c|\mathbf{k}|^\alpha)$$
 
 其中 $\alpha > 0$，表明高频成分被指数抑制。
 

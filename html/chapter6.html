@@ -97,9 +97,9 @@ $$L(\mathbf{r}) = \int_{[t_n, t_f]} T(t) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) d
 </li>
 <li>
 <p><strong>算子理论视角</strong>：定义渲染算子 $\mathcal{R}$：
-$$\mathcal{R}<a href="\mathbf{r}">\sigma, \mathbf{c}</a> = \int_{t_n}^{t_f} \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+$$\mathcal{R}[\sigma, \mathbf{c}]  (\mathbf{r}) = \int_{t_n}^{t_f} \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
 这是一个非线性算子，其Fréchet导数为：
-$$D\mathcal{R}[\sigma, \mathbf{c}][\delta\sigma, \delta\mathbf{c}] = \int_{t_n}^{t_f} T(t) \left[\delta\sigma(t) \mathbf{c}(t) + \sigma(t) \delta\mathbf{c}(t) - \sigma(t) \mathbf{c}(t) \int_{t_n}^t \delta\sigma(s) ds\right] dt$$
+$$D\mathcal{R}[\sigma, \mathbf{c}]  [\delta\sigma, \delta\mathbf{c}] = \int_{t_n}^{t_f} T(t) \left[\delta\sigma(t) \mathbf{c}(t) + \sigma(t) \delta\mathbf{c}(t) - \sigma(t) \mathbf{c}(t) \int_{t_n}^t \delta\sigma(s) ds\right] dt$$
 这对理解梯度传播至关重要。</p>
 </li>
 </ol>
@@ -163,7 +163,7 @@ $$F_\Theta: (\mathbf{x}, \mathbf{d}, \lambda) \mapsto (A e^{i\phi}, \mathbf{c}) 
 <li><strong>与逆向渲染的联系</strong>（第11-14章）：NeRF的可微性使其成为逆向问题的理想表示。</li>
 </ol>
 <p>逆向渲染可表述为变分问题：
-$$\min_\Theta \sum_{i} |\mathcal{R}<a href="\mathbf{r}_i">F_\Theta</a> - I_i|^2 + \mathcal{R}_{\text{reg}}(\Theta)$$
+$$\min_\Theta \sum_{i} |\mathcal{R}[F_\Theta]  (\mathbf{r}_i) - I_i|^2 + \mathcal{R}_{\text{reg}}(\Theta)$$
 其中 $\mathcal{R}$ 是渲染算子，$I_i$ 是观测图像。</p>
 <h3 id="62">6.2 连续体积表示</h3>
 <h4 id="621">6.2.1 神经隐式表示基础</h4>
@@ -294,7 +294,7 @@ $$\frac{\partial \sigma}{\partial \mathbf{d}} = 0$$
 $$\mathbf{c}(\mathbf{x}, \mathbf{d}) \approx \int_{\Omega} f_r(\mathbf{x}, \mathbf{d}_i \rightarrow \mathbf{d}) L_i(\mathbf{x}, \mathbf{d}_i) (\mathbf{n} \cdot \mathbf{d}_i) d\mathbf{d}_i$$</p>
 <ol start="3">
 <li><strong>跳跃连接</strong>：在第 $l^<em>$ 层重新注入位置编码
-$$\mathbf{h}_{l^</em>+1} = \phi(W_{l^<em>} [\mathbf{h}_{l^</em>}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
+$$\mathbf{h}_{l^{</em>}+1} = \phi(W_{l^<em>} [\mathbf{h}_{l^</em>}, \gamma(\mathbf{x})] + \mathbf{b}_{l^*})$$
 这改善了梯度流并保留了高频信息。</li>
 </ol>
 <p><strong>理论分析</strong>：跳跃连接可以视为残差学习：
@@ -417,7 +417,7 @@ $$\frac{\partial f(\mathbf{x}; \Theta_t)}{\partial t} = -\eta \int K(\mathbf{x},
 其中核函数为：
 $$K(\mathbf{x}, \mathbf{x}') = \lim_{w \to \infty} \frac{1}{w} \sum_{i=1}^w \frac{\partial f(\mathbf{x}; \Theta)}{\partial \Theta_i} \frac{\partial f(\mathbf{x}'; \Theta)}{\partial \Theta_i}$$
 对于ReLU网络，NTK具有特定的频谱特性：
-$$\hat{K}(\mathbf{k}, \mathbf{k}') = \mathcal{F}<a href="\mathbf{k}, \mathbf{k}'">K</a> \propto \exp(-c|\mathbf{k}|^\alpha)$$
+$$\hat{K}(\mathbf{k}, \mathbf{k}') = \mathcal{F}[K]  (\mathbf{k}, \mathbf{k}') \propto \exp(-c|\mathbf{k}|^\alpha)$$
 其中 $\alpha &gt; 0$，表明高频成分被指数抑制。</p>
 <p><strong>学习动态的频率依赖性</strong>：</p>
 <p>定义频率 $\mathbf{k}$ 的学习率为：
