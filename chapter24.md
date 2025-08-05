@@ -39,6 +39,41 @@ $$\Lambda = \frac{2\pi}{|\nabla(\phi_o - \phi_r)|}$$
 
 $$\Lambda \approx \frac{\lambda}{2\sin(\theta/2)}$$
 
+**干涉条纹的形成机理**：
+当物光波和参考光波在记录介质上相遇时，空间各点的相位差决定了干涉强度。对于平面参考波 $U_r = A_r \exp(i\mathbf{k}_r \cdot \mathbf{x})$ 和来自点源的球面物波：
+
+$$U_o = \frac{A_o}{r} \exp(ikr)$$
+
+相位差为：
+$$\Delta\phi = kr - \mathbf{k}_r \cdot \mathbf{x}$$
+
+等相位面（亮条纹位置）满足 $\Delta\phi = 2\pi m$，形成三维驻波模式。
+
+**记录介质的响应特性**：
+全息记录材料的响应可用透过率调制度表征：
+
+$$T(I) = T_0 + \beta I$$
+
+其中 $\beta$ 是材料的响应系数。对于线性记录：
+
+$$T(\mathbf{x}) = T_0 + \beta[|U_o|^2 + |U_r|^2 + 2|U_o||U_r|\cos(\phi_o - \phi_r)]$$
+
+非线性响应会产生高阶衍射项，影响重建质量。常见记录材料包括：
+- 卤化银乳胶：高灵敏度，分辨率>5000线/mm
+- 光致聚合物：实时记录，动态范围大
+- 光折变晶体：可擦写，适合动态全息
+
+**空间频率分析**：
+全息图可视为物光波的空间频谱载波调制。设物光波的频谱为 $\tilde{U}_o(f_x, f_y)$，参考光引入载波频率 $(f_{xr}, f_{yr})$：
+
+$$\tilde{I}(f_x, f_y) = \tilde{U}_o \otimes \tilde{U}_o^* + \delta(f_x, f_y) + \tilde{U}_o(f_x - f_{xr}, f_y - f_{yr}) + \tilde{U}_o^*(-(f_x + f_{xr}), -(f_y + f_{yr}))$$
+
+这解释了为什么离轴配置可以空间分离不同衍射级。载波频率必须满足：
+
+$$f_{xr} > 3f_{x,max}, \quad f_{yr} > 3f_{y,max}$$
+
+以避免频谱重叠。
+
 ### 24.1.2 菲涅尔全息图
 
 对于菲涅尔全息，参考光为球面波。设参考点源位于 $\mathbf{r}_r$，则：
@@ -91,6 +126,54 @@ $$U_{real}(\mathbf{x}) = U_o^*(\mathbf{x}) U_r^2(\mathbf{x})$$
 - 实像位于 $z = -z_o + 2z_r$（相对于参考源的镜像位置）
 
 离轴配置的优势在于这三个衍射级在空间上分离，便于观察单一重建像。
+
+**衍射效率分析**：
+对于振幅全息图，一级衍射效率定义为：
+
+$$\eta = \frac{|U_{+1}|^2}{|U_{incident}|^2}$$
+
+在线性记录条件下（$|U_o| << |U_r|$），效率为：
+
+$$\eta = \left(\frac{\beta |U_o||U_r|}{2}\right)^2$$
+
+理论最大效率约为6.25%。相位全息图可达到更高效率（理论上100%）。
+
+**像质评估**：
+重建像的质量受多种因素影响：
+
+1. **记录介质的MTF（调制传递函数）**：
+   $$MTF(f) = \frac{M_{out}(f)}{M_{in}(f)}$$
+   
+   其中 $M$ 是调制度。高频衰减导致细节损失。
+
+2. **参考光的相干性**：
+   时间相干长度 $l_c = c\tau_c = \frac{\lambda^2}{\Delta\lambda}$ 限制了可记录的最大光程差。
+   
+   空间相干宽度 $w_c = \frac{\lambda D}{s}$ 影响干涉条纹的可见度，其中 $D$ 是到光源的距离，$s$ 是光源尺寸。
+
+3. **记录几何的像差**：
+   球面参考波引入的像差可通过Zernike多项式展开：
+   $$W(\rho, \theta) = \sum_{n,m} a_{nm} Z_n^m(\rho, \theta)$$
+
+**波长选择性与角度选择性**：
+重建时使用不同波长 $\lambda'$ 或不同角度 $\theta'$ 会导致：
+
+1. **色散**：横向放大率变化
+   $$M = \frac{\lambda'}{\lambda} \cdot \frac{z_i'}{z_i}$$
+
+2. **像差**：主要是球差和彗差
+   $$\Delta W = \frac{2\pi}{\lambda'} \left(\sqrt{x^2 + y^2 + z_i'^2} - z_i'\right) - \frac{2\pi}{\lambda} \left(\sqrt{x^2 + y^2 + z_i^2} - z_i\right)$$
+
+**数字重建方法**：
+除了光学重建，可通过数值计算模拟重建过程：
+
+$$U_{recon}(\xi, \eta) = \iint H(x,y) U_r(x,y) h(x,y;\xi,\eta) dx dy$$
+
+其中 $h$ 是从全息平面到重建平面的传播核。使用卷积定理和FFT可加速计算：
+
+$$U_{recon} = \mathcal{F}^{-1}\{\mathcal{F}\{H \cdot U_r\} \cdot \mathcal{F}\{h\}\}$$
+
+这种方法允许数字聚焦、像差补偿和增强处理。
 
 ### 24.1.4 体积全息与布拉格条件
 
@@ -154,6 +237,55 @@ $$U_o(\mathbf{x}) = \sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x} - \mathbf{r}_j|)}{
   $$f_{max} = \frac{2NA}{\lambda}$$
   
 - **量化效应**：数字表示的有限精度导致量化噪声。
+
+**Rayleigh-Sommerfeld衍射理论基础**：
+CGH计算基于标量衍射理论。第一类Rayleigh-Sommerfeld积分给出：
+
+$$U(\mathbf{x}) = \frac{1}{i\lambda} \iint_{\Sigma} U_0(\mathbf{x}') \frac{\exp(ikr)}{r} \cos(\mathbf{n}, \mathbf{r}) d\mathbf{x}'$$
+
+其中 $r = |\mathbf{x} - \mathbf{x}'|$，$\cos(\mathbf{n}, \mathbf{r})$ 是倾斜因子。这是CGH算法的理论基础。
+
+**带限信号的完美重建条件**：
+根据Whittaker-Shannon采样定理，要完美重建带限信号，采样率必须满足：
+
+$$f_s > 2B$$
+
+其中 $B$ 是信号带宽。对于全息图，空间带宽由物体的角谱范围决定：
+
+$$B_x = \frac{NA_x}{\lambda}, \quad B_y = \frac{NA_y}{\lambda}$$
+
+因此全息图的采样间隔应满足：
+
+$$\Delta x < \frac{\lambda}{2NA_x}, \quad \Delta y < \frac{\lambda}{2NA_y}$$
+
+**复数编码策略**：
+由于大多数空间光调制器只能调制振幅或相位，需要编码方法表示复数值：
+
+1. **Kinoform（纯相位编码）**：
+   忽略振幅，只编码相位：$H_{kino} = \exp(i\arg[U_o])$
+   
+2. **迭代傅里叶变换算法（IFTA）**：
+   通过迭代优化找到最佳相位分布
+
+3. **双相位分解**：
+   $$U = A e^{i\phi} = \frac{1}{2}[e^{i\phi_1} + e^{i\phi_2}]$$
+   其中 $\phi_1 = \phi + \arccos(A)$，$\phi_2 = \phi - \arccos(A)$
+
+**计算精度与数值稳定性**：
+浮点运算的有限精度影响CGH质量：
+
+1. **相位卷绕处理**：
+   当 $kr > 2\pi n$ 时，需要正确处理相位卷绕：
+   $$\phi_{wrapped} = \mod(kr, 2\pi)$$
+
+2. **近场奇异性**：
+   当 $r \to 0$ 时，$1/r$ 项发散。实际处理时使用：
+   $$U_{reg} = \frac{\exp(ikr)}{r + \epsilon}$$
+   其中 $\epsilon \sim \lambda/100$
+
+3. **大规模FFT的数值误差**：
+   FFT的相对误差约为 $\epsilon_{FFT} \sim \sqrt{N} \cdot \epsilon_{machine}$
+   对于 $N = 4096 \times 4096$，单精度下误差约 $10^{-5}$
 
 ### 24.2.2 点源法（Point Source Method）
 
@@ -296,6 +428,41 @@ $$t_{SLM}(\mathbf{x}) = \exp[i\phi_{SLM}(\mathbf{x})]$$
 
 其中 $\phi_{SLM} \in [0, 2\pi]$ 是可控相位延迟。
 
+**液晶SLM的物理机制**：
+向列型液晶的双折射特性使其折射率随分子取向变化：
+
+$$\Delta n(\theta) = n_e \cos^2\theta + n_o \sin^2\theta - n_o$$
+
+其中 $n_e$、$n_o$ 分别是非常光和寻常光折射率，$\theta$ 是液晶分子倾角。相位延迟为：
+
+$$\phi = \frac{2\pi d \Delta n(\theta)}{\lambda}$$
+
+其中 $d$ 是液晶层厚度。通过施加电压 $V$ 控制倾角：
+
+$$\theta(V) = \begin{cases}
+0 & V < V_{th} \\
+\arcsin\sqrt{\frac{V^2 - V_{th}^2}{V^2}} & V > V_{th}
+\end{cases}$$
+
+**DMD的工作特性**：
+DMD由微镜阵列组成，每个微镜可在 ±12° 间切换。其调制特性：
+
+$$t_{DMD}(x,y) = \begin{cases}
+1 & \text{镜子处于 ON 状态} \\
+0 & \text{镜子处于 OFF 状态}
+\end{cases}$$
+
+通过脉宽调制（PWM）实现灰度：
+
+$$t_{avg} = \frac{t_{ON}}{t_{ON} + t_{OFF}}$$
+
+刷新率可达 22kHz，适合时分复用全息显示。
+
+**响应时间与带宽**：
+- 液晶SLM：响应时间 ~10ms，刷新率 60-120Hz
+- DMD：切换时间 ~10μs，二进制帧率 >20kHz
+- 铁电液晶：响应时间 ~100μs，适合中速应用
+
 ### 24.3.2 像素化效应与衍射
 
 SLM的像素结构导致额外的衍射效应。对于像素间距 $p$，衍射角由光栅方程给出：
@@ -305,6 +472,30 @@ $$\sin\theta_m = m\frac{\lambda}{p}$$
 有效视场角（FOV）受限于：
 
 $$\text{FOV} = 2\arcsin\left(\frac{\lambda}{2p}\right)$$
+
+**像素化的傅里叶分析**：
+SLM可建模为理想光场与像素函数的卷积：
+
+$$t_{pixelated}(x,y) = t_{ideal}(x,y) \otimes \text{rect}\left(\frac{x}{w}, \frac{y}{w}\right) * \text{comb}\left(\frac{x}{p}, \frac{y}{p}\right)$$
+
+其中 $w$ 是像素宽度（填充因子 $FF = w/p$）。频域表示：
+
+$$\tilde{t}_{pixelated}(f_x, f_y) = \tilde{t}_{ideal}(f_x, f_y) \cdot \text{sinc}(wf_x, wf_y) \otimes \text{comb}(pf_x, pf_y)$$
+
+这产生了多个衍射级，强度分布为：
+
+$$I_m = I_0 \cdot \text{sinc}^2\left(\frac{m\lambda w}{p}\right)$$
+
+**串扰与对比度**：
+相邻像素间的串扰影响调制质量：
+
+$$\text{Crosstalk} = \frac{I_{neighbor}}{I_{pixel}} = \exp\left(-\frac{2\pi^2 g^2}{\lambda^2}\right)$$
+
+其中 $g$ 是像素间隙。对比度定义为：
+
+$$\text{Contrast} = \frac{I_{max} - I_{min}}{I_{max} + I_{min}}$$
+
+典型液晶SLM对比度 >1000:1，DMD >2000:1。
 
 ### 24.3.3 振幅与相位调制
 
@@ -317,6 +508,27 @@ $$\text{FOV} = 2\arcsin\left(\frac{\lambda}{2p}\right)$$
 2. **误差扩散法**：
    将复数值量化到最近的可实现相位值，并将误差扩散到邻近像素
 
+**超像素编码方法**：
+使用多个物理像素编码一个复数值：
+
+$$U_{target} = A e^{i\phi} \approx \frac{1}{N}\sum_{n=1}^N \exp(i\phi_n)$$
+
+优化问题：
+$$\min_{\{\phi_n\}} \left|A e^{i\phi} - \frac{1}{N}\sum_{n=1}^N \exp(i\phi_n)\right|^2$$
+
+对于 $N=4$ 的 2×2 超像素，可实现约 85% 的调制精度。
+
+**迭代量化算法**：
+1. 初始化：$\phi^{(0)} = \arg[U_{target}]$
+2. 量化：$\phi_q^{(k)} = Q[\phi^{(k)}]$，其中 $Q$ 是量化函数
+3. 误差计算：$e^{(k)} = U_{target} - \exp(i\phi_q^{(k)})$
+4. 更新：$\phi^{(k+1)} = \phi^{(k)} + \alpha \cdot \arg[e^{(k)}]$
+
+收敛后的量化噪声约为：
+$$\sigma_q^2 = \frac{\Delta^2}{12}$$
+
+其中 $\Delta = 2\pi/L$ 是量化步长，$L$ 是量化级数。
+
 ### 24.3.4 时分复用与空分复用
 
 提高显示质量的复用技术：
@@ -328,6 +540,37 @@ $$\text{FOV} = 2\arcsin\left(\frac{\lambda}{2p}\right)$$
    $$H_{total}(\mathbf{x}) = \sum_{k} W_k(\mathbf{x}) H_k(\mathbf{x})$$
    
 其中 $W_k$ 是窗函数。
+
+**时分复用的视觉积分**：
+人眼的时间积分特性（~50ms）允许多帧融合：
+
+$$I_{perceived} = \frac{1}{\tau} \int_0^\tau I(t) dt$$
+
+对于 $N$ 个二值全息图的循环显示：
+
+$$\langle U \rangle = \frac{1}{N}\sum_{n=1}^N U_n$$
+
+斑点噪声降低因子：$\sqrt{N}$
+
+**空间复用的优化分配**：
+将SLM分为 $K$ 个区域，每个区域负责不同视角或颜色：
+
+$$\text{minimize} \sum_{k=1}^K \|U_k - U_{target,k}\|^2$$
+
+约束条件：
+- 区域不重叠：$W_i \cap W_j = \emptyset$，$i \neq j$
+- 完整覆盖：$\bigcup_{k=1}^K W_k = \Omega_{SLM}$
+
+**随机相位复用**：
+添加随机相位减少斑点：
+
+$$H_{random} = |H| \exp[i(\arg[H] + \phi_{random})]$$
+
+其中 $\phi_{random} \sim \mathcal{U}[0, 2\pi]$。多次平均后斑点对比度：
+
+$$C_{speckle} = \frac{1}{\sqrt{M}}$$
+
+其中 $M$ 是独立随机相位的数量。
 
 ## 24.4 相位恢复算法
 
