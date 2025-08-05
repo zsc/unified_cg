@@ -58,6 +58,32 @@ $$\frac{1}{c} \frac{\partial L}{\partial t} + (\boldsymbol{\omega} \cdot \nabla)
 
 其中 c 是介质中的光速。
 
+**物理量的尺度分析**
+
+为了更好理解RTE中各项的相对重要性，考虑典型尺度：
+- 特征长度 L₀：场景或介质的典型尺寸
+- 平均自由程 ℓ = 1/σₜ：光子碰撞间的平均距离
+- 光学厚度 τ = L₀/ℓ = σₜL₀：无量纲参数
+
+根据τ的大小，介质分类为：
+- **光学薄介质**（τ ≪ 1）：单次散射主导，可用Born近似
+- **光学厚介质**（τ ≫ 1）：多次散射主导，适用扩散近似
+- **中等光学厚度**（τ ≈ 1）：需要完整RTE求解
+
+**RTE的算子形式**
+
+定义传输算子 𝒯 和散射算子 𝒮：
+$$\mathcal{T} = -(\boldsymbol{\omega} \cdot \nabla) - \sigma_t$$
+$$\mathcal{S}[L](\mathbf{x}, \boldsymbol{\omega}) = \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+
+RTE可写作：
+$$\mathcal{T}[L] = -\sigma_a L_e - \mathcal{S}[L]$$
+
+或重排为：
+$$L = \mathcal{T}^{-1}[-\sigma_a L_e - \mathcal{S}[L]]$$
+
+这形式便于迭代求解和理论分析。
+
 ### 5.1.2 边界条件与初始条件
 
 对于有界域 Ω ⊂ ℝ³，需要指定边界条件。设 ∂Ω 为域的边界，**n** 为外法向量。
@@ -74,6 +100,20 @@ $$L_t = \frac{n_2^2}{n_1^2} T(\theta_i) L_i$$
 $$L_r = R(\theta_i) L_i$$
 
 其中 T 和 R 分别为透射率和反射率，满足 T + R = 1（能量守恒）。
+
+**Robin边界条件**
+
+对于半透明边界，使用混合边界条件：
+$$L(\mathbf{x}, \boldsymbol{\omega}) + \ell_b (\boldsymbol{\omega} \cdot \mathbf{n}) \frac{\partial L}{\partial n} = g(\mathbf{x}, \boldsymbol{\omega})$$
+
+其中 ℓ_b 是外推长度，与表面反射特性相关。
+
+**周期边界条件**
+
+对于周期性结构（如光子晶体）：
+$$L(\mathbf{x} + \mathbf{L}, \boldsymbol{\omega}) = L(\mathbf{x}, \boldsymbol{\omega})$$
+
+其中 **L** 是晶格周期向量。
 
 ### 5.1.3 解析解与数值方法
 
@@ -119,6 +159,16 @@ $$L(\mathbf{x}, \boldsymbol{\omega}) = L_0(\mathbf{x}, \boldsymbol{\omega}) + \i
 - Q = σₐLₑ + σₛ∫p L dω' 是源项
 - L₀ 是边界贡献
 
+**特征线方法**
+
+RTE沿特征线（光线）是一维问题。定义特征坐标：
+$$\frac{d\mathbf{x}}{ds} = \boldsymbol{\omega}, \quad \frac{d\boldsymbol{\omega}}{ds} = 0$$
+
+沿特征线，RTE简化为：
+$$\frac{dL}{ds} + \sigma_t L = S(\mathbf{x}(s), \boldsymbol{\omega})$$
+
+这可用标准ODE方法求解。
+
 **数值方法详述**
 
 1. **离散坐标法（Discrete Ordinates, S_N方法）**：
@@ -151,12 +201,30 @@ $$L(\mathbf{x}, \boldsymbol{\omega}) = L_0(\mathbf{x}, \boldsymbol{\omega}) + \i
    
    其中 pₖ 是继续追踪的概率。
 
+   方差减少技术：
+   - **重要性采样**：根据贡献大小调整采样分布
+   - **分层采样**：将样本空间分层以减少聚集
+   - **控制变量**：使用已知期望的相关变量
+
 4. **有限元方法（FEM）**：
    
    弱形式：
    $$\int_{\Omega \times S^2} \psi \left[ (\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L \right] d\mathbf{x} d\boldsymbol{\omega} = \int_{\Omega \times S^2} \psi S d\mathbf{x} d\boldsymbol{\omega}$$
    
    选择适当的测试函数ψ和基函数，构建稀疏线性系统。
+
+   **流线上风Petrov-Galerkin（SUPG）**：
+   对于对流占优问题，添加人工扩散项：
+   $$\psi_{SUPG} = \psi + \tau (\boldsymbol{\omega} \cdot \nabla)\psi$$
+   
+   其中 τ 是稳定化参数。
+
+5. **格子Boltzmann方法**：
+   
+   基于速度离散的动力学方程：
+   $$f_i(t+\Delta t, \mathbf{x}+\boldsymbol{\omega}_i\Delta t) - f_i(t,\mathbf{x}) = \Omega_i$$
+   
+   其中 Ω_i 是碰撞算子，f_i 是分布函数。
 
 **收敛性分析**
 
@@ -165,6 +233,13 @@ $$\rho(\mathcal{K}) = \sup_{\mathbf{x}} \frac{\sigma_s(\mathbf{x})}{\sigma_t(\ma
 
 收敛速度：
 $$||L^{(n)} - L|| \leq C \rho^n ||L^{(0)} - L||$$
+
+**误差估计**
+
+对于离散化方法，总误差包括：
+- **截断误差**：O(h^p)，其中h是网格尺寸，p是方法阶数
+- **统计误差**（蒙特卡洛）：O(1/√N)，N是样本数
+- **射线效应**（S_N方法）：在光学薄区域的非物理条纹
 
 ## 5.2 体积散射与相位函数
 
@@ -181,6 +256,16 @@ $$\sigma_a(\mathbf{x}) = \rho(\mathbf{x}) \cdot \sigma_{a,particle}$$
 
 对于混合介质，总系数是各成分的线性组合：
 $$\sigma_t = \sum_i \rho_i \sigma_{t,i}$$
+
+**散射截面的物理含义**
+
+散射截面定义为入射能量流与散射功率的比值：
+$$\sigma_s = \frac{P_{scattered}}{I_{incident}}$$
+
+对于球形粒子，几何截面 σ_geo = πr²，但散射截面可能大于或小于几何截面：
+- **散射效率因子** Q_s = σ_s/σ_geo
+- 小粒子（Rayleigh）：Q_s ∝ r⁴/λ⁴
+- 大粒子（几何光学）：Q_s → 2（衍射贡献）
 
 **单散射反照率（Single Scattering Albedo）**
 
@@ -200,6 +285,18 @@ $$\ell = \frac{1}{\sigma_t}$$
 概率分布遵循指数分布：
 $$P(s) = \sigma_t e^{-\sigma_t s}$$
 
+相关长度尺度：
+- **散射平均自由程**：ℓ_s = 1/σ_s
+- **吸收平均自由程**：ℓ_a = 1/σ_a
+- **传输平均自由程**：ℓ* = 1/σ_t' = 1/[σ_a + σ_s(1-g)]
+
+**波长依赖性**
+
+光学系数通常与波长相关：
+- **Rayleigh散射**：σ_s ∝ λ⁻⁴（蓝天现象）
+- **Mie散射**：复杂振荡行为
+- **吸收**：取决于材质的电子跃迁和振动模式
+
 ### 5.2.2 相位函数的数学性质
 
 相位函数 p(**ω'** → **ω**) 描述了光从方向 **ω'** 散射到方向 **ω** 的概率密度。
@@ -215,6 +312,9 @@ $$\int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) d\boldsymbol{\omega
 2. **互易性**（某些情况下）：
    $$p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) = p(\boldsymbol{\omega} \to \boldsymbol{\omega}')$$
 
+3. **前后对称性**（某些粒子）：
+   $$p(\cos\theta) = p(\cos(\pi - \theta))$$
+
 **矩与各向异性参数**
 
 第 n 阶矩：
@@ -227,6 +327,25 @@ $$g = \mu_1 = \int_{S^2} (\boldsymbol{\omega}' \cdot \boldsymbol{\omega}) p(\bol
 - g = 0：各向同性散射
 - g < 0：后向散射为主
 
+**Legendre多项式展开**
+
+相位函数可展开为Legendre多项式：
+$$p(\cos\theta) = \sum_{l=0}^{\infty} \frac{2l+1}{4\pi} \chi_l P_l(\cos\theta)$$
+
+其中展开系数：
+$$\chi_l = 2\pi \int_{-1}^{1} p(\cos\theta) P_l(\cos\theta) d(\cos\theta)$$
+
+注意：χ₀ = 1（归一化），χ₁ = g（各向异性参数）
+
+**相位函数的信息熵**
+
+定义Shannon熵量化散射的随机性：
+$$H[p] = -\int_{S^2} p(\boldsymbol{\omega}) \ln p(\boldsymbol{\omega}) d\boldsymbol{\omega}$$
+
+- 各向同性：H_max = ln(4π)
+- 完全前向：H_min = 0
+- 实际介质：0 < H < ln(4π)
+
 ### 5.2.3 常见相位函数模型
 
 **1. 各向同性散射**
@@ -236,15 +355,25 @@ $$p(\cos\theta) = \frac{1}{4\pi}$$
 
 采样：cosθ = 1 - 2ξ₁, φ = 2πξ₂
 
+应用场景：
+- 密集烟雾的多次散射
+- 扩散近似的验证
+- 理论分析的基准
+
 **2. Rayleigh 散射**
 
-适用于粒子尺寸远小于波长的情况（x ≪ 1）：
+适用于粒子尺寸远小于波长的情况（x = 2πr/λ ≪ 1）：
 $$p_{Rayleigh}(\cos\theta) = \frac{3}{16\pi}(1 + \cos^2\theta)$$
 
 各向异性参数：g = 0（对称散射）
 
 偏振形式（考虑偏振态）：
 $$p_{Rayleigh}(\cos\theta, \phi) = \frac{3}{16\pi} \begin{pmatrix} 1 + \cos^2\theta & \sin^2\theta \cos(2\phi) \\ \sin^2\theta \cos(2\phi) & 1 + \cos^2\theta \end{pmatrix}$$
+
+采样方法：
+1. 生成 u = 2ξ₁ - 1
+2. 如果 u² > (1 + u²)ξ₂，拒绝并重试
+3. 否则 cosθ = u
 
 **3. Henyey-Greenstein 相位函数**
 
@@ -264,6 +393,8 @@ $$p_{HG}(\cos\theta) = \frac{1}{4\pi} \frac{1 - g^2}{(1 + g^2 - 2g\cos\theta)^{3
 勒让德展开：
 $$p_{HG}(\cos\theta) = \frac{1}{4\pi} \sum_{l=0}^{\infty} (2l+1) g^l P_l(\cos\theta)$$
 
+解析采样（见后续重要性采样部分）
+
 **4. Schlick 相位函数**
 
 Henyey-Greenstein 的有理近似，计算更高效：
@@ -272,6 +403,8 @@ $$p_{Schlick}(\cos\theta) = \frac{1}{4\pi} \frac{1 - k^2}{(1 + k\cos\theta)^2}$$
 参数转换：k = 1.55g - 0.55g³（保持相同的平均余弦）
 
 误差分析：|p_{Schlick} - p_{HG}|/p_{HG} < 0.02 对大部分角度
+
+计算效率提升：避免了HG中的幂运算和平方根
 
 **5. 双 Henyey-Greenstein（Double HG）**
 
@@ -284,6 +417,10 @@ $$p_{DHG}(\cos\theta) = \alpha p_{HG}(\cos\theta; g_1) + (1-\alpha) p_{HG}(\cos\
 - g₂ < 0：后向散射成分
 - 平均各向异性：g = αg₁ + (1-α)g₂
 
+典型参数（生物组织）：
+- 皮肤：α ≈ 0.8, g₁ ≈ 0.9, g₂ ≈ -0.3
+- 肌肉：α ≈ 0.9, g₁ ≈ 0.95, g₂ ≈ -0.5
+
 **6. Fournier-Forand 相位函数**
 
 海洋光学中常用，考虑颗粒大小分布：
@@ -293,6 +430,12 @@ $$p_{FF}(\cos\theta) = \frac{1}{4\pi(1-\delta)^2\delta^v} \left[ v(1-\delta) - (
 - δ = 4sin²(θ/2)/(3(n-1)²)
 - v = (3-μ)/2
 - μ：颗粒大小分布的Junge指数
+- n：相对折射率
+
+特点：
+- 准确描述海洋悬浮粒子
+- 包含强前向散射峰
+- 小角度近似为衍射峰
 
 **7. Mie 散射理论**
 
@@ -308,12 +451,22 @@ $$a_n = \frac{m\psi_n(mx)\psi'_n(x) - \psi_n(x)\psi'_n(mx)}{m\psi_n(mx)\xi'_n(x)
 相位函数：
 $$p_{Mie}(\cos\theta) = \frac{4\pi}{k^2\sigma_s} \left[ |S_1(\theta)|^2 + |S_2(\theta)|^2 \right]$$
 
+计算考虑：
+- 级数截断：n_max ≈ x + 4x^(1/3) + 2
+- 数值稳定性：使用向下递推计算贝塞尔函数
+- 效率优化：预计算并缓存系数
+
 **8. SGGX 相位函数**
 
 基于微表面理论，适用于纤维和毛发：
 $$p_{SGGX}(\cos\theta) = \frac{D(\mathbf{h})}{4|\boldsymbol{\omega}' \cdot \mathbf{h}|}$$
 
 其中 D(h) 是SGGX分布，h 是半向量。
+
+SGGX分布：
+$$D(\mathbf{h}) = \frac{1}{\pi \alpha_x \alpha_y} \frac{1}{(\mathbf{h} \cdot \mathbf{S}^{-1} \mathbf{h})^2}$$
+
+S 是3×3协方差矩阵，描述纤维方向分布。
 
 **相位函数的重要性采样**
 
@@ -328,7 +481,10 @@ $$\cos\theta = \begin{cases}
 
 2. 采样方位角：φ = 2πξ₂
 
-3. 构造散射方向（局部坐标系）
+3. 构造散射方向（局部坐标系）：
+   - 构建正交基 {t, b, ω'}
+   - sinθ = √(1 - cos²θ)
+   - ω = sinθ·cosφ·t + sinθ·sinφ·b + cosθ·ω'
 
 PDF值：p_{HG}(cosθ)
 
@@ -339,18 +495,30 @@ PDF值：p_{HG}(cosθ)
 2. 从 q(θ) 采样候选值
 3. 以概率 p(θ)/(M·q(θ)) 接受
 
+效率：η = 1/M，选择好的q(θ)最大化效率
+
 **表格法采样**：
 
 1. 预计算CDF：F(θᵢ) = ∫₀^{θᵢ} p(θ)sinθ dθ
 2. 二分查找：F⁻¹(ξ)
 3. 线性插值获得精确值
 
+存储优化：非均匀采样，在变化剧烈区域加密
+
 **混合重要性采样**：
 
 结合相位函数和其他因素（如光源方向）：
 $$p_{mix}(\boldsymbol{\omega}) = \alpha p_{phase}(\boldsymbol{\omega}) + (1-\alpha) p_{light}(\boldsymbol{\omega})$$
 
-使用多重重要性采样（MIS）组合不同策略。
+使用多重重要性采样（MIS）组合不同策略：
+$$w_i = \frac{p_i^2}{\sum_j p_j^2} \quad \text{(balance heuristic)}$$
+
+**相位函数的预计算与优化**
+
+1. **球谐系数缓存**：预计算前N项Legendre系数
+2. **查找表**：离散化角度空间，存储函数值
+3. **解析近似**：使用有理函数逼近复杂相位函数
+4. **GPU优化**：向量化计算，利用纹理缓存
 
 ## 5.3 通过扩散的次表面散射
 
@@ -367,11 +535,24 @@ $$L(\mathbf{x}, \boldsymbol{\omega}) \approx \frac{1}{4\pi}\phi(\mathbf{x}) + \f
 - φ(**x**) = ∫_{S²} L(**x**, **ω**) d**ω**：辐射通量（fluence）
 - **E**(**x**) = ∫_{S²} L(**x**, **ω**)**ω** d**ω**：辐射通量矢量
 
+**从RTE到扩散方程的严格推导**
+
+将P₁展开代入RTE：
+$$(\boldsymbol{\omega} \cdot \nabla)\left[\frac{\phi}{4\pi} + \frac{3}{4\pi}\mathbf{E} \cdot \boldsymbol{\omega}\right] + \sigma_t\left[\frac{\phi}{4\pi} + \frac{3}{4\pi}\mathbf{E} \cdot \boldsymbol{\omega}\right] = \text{源项}$$
+
+对所有方向积分（零阶矩）：
+$$\nabla \cdot \mathbf{E} + \sigma_a \phi = Q$$
+
+对**ω**加权积分（一阶矩）：
+$$\frac{1}{3}\nabla\phi + \sigma_t' \mathbf{E} = \mathbf{0}$$
+
+其中利用了 ∫**ω**⊗**ω** d**ω** = (4π/3)**I**。
+
 **扩散近似的条件**
 
 1. 散射占主导：σₛ ≫ σₐ（即 α ≈ 1）
 2. 近似各向同性：|**E**| ≪ φ
-3. 远离边界和光源
+3. 远离边界和光源（距离 > 几个平均自由程）
 
 在这些条件下，辐射通量矢量遵循Fick定律：
 $$\mathbf{E}(\mathbf{x}) = -D \nabla \phi(\mathbf{x})$$
@@ -383,7 +564,10 @@ $$D = \frac{1}{3\sigma_t'} = \frac{1}{3[\sigma_a + \sigma_s(1-g)]}$$
 
 **扩散方程**
 
-将P₁近似代入RTE并积分，得到稳态扩散方程：
+将Fick定律代入连续性方程：
+$$\nabla \cdot (-D\nabla\phi) + \sigma_a\phi = Q$$
+
+对于均匀介质：
 $$\nabla^2 \phi(\mathbf{x}) - \frac{\sigma_a}{D} \phi(\mathbf{x}) = -\frac{Q(\mathbf{x})}{D}$$
 
 或写作：
@@ -391,17 +575,42 @@ $$\nabla^2 \phi - \kappa^2 \phi = -\frac{Q}{D}$$
 
 其中：
 - κ = √(σₐ/D) = √(3σₐσₜ')：有效衰减系数
-- Q(**x**)：源项（体积光源）
+- 扩散长度：L_D = 1/κ
 
 **边界条件**
 
-在介质-真空界面，需要考虑菲涅尔反射。推导得到Robin边界条件：
+在介质-真空界面，需要考虑菲涅尔反射。
+
+**精确边界条件**（Marshak）：
+$$\phi(\mathbf{x}_s) = \int_{\boldsymbol{\omega} \cdot \mathbf{n} < 0} L(\mathbf{x}_s, \boldsymbol{\omega}) d\boldsymbol{\omega} = 2\pi \int_0^{1} L(\mathbf{x}_s, -\mu) \mu d\mu$$
+
+**外推边界条件**（近似）：
 $$\phi(\mathbf{x}_s) + 2AD(\mathbf{n} \cdot \nabla)\phi(\mathbf{x}_s) = 0$$
 
 其中 A 是与菲涅尔反射相关的参数：
 $$A = \frac{1 + F_{dr}}{1 - F_{dr}}$$
 
-Fdr 是漫反射菲涅尔反射率的角度平均值。
+**菲涅尔反射率的计算**
+
+漫反射菲涅尔反射率：
+$$F_{dr} = \int_0^{\pi/2} R(\theta) \sin(2\theta) d\theta$$
+
+对于相对折射率 η = n₂/n₁：
+- η < 1：F_dr ≈ -1.440η⁻² + 0.710η⁻¹ + 0.668 + 0.0636η
+- η > 1：F_dr ≈ -0.4399 + 0.7099/η - 0.3319/η² + 0.0636/η³
+
+**扩散近似的有效性范围**
+
+定义无量纲参数：
+- 光学厚度：τ = σₜ'L（L是特征长度）
+- 反照率：α' = σₛ'/σₜ'
+
+扩散近似误差：
+$$\epsilon \approx \frac{1}{\sqrt{3\tau(1-\alpha')}}$$
+
+要求 ε < 0.1，需要：
+- τ > 10 且 α' > 0.9
+- 或 τ(1-α') > 3.3
 
 ### 5.3.2 偶极子近似
 
