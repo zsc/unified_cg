@@ -16,6 +16,30 @@ For a stationary random process, this can be written more explicitly as:
 
 The physical interpretation is straightforward: Γ(τ) measures how similar the field is to a time-delayed version of itself. For τ = 0, we have Γ(0) = ⟨|E(t)|²⟩, which is the time-averaged intensity.
 
+### Statistical Foundation
+
+The field E(t) is treated as a complex-valued random process. For ergodic processes, the time average equals the ensemble average:
+
+**Γ(τ) = E[E*(t)E(t+τ)]**
+
+where E[·] denotes expectation value. The autocorrelation function satisfies:
+
+**Γ(-τ) = Γ*(τ)** (Hermitian symmetry)
+
+This follows from stationarity: ⟨E*(t)E(t-τ)⟩ = ⟨E*(t+τ)E(t)⟩ = ⟨E(t)E*(t+τ)⟩*.
+
+### Connection to Interferometry
+
+In a Michelson interferometer with path difference Δ = cτ, the intensity at the output is:
+
+**I_out = I₁ + I₂ + 2Re[√(I₁I₂)γ(τ)exp(iω₀τ)]**
+
+where I₁, I₂ are intensities from the two arms and γ(τ) = Γ(τ)/Γ(0) is the normalized coherence function. The fringe visibility directly measures |γ(τ)|:
+
+**V(τ) = 2√(I₁I₂)|γ(τ)|/(I₁ + I₂)**
+
+For balanced arms (I₁ = I₂), we have V(τ) = |γ(τ)|, providing a direct experimental method to measure temporal coherence.
+
 ### 16.1.1 Coherence Time and Length
 
 The normalized degree of temporal coherence is:
@@ -54,6 +78,26 @@ This Fourier transform relationship implies a fundamental uncertainty principle:
 
 where K is a constant of order unity depending on how the widths are defined.
 
+#### Derivation of the Uncertainty Principle
+
+Starting from the Schwarz inequality for Fourier transforms:
+
+**∫|f(t)|² dt · ∫|F(ω)|² dω ≥ (1/4π)|∫f(t) dt|²**
+
+Applying this to f(t) = tΓ(t) and using integration by parts:
+
+**⟨τ²⟩⟨ω²⟩ ≥ 1/4**
+
+where ⟨τ²⟩ = ∫τ²|γ(τ)|² dτ/∫|γ(τ)|² dτ and ⟨ω²⟩ = ∫(ω-ω₀)²S(ω) dω/∫S(ω) dω.
+
+This gives the minimum uncertainty product:
+
+**Δτ_rms · Δω_rms ≥ 1/2**
+
+For other definitions:
+- FWHM: Δτ_FWHM · Δω_FWHM ≥ 4ln(2)/π ≈ 0.88
+- 1/e width: Δτ_{1/e} · Δω_{1/e} ≥ 1
+
 For specific spectral shapes:
 
 **1. Gaussian Spectrum:**
@@ -91,36 +135,54 @@ Different light sources exhibit vastly different coherence properties:
 - τ_c ~ 10⁻³ - 1 s
 - l_c ~ 300 km - 300,000 km
 - Applications: Interferometry, holography
+- Spectral profile: Nearly Lorentzian due to cavity dynamics
 
 **2. Semiconductor Laser Diode:**
 - Δν ~ 1-10 MHz (single mode)
 - τ_c ~ 10⁻⁷ - 10⁻⁸ s
 - l_c ~ 30 - 300 m
 - Applications: Fiber optic communications, CD/DVD readers
+- Temperature dependence: Δν ∝ T³/² (carrier scattering)
 
 **3. Light Emitting Diode (LED):**
 - Δν ~ 10 THz (Δλ ~ 30 nm for visible)
 - τ_c ~ 10⁻¹⁴ s
 - l_c ~ 3 μm
 - Applications: Display technology, illumination
+- Spectrum shape: Approximately Gaussian from band-edge emission
 
 **4. Filtered Sunlight (1 nm filter):**
 - Δν ~ 1 THz
 - τ_c ~ 10⁻¹² s  
 - l_c ~ 0.3 mm
 - Natural illumination reference
+- Blackbody spectrum: S(ω) ∝ ω³/(exp(ℏω/k_BT) - 1)
 
 **5. White Light (unfiltered):**
 - Δν ~ 300 THz (400-700 nm range)
 - τ_c ~ 10⁻¹⁵ s
 - l_c ~ 0.3 μm
 - Essentially incoherent for most applications
+- Coherence function: γ(τ) ≈ rect(τ/τ_c)exp(iω_cτ)
 
 **6. Sodium D-line (low pressure lamp):**
 - Δν ~ 500 MHz (Doppler broadened)
 - τ_c ~ 10⁻⁹ s
 - l_c ~ 0.3 m
 - Classic atomic spectral line
+- Fine structure: D₁ (589.6 nm) and D₂ (589.0 nm) doublet
+
+**7. Synchrotron Radiation:**
+- Δν/ν ~ 10⁻³ (typical undulator)
+- τ_c ~ 10⁻¹² s at λ = 1 nm
+- l_c ~ 0.3 mm
+- Highly directional, partially coherent beam
+
+**8. Free Electron Laser (FEL):**
+- Δν/ν ~ 10⁻⁴ - 10⁻³
+- τ_c ~ 10⁻¹¹ - 10⁻¹² s (X-ray regime)
+- l_c ~ 3-30 mm
+- SASE process produces partial temporal coherence
 
 ### 16.1.4 Measurement of Coherence Time
 
@@ -132,11 +194,28 @@ Measure fringe visibility V as function of path difference Δ:
 
 The coherence length l_c is where V drops to 1/e or 1/2.
 
+For quasi-monochromatic light:
+**I(Δ) = I₀[1 + V(Δ)cos(k₀Δ + φ)]**
+
+The visibility envelope V(Δ) directly traces |γ(τ)|. Key considerations:
+- Mechanical stability: Δ stable to λ/20
+- Equal arm balance: Compensate dispersion
+- Detector response: Must resolve fringes
+
 **2. Spectral Analysis:**
 Measure power spectrum S(ω) directly using spectrometer, then calculate:
 **τ_c = 2π/Δω_eff**
 
 where Δω_eff is effective spectral width.
+
+Effective width definitions:
+- RMS width: Δω_rms = √(⟨ω²⟩ - ⟨ω⟩²)
+- FWHM: Full width at half maximum
+- Equivalent width: Δω_eq = ∫S(ω)dω/S_max
+
+Resolution requirements:
+- Spectrometer resolution δω << Δω
+- Free spectral range > full spectrum width
 
 **3. Intensity Correlation:**
 For thermal light, measure intensity correlation function:
@@ -145,11 +224,37 @@ For thermal light, measure intensity correlation function:
 Related to field correlation by:
 **g⁽²⁾(τ) = 1 + |γ(τ)|²**
 
+This is the Hanbury Brown-Twiss effect. Implementation:
+- Fast detectors: Response time << τ_c
+- Correlator: Digital or analog
+- Photon counting: For weak signals
+
+**4. Fourier Transform Spectroscopy:**
+Scan Michelson interferometer over large Δ range:
+**I(Δ) = ∫S(ω)[1 + cos(ωΔ/c)]dω**
+
+Fourier transform gives S(ω):
+**S(ω) ∝ ℱ{I(Δ) - I_∞}**
+
+Advantages:
+- Multiplex advantage (Fellgett)
+- High light gathering (Jacquinot)
+- Accurate wavelength calibration
+
 ## 16.2 Spatial Coherence and Young's Experiment
 
 Spatial coherence describes the correlation between light fields at different spatial points at the same time. Young's double-slit experiment provides the canonical framework for understanding spatial coherence.
 
 The fundamental question of spatial coherence is: given two points P₁ and P₂ in space, how correlated are the optical fields at these points? This correlation determines whether interference fringes can be observed when light from these two points is combined.
+
+### Historical Context and Modern Applications
+
+Young's 1801 experiment not only demonstrated the wave nature of light but established the principle that coherence determines interference visibility. Modern applications include:
+
+- **Stellar interferometry**: Measuring star diameters using baseline correlation
+- **Optical coherence tomography**: Depth imaging using coherence gating
+- **Lithography**: Partial coherence effects in pattern transfer
+- **Quantum optics**: EPR correlations and Bell inequality tests
 
 ### 16.2.1 Mutual Intensity and Visibility
 
@@ -158,6 +263,19 @@ Consider two points P₁ and P₂ illuminated by a source. The mutual intensity 
 **J₁₂ = ⟨E*(P₁,t)E(P₂,t)⟩**
 
 This complex quantity contains both amplitude and phase information about the correlation.
+
+#### Mathematical Structure
+
+The mutual intensity forms a Hermitian matrix:
+
+**J = [J₁₁  J₁₂]**
+**    [J₂₁  J₂₂]**
+
+with properties:
+- J₁₁, J₂₂ ≥ 0 (intensities)
+- J₂₁ = J₁₂* (Hermitian)
+- det(J) ≥ 0 (positive semi-definite)
+- |J₁₂|² ≤ J₁₁J₂₂ (Schwarz inequality)
 
 #### Young's Double Slit Analysis
 
@@ -232,6 +350,19 @@ where Cov is covariance and σᵢ are standard deviations.
 
 For extended sources, each point on the source contributes independently (for incoherent sources), and the total mutual intensity is the sum of contributions.
 
+#### General Formulation
+
+For an extended incoherent source with intensity distribution I_s(r_s), the mutual intensity at observation points r₁, r₂ is:
+
+**J₁₂ = ∫∫∫ I_s(r_s) K*(r₁,r_s)K(r₂,r_s) d³r_s**
+
+where K(r,r_s) is the propagation kernel from source point r_s to observation point r.
+
+In the Fresnel approximation:
+**K(r,r_s) = (exp(ikR)/R) × exp[ik(r-r_s)²/2R]**
+
+where R = |r_z - r_{s,z}| is the axial distance.
+
 #### Circular Source Analysis
 
 Consider a uniformly illuminated circular incoherent source of diameter D at distance z from the observation plane. For two observation points P₁ and P₂ separated by distance d:
@@ -247,6 +378,25 @@ Converting to polar coordinates and integrating:
 **|γ₁₂| = |2J₁(πDd/λz)/(πDd/λz)|**
 
 where J₁ is the first-order Bessel function of the first kind.
+
+#### Detailed Derivation
+
+Starting with polar coordinates (ρ,θ) in the source plane:
+
+**γ₁₂ = (1/πa²) ∫₀^{2π} ∫₀^a exp(ikdρcos(θ)/z) ρ dρ dθ**
+
+The angular integral gives:
+**∫₀^{2π} exp(ikdρcos(θ)/z) dθ = 2πJ₀(kdρ/z)**
+
+where J₀ is the zeroth-order Bessel function. The radial integral becomes:
+
+**γ₁₂ = (2/a²) ∫₀^a J₀(kdρ/z) ρ dρ**
+
+Using the identity ∫₀^x tJ₀(t)dt = xJ₁(x):
+
+**γ₁₂ = 2J₁(kda/z)/(kda/z) = 2J₁(πDd/λz)/(πDd/λz)**
+
+This is the celebrated Airy pattern for coherence.
 
 #### Coherence Radius
 
@@ -442,6 +592,30 @@ In the paraxial approximation, this becomes:
 **γ₁₂ = ℱ{I_s(ξ,η)}|_{(u,v)=(x₁-x₂)/λz, (y₁-y₂)/λz} / ∫∫ I_s(ξ,η) dξdη**
 
 where ℱ denotes the 2D Fourier transform.
+
+#### Rigorous Derivation
+
+Starting from the mutual intensity for an incoherent source:
+
+**J(r₁,r₂) = ∫∫ I_s(r_s) G*(r₁,r_s)G(r₂,r_s) d²r_s**
+
+where G is the Green's function. In free space:
+
+**G(r,r_s) = exp(ik|r-r_s|)/4π|r-r_s|**
+
+For paraxial propagation with z >> |r_⊥|, |r_s|:
+
+**|r-r_s| ≈ z + (r_⊥ - r_s)²/2z**
+
+Substituting and simplifying:
+
+**J(r₁,r₂) = (k/2πz)² exp[ik(|r₁|² - |r₂|²)/2z] × ∫∫ I_s(r_s) exp[ik(r₂-r₁)·r_s/z] d²r_s**
+
+The normalized degree of coherence becomes:
+
+**γ₁₂ = exp[ik(|r₁|² - |r₂|²)/2z] × ℱ{I_s}(k(r₂-r₁)/2πz) / I_total**
+
+For points at equal distance from the axis, the quadratic phase cancels, giving the classic result.
 
 ### 16.4.2 Physical Interpretation
 
