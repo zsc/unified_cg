@@ -1,1149 +1,1160 @@
-# Chapter 15: Scalar Wave Optics Foundations
+# 第15章：标量波动光学基础
 
-In this chapter, we transition from geometric optics and volume rendering to wave optics, establishing the mathematical foundation for understanding light as an electromagnetic wave. We'll derive the scalar wave approximation from Maxwell's equations and explore fundamental diffraction phenomena that become crucial when wavelength-scale effects matter. This bridge from ray-based to wave-based descriptions enriches our understanding of light transport and sets the stage for advanced optical phenomena in computer graphics.
+在本章中，我们将从几何光学和体渲染过渡到波动光学，为理解光作为电磁波建立数学基础。我们将从麦克斯韦方程组推导出标量波近似，并探讨当波长尺度效应变得至关重要时，变得关键的基本衍射现象。这种从基于射线到基于波的描述的转变丰富了我们对光传输的理解，并为计算机图形学中的高级光学现象奠定了基础。
 
-The transition from rays to waves fundamentally changes how we model light transport. Where geometric optics treats light as infinitesimal rays following straight paths, wave optics reveals that light spreads, diffracts around edges, and interferes with itself. These effects become essential when:
-- Feature sizes approach the wavelength of light (~400-700nm)
-- Coherent illumination is present (lasers, some LEDs)
-- High-fidelity rendering of optical phenomena is required
-- Microscale surface structures create visual effects
+从射线到波的转变从根本上改变了我们对光传输的建模方式。几何光学将光视为遵循直线路径的无穷小射线，而波动光学揭示了光会扩散、绕过边缘衍射并自身干涉。当以下情况发生时，这些效应变得至关重要：
+- 特征尺寸接近光的波长（约400-700纳米）
+- 存在相干照明（激光、某些LED）
+- 需要高保真渲染光学现象
+- 微尺度表面结构产生视觉效果
 
-We'll see how the volume rendering equation naturally extends to include wave phenomena through the Green's function formalism, providing a unified framework that encompasses both ray and wave regimes.
+我们将看到体渲染方程如何通过格林函数形式自然地扩展以包含波动现象，提供了一个包含射线和波两种机制的统一框架。
 
-## Mathematical Foundations and Context
+## 数学基础与背景
 
-Before diving into wave equations, let's establish the mathematical context. The transition from geometric to wave optics represents a fundamental shift in how we describe light propagation:
+在深入研究波动方程之前，让我们建立数学背景。从几何光学到波动光学的转变代表了我们描述光传播方式的根本性转变：
 
-**Geometric Optics**: Light intensity I(x,ω) follows rays according to:
-dI/ds = -σₜI along ray parameterized by s
+**几何光学**：光强度 $I(\mathbf{x},\omega)$ 沿射线遵循：
+$\frac{dI}{ds} = -\sigma_t I$ 沿由 $s$ 参数化的射线
 
-**Wave Optics**: Complex field amplitude u(x,t) satisfies wave equations:
-∇²u - (1/c²)∂²u/∂t² = 0
+**波动光学**：复场振幅 $u(\mathbf{x},t)$ 满足波动方程：
+$\nabla^2 u - \frac{1}{c^2}\frac{\partial^2 u}{\partial t^2} = 0$
 
-The connection emerges through the **eikonal approximation**. For highly oscillatory fields u = A exp(ikS), where k >> 1:
-- Amplitude A varies slowly
-- Phase S satisfies the eikonal equation: |∇S|² = n²
-- Rays are orthogonal to surfaces of constant phase
+这种联系通过**程函近似**出现。对于高度振荡的场 $u = A \exp(ikS)$，其中 $k \gg 1$：
+- 振幅 $A$ 变化缓慢
+- 相位 $S$ 满足程函方程：$|\nabla S|^2 = n^2$
+- 射线与等相位面正交
 
-This chapter explores what happens when k is finite, revealing diffraction, interference, and the wave nature of light.
+本章探讨当 $k$ 有限时会发生什么，揭示衍射、干涉和光的波动性质。
 
-## 15.1 From Maxwell's Equations to the Helmholtz Equation
+## 15.1 从麦克斯韦方程组到亥姆霍兹方程
 
-### Vector Wave Equation
+### 矢量波动方程
 
-We begin with Maxwell's equations in a source-free, homogeneous medium:
+我们从无源、均匀介质中的麦克斯韦方程组开始：
 
-∇ × **E** = -∂**B**/∂t  (Faraday's law)
-∇ × **H** = ∂**D**/∂t   (Ampère-Maxwell law)
-∇ · **D** = 0           (No free charges)
-∇ · **B** = 0           (No magnetic monopoles)
+$\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t}$ (法拉第定律)
+$\nabla \times \mathbf{H} = \frac{\partial \mathbf{D}}{\partial t}$ (安培-麦克斯韦定律)
+$\nabla \cdot \mathbf{D} = 0$ (无自由电荷)
+$\nabla \cdot \mathbf{B} = 0$ (无磁单极子)
 
-For linear, isotropic media: **D** = ε**E** and **B** = μ**H**, where ε = ε₀εᵣ and μ = μ₀μᵣ.
+对于线性、各向同性介质：$\mathbf{D} = \varepsilon \mathbf{E}$ 和 $\mathbf{B} = \mu \mathbf{H}$，其中 $\varepsilon = \varepsilon_0 \varepsilon_r$ 和 $\mu = \mu_0 \mu_r$。
 
-These equations embody fundamental electromagnetic principles:
-- **Faraday's law**: Time-varying magnetic fields induce electric fields
-- **Ampère-Maxwell law**: Time-varying electric fields (displacement current) and conduction currents create magnetic fields
-- **Gauss's law**: Electric field divergence relates to charge density
-- **No monopoles**: Magnetic field lines are always closed loops
+这些方程体现了基本的电磁原理：
+- **法拉第定律**：时变磁场产生电场
+- **安培-麦克斯韦定律**：时变电场（位移电流）和传导电流产生磁场
+- **高斯定律**：电场散度与电荷密度相关
+- **无单极子**：磁力线总是闭合回路
 
-Taking the curl of Faraday's law:
-∇ × (∇ × **E**) = -∇ × (∂**B**/∂t) = -∂(∇ × **B**)/∂t = -μ∂(∇ × **H**)/∂t
+对法拉第定律取旋度：
+$\nabla \times (\nabla \times \mathbf{E}) = -\nabla \times (\frac{\partial \mathbf{B}}{\partial t}) = -\frac{\partial}{\partial t}(\nabla \times \mathbf{B}) = -\mu\frac{\partial}{\partial t}(\nabla \times \mathbf{H})$
 
-Using the vector identity ∇ × (∇ × **E**) = ∇(∇ · **E**) - ∇²**E** and noting that ∇ · **E** = 0 in source-free regions:
+使用矢量恒等式 $\nabla \times (\nabla \times \mathbf{E}) = \nabla(\nabla \cdot \mathbf{E}) - \nabla^2 \mathbf{E}$ 并注意到在无源区域 $\nabla \cdot \mathbf{E} = 0$：
 
--∇²**E** = -μ∂(∇ × **H**)/∂t = -μ∂(∂**D**/∂t)/∂t = -με∂²**E**/∂t²
+$-\nabla^2 \mathbf{E} = -\mu\frac{\partial}{\partial t}(\nabla \times \mathbf{H}) = -\mu\frac{\partial}{\partial t}(\frac{\partial \mathbf{D}}{\partial t}) = -\mu\varepsilon\frac{\partial^2 \mathbf{E}}{\partial t^2}$
 
-This yields the vector wave equation:
+这产生了矢量波动方程：
 
-∇²**E** - με(∂²**E**/∂t²) = 0
+$\nabla^2 \mathbf{E} - \mu\varepsilon(\frac{\partial^2 \mathbf{E}}{\partial t^2}) = 0$
 
-Or in more compact form:
-∇²**E** - (1/v²)(∂²**E**/∂t²) = 0
+或更紧凑的形式：
+$\nabla^2 \mathbf{E} - \frac{1}{v^2}(\frac{\partial^2 \mathbf{E}}{\partial t^2}) = 0$
 
-The wave velocity is v = 1/√(με) = c/n, where:
-- c = 1/√(μ₀ε₀) ≈ 2.998×10⁸ m/s is the speed of light in vacuum
-- n = √(εᵣμᵣ) ≈ √εᵣ is the refractive index (since μᵣ ≈ 1 for most optical materials)
+波速为 $v = \frac{1}{\sqrt{\mu\varepsilon}} = \frac{c}{n}$，其中：
+- $c = \frac{1}{\sqrt{\mu_0\varepsilon_0}} \approx 2.998 \times 10^8 \text{ m/s}$ 是真空中的光速
+- $n = \sqrt{\varepsilon_r\mu_r} \approx \sqrt{\varepsilon_r}$ 是折射率（因为对于大多数光学材料 $\mu_r \approx 1$）
 
-An identical equation holds for the magnetic field **H**. These vector equations couple the three spatial components of the fields through:
-1. **Boundary conditions** at material interfaces
-2. **Transversality constraint**: ∇ · **E** = 0 implies **k** · **E** = 0 for plane waves
-3. **Impedance relations**: Z = √(μ/ε) relates **E** and **H** magnitudes
+磁场 $\mathbf{H}$ 也有一个相同的方程。这些矢量方程通过以下方式耦合场的三个空间分量：
+1. 材料界面处的**边界条件**
+2. **横向约束**：$\nabla \cdot \mathbf{E} = 0$ 意味着对于平面波 $\mathbf{k} \cdot \mathbf{E} = 0$
+3. **阻抗关系**：$Z = \sqrt{\mu/\varepsilon}$ 关联 $\mathbf{E}$ 和 $\mathbf{H}$ 的大小
 
-### Mathematical Structure
+### 数学结构
 
-The vector wave equation exhibits several key mathematical properties:
+矢量波动方程表现出几个关键的数学性质：
 
-**Linearity**: Solutions can be superposed
-If **E₁** and **E₂** are solutions, then α**E₁** + β**E₂** is also a solution
+**线性**：解可以叠加
+如果 $\mathbf{E}_1$ 和 $\mathbf{E}_2$ 是解，那么 $\alpha\mathbf{E}_1 + \beta\mathbf{E}_2$ 也是解
 
-**Time-reversal symmetry**: Replace t → -t yields valid solutions
-Forward and backward propagating waves are equally valid
+**时间反演对称性**：将 $t \rightarrow -t$ 替换会产生有效解
+向前和向后传播的波同样有效
 
-**Gauge invariance**: In vacuum, we can choose ∇ · **A** = 0 (Coulomb gauge) or 
-∂Φ/∂t + ∇ · **A** = 0 (Lorenz gauge), where **E** = -∇Φ - ∂**A**/∂t
+**规范不变性**：在真空中，我们可以选择 $\nabla \cdot \mathbf{A} = 0$（库仑规范）或
+$\frac{\partial\Phi}{\partial t} + \nabla \cdot \mathbf{A} = 0$（洛伦兹规范），其中 $\mathbf{E} = -\nabla\Phi - \frac{\partial\mathbf{A}}{\partial t}$
 
-**Energy conservation**: The Poynting vector **S** = **E** × **H** satisfies:
-∂u/∂t + ∇ · **S** = 0
-where u = (ε|**E**|² + μ|**H**|²)/2 is the electromagnetic energy density
+**能量守恒**：坡印亭矢量 $\mathbf{S} = \mathbf{E} \times \mathbf{H}$ 满足：
+$\frac{\partial u}{\partial t} + \nabla \cdot \mathbf{S} = 0$
+其中 $u = \frac{1}{2}(\varepsilon|\mathbf{E}|^2 + \mu|\mathbf{H}|^2)$ 是电磁能量密度
 
-### Scalar Wave Approximation
+### 标量波近似
 
-For many optical phenomena, we can approximate the vector field with a scalar field U(r,t). This approximation is valid when:
-- The medium is homogeneous over wavelength scales (∇n·λ << n)
-- Polarization effects are negligible (unpolarized or fixed polarization)
-- The field varies slowly compared to wavelength (paraxial approximation)
-- We're far from material interfaces where boundary conditions couple components
+对于许多光学现象，我们可以用标量场 $U(\mathbf{r},t)$ 来近似矢量场。这种近似在以下情况下有效：
+- 介质在波长尺度上是均匀的（$\nabla n \cdot \lambda \ll n$）
+- 偏振效应可以忽略不计（非偏振或固定偏振）
+- 场相对于波长变化缓慢（近轴近似）
+- 我们远离材料界面，其中边界条件耦合分量
 
-#### Rigorous Derivation
+#### 严格推导
 
-To derive the scalar approximation systematically, we start with the vector Helmholtz equation for each component. Consider a predominantly z-propagating wave with electric field:
+为了系统地推导标量近似，我们从每个分量的矢量亥姆霍兹方程开始。考虑一个主要沿 $z$ 传播的波，其电场为：
 
-**E** = E_x **x̂** + E_y **ŷ** + E_z **ẑ**
+$\mathbf{E} = E_x \mathbf{\hat{x}} + E_y \mathbf{\hat{y}} + E_z \mathbf{\hat{z}}$
 
-From Maxwell's equations, the transversality condition ∇ · **E** = 0 gives:
-∂E_x/∂x + ∂E_y/∂y + ∂E_z/∂z = 0
+根据麦克斯韦方程组，横向条件 $\nabla \cdot \mathbf{E} = 0$ 给出：
+$\frac{\partial E_x}{\partial x} + \frac{\partial E_y}{\partial y} + \frac{\partial E_z}{\partial z} = 0$
 
-For paraxial waves where ∂/∂z ~ ik (rapid phase variation) but transverse derivatives are small:
-E_z ≈ -(1/ik)(∂E_x/∂x + ∂E_y/∂y)
+对于近轴波，其中 $\frac{\partial}{\partial z} \sim ik$（快速相位变化）但横向导数很小：
+$E_z \approx -\frac{1}{ik}(\frac{\partial E_x}{\partial x} + \frac{\partial E_y}{\partial y})$
 
-This shows E_z << E_x, E_y for paraxial propagation, justifying focus on transverse components.
-
-Each transverse component satisfies:
-∇²E_⊥ - (1/v²)(∂²E_⊥/∂t²) = 0
-
-For monochromatic fields with angular frequency ω:
-E_⊥(r,t) = Re[e_⊥(r)e^(-iωt)]
+这表明对于近轴传播，$E_z \ll E_x, E_y$，从而证明了对横向分量的关注是合理的。
 
-The complex amplitude representation separates time and space:
-- Temporal: e^(-iωt) with ∂²/∂t² → -ω²
-- Spatial: e_⊥(r) contains all spatial variation
+每个横向分量满足：
+$\nabla^2 E_\perp - \frac{1}{v^2}(\frac{\partial^2 E_\perp}{\partial t^2}) = 0$
 
-Substituting:
-∇²e_⊥ + (ω²/v²)e_⊥ = 0
+对于角频率为 $\omega$ 的单色场：
+$E_\perp(\mathbf{r},t) = \text{Re}[e_\perp(\mathbf{r})e^{-i\omega t}]$
 
-Defining the wavenumber k = ω/v = 2πn/λ, we get:
+复振幅表示将时间和空间分离：
+- 时间：$e^{-i\omega t}$，其中 $\frac{\partial^2}{\partial t^2} \rightarrow -\omega^2$
+- 空间：$e_\perp(\mathbf{r})$ 包含所有空间变化
 
-∇²u + k²u = 0
+代入：
+$\nabla^2 e_\perp + (\frac{\omega^2}{v^2})e_\perp = 0$
 
-This is the **Helmholtz equation**, where u represents any scalar component of the field.
+定义波数 $k = \omega/v = 2\pi n/\lambda$，我们得到：
 
-#### Validity Limits
+$\nabla^2 u + k^2 u = 0$
 
-The scalar approximation breaks down when:
+这就是**亥姆霍兹方程**，其中 $u$ 代表场的任何标量分量。
 
-1. **High numerical aperture** (NA > 0.6):
-   - Vector effects: longitudinal fields become significant
-   - Polarization coupling in tight focusing
-   - Use vector diffraction theory (Richards-Wolf)
+#### 有效性限制
 
-2. **Near material interfaces**:
-   - Boundary conditions couple field components
-   - Fresnel coefficients depend on polarization
-   - Surface plasmons and guided modes
+标量近似在以下情况下失效：
 
-3. **Subwavelength structures**:
-   - Near-field enhancement
-   - Evanescent waves dominate
-   - Full vector treatment required
+1. **高数值孔径**（NA > 0.6）：
+   - 矢量效应：纵向场变得显著
+   - 紧密聚焦中的偏振耦合
+   - 使用矢量衍射理论（Richards-Wolf）
 
-4. **Birefringent media**:
-   - Different propagation for orthogonal polarizations
-   - Coupled wave equations
-   - Jones or Mueller calculus needed
+2. **靠近材料界面**：
+   - 边界条件耦合场分量
+   - 菲涅耳系数取决于偏振
+   - 表面等离子体和导模
 
-### Physical Interpretation
+3. **亚波长结构**：
+   - 近场增强
+   - 倏逝波占主导
+   - 需要完整的矢量处理
 
-The Helmholtz equation describes monochromatic wave propagation where:
-- k = 2πn/λ represents the spatial frequency (rad/m)
-- The equation balances spatial curvature (∇²u) against phase accumulation (k²u)
-- Solutions form a complete basis for arbitrary fields
+4. **双折射介质**：
+   - 正交偏振的不同传播
+   - 耦合波动方程
+   - 需要琼斯或穆勒微积分
 
-#### Fundamental Solutions
+### 物理诠释
 
-1. **Plane waves**: u = A exp(i**k**·**r**)
-   - Wavevector **k** = k(sin θ cos φ **x̂** + sin θ sin φ **ŷ** + cos θ **ẑ**)
-   - |**k**| = k = 2πn/λ
-   - Constant amplitude surfaces perpendicular to **k**
-   - Energy flux along **k** direction
-   - Basis for angular spectrum representation
+亥姆霍兹方程描述了单色波传播，其中：
+- $k = 2\pi n/\lambda$ 表示空间频率（弧度/米）
+- 该方程平衡了空间曲率（$\nabla^2 u$）与相位累积（$k^2 u$）
+- 解构成了任意场的完整基
 
-   Verification: ∇²[exp(i**k**·**r**)] = -k²exp(i**k**·**r**) ✓
+#### 基本解
 
-2. **Spherical waves**: u = (A/r)exp(±ikr)
-   - Point source/sink at origin
-   - ± for outgoing/incoming waves
-   - Amplitude ∝ 1/r (energy conservation)
-   - Intensity ∝ 1/r² (inverse square law)
-   - Phase surfaces are concentric spheres
+1. **平面波**：$u = A \exp(i\mathbf{k}\cdot\mathbf{r})$
+   - 波矢量 $\mathbf{k} = k(\sin \theta \cos \phi \mathbf{\hat{x}} + \sin \theta \sin \phi \mathbf{\hat{y}} + \cos \theta \mathbf{\hat{z}})$
+   - $|\mathbf{k}| = k = 2\pi n/\lambda$
+   - 恒定振幅面垂直于 $\mathbf{k}$
+   - 能量流沿 $\mathbf{k}$ 方向
+   - 角谱表示的基础
 
-   In spherical coordinates with radial symmetry:
-   ∇²u = (1/r²)d/dr(r²du/dr) = (A/r²)d/dr[r²d/dr((1/r)e^(ikr))]
-   After calculation: ∇²u = -k²u ✓
+   验证：$\nabla^2[\exp(i\mathbf{k}\cdot\mathbf{r})] = -k^2\exp(i\mathbf{k}\cdot\mathbf{r})$ ✓
 
-3. **Gaussian beams**: u = (A₀/q(z))exp[ikz + ikr²/2q(z)]
-   
-   Complex beam parameter: q(z) = z - iz₀ where z₀ = πw₀²/λ
-   
-   Beam properties:
-   - Beam width: w(z) = w₀√(1 + (z/z₀)²)
-   - Wavefront radius: R(z) = z(1 + (z₀/z)²)
-   - Gouy phase: ζ(z) = arctan(z/z₀)
-   - Rayleigh range: z₀ (beam doubles in area)
-   
-   Near axis (r << w): Satisfies paraxial wave equation
-   ∂²u/∂x² + ∂²u/∂y² + 2ik∂u/∂z = 0
+2. **球面波**：$u = (A/r)\exp(\pm ikr)$
+   - 原点处的点源/汇
+   - $\pm$ 用于出射/入射波
+   - 振幅 $\propto 1/r$（能量守恒）
+   - 强度 $\propto 1/r^2$（平方反比定律）
+   - 相位面是同心球
 
-4. **Bessel beams**: u = J₀(k_⊥r)exp(ik_z z)
-   - Non-diffracting solution
-   - k_⊥² + k_z² = k²
-   - Infinite energy (not physically realizable)
-   - Approximated by finite apertures
+   在具有径向对称性的球坐标中：
+   $\nabla^2 u = \frac{1}{r^2}\frac{d}{dr}(r^2\frac{du}{dr}) = \frac{A}{r^2}\frac{d}{dr}[r^2\frac{d}{dr}(\frac{1}{r}e^{ikr})]$
+   计算后：$\nabla^2 u = -k^2 u$ ✓
 
-5. **Hermite-Gaussian modes**: u_{mn} = H_m(√2x/w)H_n(√2y/w)exp(-r²/w²)×[Gaussian beam factor]
-   - H_m: Hermite polynomials
-   - Orthogonal mode basis
-   - Rectangular symmetry
-   - Important for laser cavities
+3. **高斯光束**：$u = (A_0/q(z))\exp[ikz + ikr^2/2q(z)]$
 
-6. **Laguerre-Gaussian modes**: u_{pl} = (r/w)^|l| L_p^|l|(2r²/w²)exp(-r²/w²)exp(ilφ)×[Gaussian beam factor]
-   - L_p^|l|: Associated Laguerre polynomials
-   - Orbital angular momentum: l𝗁 per photon
-   - Cylindrical symmetry
-   - Optical vortices for l ≠ 0
+   复光束参数：$q(z) = z - iz_0$，其中 $z_0 = \pi w_0^2/\lambda$
 
-### Connection to Volume Rendering
+   光束特性：
+   - 光束宽度：$w(z) = w_0\sqrt{1 + (z/z_0)^2}$
+   - 波前半径：$R(z) = z(1 + (z_0/z)^2)$
+   - 戈伊相移：$\zeta(z) = \arctan(z/z_0)$
+   - 瑞利范围：$z_0$（光束面积加倍）
 
-The Helmholtz equation naturally connects to our volume rendering framework through the Green's function formalism. This connection reveals how wave optics emerges from and extends the radiative transfer equation.
+   近轴（$r \ll w$）：满足近轴波动方程
+   $\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} + 2ik\frac{\partial u}{\partial z} = 0$
 
-#### Green's Function Formulation
+4. **贝塞尔光束**：$u = J_0(k_\perp r)\exp(ik_z z)$
+   - 非衍射解
+   - $k_\perp^2 + k_z^2 = k^2$
+   - 无限能量（物理上不可实现）
+   - 通过有限孔径近似
 
-Consider the frequency-domain rendering equation with coherent illumination:
+5. **厄米-高斯模式**：$u_{mn} = H_m(\sqrt{2}x/w)H_n(\sqrt{2}y/w)\exp(-r^2/w^2)\times[\text{高斯光束因子}]$
+   - $H_m$：厄米多项式
+   - 正交模式基
+   - 矩形对称性
+   - 对激光腔很重要
 
-L(x,ω) = L₀(x,ω) + ∫ σₛ(x')p(x',ω'→ω)G(x,x')L(x',ω')dV'
+6. **拉盖尔-高斯模式**：$u_{pl} = (r/w)^{|l|} L_p^{|l|}(2r^2/w^2)\exp(-r^2/w^2)\exp(il\phi)\times[\text{高斯光束因子}]$
+   - $L_p^{|l|}$：广义拉盖尔多项式
+   - 轨道角动量：每个光子 $l\hbar$
+   - 圆柱对称性
+   - 对于 $l \neq 0$ 的光学涡旋
 
-The Green's function G(x,x') represents coherent propagation from x' to x and satisfies:
+### 与体渲染的联系
 
-(∇² + k²)G(x,x') = -δ(x-x')
+亥姆霍兹方程通过格林函数形式自然地与我们的体渲染框架联系起来。这种联系揭示了波动光学如何从辐射传输方程中产生并扩展。
 
-This inhomogeneous Helmholtz equation has the fundamental solution:
-G(x,x') = exp(ik|x-x'|)/(4π|x-x'|)
+#### 格林函数公式
 
-Physical interpretation:
-- Outgoing spherical wave from point source at x'
-- Phase accumulation: k|x-x'|
-- Amplitude decay: 1/|x-x'|
-- Satisfies Sommerfeld radiation condition
+考虑相干照明的频域渲染方程：
 
-#### Scale-Dependent Regimes
+$L(\mathbf{x},\omega) = L_0(\mathbf{x},\omega) + \int \sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\rightarrow\omega)G(\mathbf{x},\mathbf{x}')L(\mathbf{x}',\omega')dV'$
 
-The parameter kr = k|x-x'| determines the propagation regime:
+格林函数 $G(\mathbf{x},\mathbf{x}')$ 表示从 $\mathbf{x}'$ 到 $\mathbf{x}$ 的相干传播，并满足：
 
-1. **Geometric optics limit** (kr >> 1):
-   - Rapid phase oscillation: exp(ikr)
-   - Stationary phase approximation applies
-   - Only paths with ∇φ = 0 contribute
-   - Green's function → δ-function along rays
-   
-   G(x,x') ≈ δ(s - |x-x'|)/|∂s/∂x'|
-   
-   where s parameterizes the ray from x' to x
+$(\nabla^2 + k^2)G(\mathbf{x},\mathbf{x}') = -\delta(\mathbf{x}-\mathbf{x}')$
 
-2. **Wave regime** (kr ~ 1):
-   - Phase and amplitude comparable
-   - Diffraction effects significant
-   - Interference between multiple paths
-   - Full Green's function needed
+这个非齐次亥姆霍兹方程有基本解：
+$G(\mathbf{x},\mathbf{x}') = \frac{\exp(ik|\mathbf{x}-\mathbf{x}'|)}{4\pi|\mathbf{x}-\mathbf{x}'|}$
 
-3. **Near-field** (kr << 1):
-   - Static field approximation
-   - G(x,x') ≈ 1/(4π|x-x'|) (Coulomb-like)
-   - Evanescent waves dominate
-   - Non-propagating near-field coupling
+物理诠释：
+- 从 $\mathbf{x}'$ 处的点源发出的出射球面波
+- 相位累积：$k|\mathbf{x}-\mathbf{x}'|$
+- 振幅衰减：$1/|\mathbf{x}-\mathbf{x}'|$
+- 满足索末菲辐射条件
 
-#### Coherent vs Incoherent Rendering
+#### 尺度相关机制
 
-The transition between coherent and incoherent rendering depends on source coherence:
+参数 $kr = k|\mathbf{x}-\mathbf{x}'|$ 决定了传播机制：
 
-**Coherent sources** (lasers, single-mode fibers):
-- Fields add: E_total = E₁ + E₂ + ...
-- Cross terms: |E_total|² = |E₁|² + |E₂|² + 2Re(E₁*E₂) + ...
-- Interference fringes with visibility V = |γ₁₂|
+1. **几何光学极限**（$kr \gg 1$）：
+   - 快速相位振荡：$\exp(ikr)$
+   - 驻相近似适用
+   - 只有 $\nabla\phi = 0$ 的路径有贡献
+   - 格林函数 $\rightarrow$ 沿射线的 $\delta$-函数
 
-**Partially coherent sources** (LEDs, thermal):
-- Mutual coherence function: Γ(x₁,x₂) = ⟨E*(x₁)E(x₂)⟩
-- Van Cittert-Zernike theorem relates source size to coherence
-- Coherence length: l_c = λ²/(Δλ) 
-- Coherence area: A_c = λ²R²/A_source
+   $G(\mathbf{x},\mathbf{x}') \approx \frac{\delta(s - |\mathbf{x}-\mathbf{x}'|)}{|\partial s/\partial \mathbf{x}'|}$
 
-**Incoherent limit** (most rendering):
-- Intensities add: I_total = I₁ + I₂ + ...
-- No interference terms
-- Ray optics sufficient
-- Standard rendering equation applies
+   其中 $s$ 参数化从 $\mathbf{x}'$ 到 $\mathbf{x}$ 的射线
 
-#### Extended Volume Rendering Equation
+2. **波机制**（$kr \sim 1$）：
+   - 相位和振幅相当
+   - 衍射效应显著
+   - 多条路径之间的干涉
+   - 需要完整的格林函数
 
-For partial coherence, the rendering equation generalizes to:
+3. **近场**（$kr \ll 1$）：
+   - 静态场近似
+   - $G(\mathbf{x},\mathbf{x}') \approx \frac{1}{4\pi|\mathbf{x}-\mathbf{x}'|}$（类库仑）
+   - 倏逝波占主导
+   - 非传播近场耦合
 
-L(x₁,x₂,ω) = L₀(x₁,x₂,ω) + ∬ σₛ(x'₁)σₛ(x'₂)p₁p₂G*(x₁,x'₁)G(x₂,x'₂)L(x'₁,x'₂,ω)dx'₁dx'₂
+#### 相干与非相干渲染
 
-This 6D equation reduces to:
-- Standard rendering (x₁ = x₂, diagonal terms only)
-- Coherent rendering (factorizable L)
-- Speckle/interference (off-diagonal terms)
+相干和非相干渲染之间的转换取决于光源相干性：
 
-#### Practical Implications
+**相干光源**（激光、单模光纤）：
+- 场叠加：$\mathbf{E}_{\text{total}} = \mathbf{E}_1 + \mathbf{E}_2 + \dots$
+- 交叉项：$|\mathbf{E}_{\text{total}}|^2 = |\mathbf{E}_1|^2 + |\mathbf{E}_2|^2 + 2\text{Re}(\mathbf{E}_1^*\mathbf{E}_2) + \dots$
+- 干涉条纹，可见度 $V = |\gamma_{12}|$
 
-1. **Multi-scale rendering**:
-   - Geometric optics: λ << feature size
-   - Wave corrections: λ ~ feature size  
-   - Full wave solution: λ >> feature size
+**部分相干光源**（LED、热源）：
+- 互相关函数：$\Gamma(\mathbf{x}_1,\mathbf{x}_2) = \langle \mathbf{E}^*(\mathbf{x}_1)\mathbf{E}(\mathbf{x}_2) \rangle$
+- 范西特-泽尼克定理将光源尺寸与相干性关联起来
+- 相干长度：$l_c = \lambda^2/(\Delta\lambda)$
+- 相干面积：$A_c = \lambda^2 R^2/A_{\text{source}}$
 
-2. **Unified algorithms**:
-   - Path tracing with phase tracking
-   - Beam propagation methods
-   - Hybrid ray-wave techniques
+**非相干极限**（大多数渲染）：
+- 强度叠加：$I_{\text{total}} = I_1 + I_2 + \dots$
+- 无干涉项
+- 射线光学足够
+- 标准渲染方程适用
 
-3. **New phenomena**:
-   - Diffraction from edges/apertures
-   - Interference in thin films
-   - Speckle from rough surfaces
-   - Focusing and caustics beyond geometric limit
+#### 扩展体渲染方程
 
-## 15.2 Huygens-Fresnel Principle
+对于部分相干性，渲染方程推广为：
 
-### Historical Development
+$L(\mathbf{x}_1,\mathbf{x}_2,\omega) = L_0(\mathbf{x}_1,\mathbf{x}_2,\omega) + \iint \sigma_s(\mathbf{x}'_1)\sigma_s(\mathbf{x}'_2)p_1 p_2 G^*(\mathbf{x}_1,\mathbf{x}'_1)G(\mathbf{x}_2,\mathbf{x}'_2)L(\mathbf{x}'_1,\mathbf{x}'_2,\omega)d\mathbf{x}'_1 d\mathbf{x}'_2$
 
-Christiaan Huygens (1678) proposed that each point on a wavefront acts as a source of secondary spherical wavelets. Augustin-Jean Fresnel (1815) added the principle of interference, explaining diffraction patterns through the coherent superposition of these wavelets.
+这个6D方程简化为：
+- 标准渲染（$\mathbf{x}_1 = \mathbf{x}_2$，仅对角项）
+- 相干渲染（可分解的 $L$）
+- 散斑/干涉（非对角项）
 
-### Mathematical Formulation
+#### 实际意义
 
-Consider a wavefront Σ at time t. The field at point P at time t + Δt is:
+1. **多尺度渲染**：
+   - 几何光学：$\lambda \ll$ 特征尺寸
+   - 波修正：$\lambda \sim$ 特征尺寸
+   - 全波解：$\lambda \gg$ 特征尺寸
 
-u(P) = (1/iλ) ∫∫_Σ u(Q) (e^(ikr))/r K(χ) dS
+2. **统一算法**：
+   - 带有相位跟踪的路径追踪
+   - 光束传播方法
+   - 混合射线-波技术
 
-where:
-- Q is a point on the wavefront Σ
-- r = |P - Q| is the distance
-- K(χ) is the obliquity factor
-- χ is the angle between normal and P-Q direction
+3. **新现象**：
+   - 边缘/孔径衍射
+   - 薄膜干涉
+   - 粗糙表面散斑
+   - 超越几何极限的聚焦和焦散
 
-### Obliquity Factor
+## 15.2 惠更斯-菲涅耳原理
 
-Fresnel originally proposed K(χ) = (1 + cos χ)/2, which:
-- Equals 1 for forward propagation (χ = 0)
-- Equals 0 for backward propagation (χ = π)
-- Provides smooth angular dependence
+### 历史发展
 
-The physical meaning:
-- cos χ term: projection of wavelet onto observation direction
-- Constant term: isotropic contribution
-- Together: cardioid radiation pattern
+克里斯蒂安·惠更斯（1678年）提出波前上的每个点都可视为次级球面波的波源。奥古斯丁-让·菲涅耳（1815年）补充了干涉原理，通过这些波的相干叠加解释了衍射图样。
 
-This obliquity factor ensures:
-1. No backward propagating waves (causality)
-2. Maximum contribution in forward direction
-3. Smooth variation preventing discontinuities
-4. Energy conservation in the far field
+### 数学公式
 
-### Kirchhoff's Rigorous Formulation
+考虑在时间 $t$ 的波前 $\Sigma$。在时间 $t + \Delta t$ 处点 $P$ 的场为：
 
-Gustav Kirchhoff (1882) derived the Huygens-Fresnel principle from the Helmholtz equation using Green's theorem:
+$u(P) = \frac{1}{i\lambda} \iint_\Sigma u(Q) \frac{e^{ikr}}{r} K(\chi) dS$
 
-u(P) = (1/4π) ∫∫_Σ [e^(ikr)/r ∂u/∂n - u ∂/∂n(e^(ikr)/r)] dS
+其中：
+- $Q$ 是波前 $\Sigma$ 上的一个点
+- $r = |P - Q|$ 是距离
+- $K(\chi)$ 是倾斜因子
+- $\chi$ 是法线与 $P-Q$ 方向之间的角度
 
-For an aperture in an opaque screen with incident field u_inc:
-- On aperture: u = u_inc, ∂u/∂n = ∂u_inc/∂n
-- On screen: u = 0, ∂u/∂n = 0
+### 倾斜因子
 
-This yields the **Kirchhoff diffraction formula**:
+菲涅耳最初提出 $K(\chi) = (1 + \cos \chi)/2$，它：
+- 对于向前传播（$\chi = 0$）等于1
+- 对于向后传播（$\chi = \pi$）等于0
+- 提供平滑的角度依赖性
 
-u(P) = (1/iλ) ∫∫_aperture u_inc(Q) (e^(ikr))/r (1 + cos χ)/2 dS
+物理意义：
+- $\cos \chi$ 项：波小波在观察方向上的投影
+- 常数项：各向同性贡献
+- 共同作用：心形辐射图样
 
-### Connection to Rendering
+这个倾斜因子确保：
+1. 没有向后传播的波（因果关系）
+2. 向前方向贡献最大
+3. 平滑变化防止不连续性
+4. 远场能量守恒
 
-The Huygens-Fresnel principle parallels importance sampling in rendering:
+### 基尔霍夫严格公式
 
-| Wave Optics | Rendering |
+古斯塔夫·基尔霍夫（1882年）使用格林定理从亥姆霍兹方程推导了惠更斯-菲涅耳原理：
+
+$u(P) = \frac{1}{4\pi} \iint_\Sigma [\frac{e^{ikr}}{r} \frac{\partial u}{\partial n} - u \frac{\partial}{\partial n}(\frac{e^{ikr}}{r})] dS$
+
+对于不透明屏幕中的孔径，入射场为 $u_{\text{inc}}$：
+- 在孔径上：$u = u_{\text{inc}}$，$\frac{\partial u}{\partial n} = \frac{\partial u_{\text{inc}}}{\partial n}$
+- 在屏幕上：$u = 0$，$\frac{\partial u}{\partial n} = 0$
+
+这产生了**基尔霍夫衍射公式**：
+
+$u(P) = \frac{1}{i\lambda} \iint_{\text{aperture}} u_{\text{inc}}(Q) \frac{e^{ikr}}{r} \frac{(1 + \cos \chi)}{2} dS$
+
+### 与渲染的联系
+
+惠更斯-菲涅耳原理与渲染中的重要性采样并行：
+
+| 波动光学 | 渲染 |
 |-------------|----------|
-| Secondary sources | Sample points |
-| Wavelet superposition | Monte Carlo integration |
-| Obliquity factor K(χ) | Cosine weighting (N·L) |
-| Coherent addition | Complex phasor sum |
-| Intensity = |∑ fields|² | Radiance accumulation |
+| 次级波源 | 采样点 |
+| 波小波叠加 | 蒙特卡洛积分 |
+| 倾斜因子 $K(\chi)$ | 余弦加权 ($\mathbf{N}\cdot\mathbf{L}$) |
+| 相干叠加 | 复相量和 |
+| 强度 = $|\sum \text{fields}|^2$ | 辐射度累积 |
 
-Key differences:
-- Wave optics: Complex amplitudes with phase
-- Rendering: Real-valued intensities
-- Coherence introduces interference not present in incoherent rendering
+主要区别：
+- 波动光学：带有相位的复振幅
+- 渲染：实值强度
+- 相干性引入了非相干渲染中不存在的干涉效应
 
-This suggests extensions to rendering:
-1. Complex-valued path tracing for coherent sources
-2. Phase-aware importance sampling
-3. Interference effects in material models
+这表明渲染的扩展：
+1. 相干光源的复值路径追踪
+2. 相位感知的重要性采样
+3. 材料模型中的干涉效应
 
-## 15.3 Fresnel Diffraction Integral
+## 15.3 菲涅耳衍射积分
 
-### Near-Field Geometry
+### 近场几何
 
-Consider a planar aperture in the z=0 plane illuminated by a field u₀(x₀,y₀). The field at observation point P(x,y,z) is given by the Kirchhoff integral. For near-field diffraction, we must carefully expand the distance r that appears in both the amplitude and phase terms.
+考虑 $z=0$ 平面上的一个平面孔径，由场 $u_0(x_0,y_0)$ 照亮。观察点 $P(x,y,z)$ 处的场由基尔霍夫积分给出。对于近场衍射，我们必须仔细展开出现在振幅和相位项中的距离 $r$。
 
-Let **r** = (x,y,z) be the observation point and **r₀** = (x₀,y₀,0) be a point in the aperture, then:
+设 $\mathbf{r} = (x,y,z)$ 为观察点，$\mathbf{r}_0 = (x_0,y_0,0)$ 为孔径中的一个点，则：
 
-r = |**r** - **r₀**| = √[(x-x₀)² + (y-y₀)² + z²]
+$r = |\mathbf{r} - \mathbf{r}_0| = \sqrt{(x-x_0)^2 + (y-y_0)^2 + z^2}$
 
-The key insight is that phase varies much more rapidly than amplitude:
-- Phase variation: kr ~ 10⁶ rad/m for visible light
-- Amplitude variation: 1/r changes slowly over wavelength scales
+关键的见解是相位变化比振幅变化快得多：
+- 相位变化：$kr \sim 10^6 \text{ rad/m}$ 对于可见光
+- 振幅变化：$1/r$ 在波长尺度上变化缓慢
 
-This allows different approximation orders for phase and amplitude terms.
+这允许对相位和振幅项采用不同的近似阶数。
+### 菲涅尔近似
 
-### Fresnel Approximation
+对于 $z \gg (x-x_0), (y-y_0)$，我们使用二项式展开：
 
-For z >> (x-x₀), (y-y₀), we use the binomial expansion:
+$r = z\sqrt{1 + \frac{(x-x_0)^2 + (y-y_0)^2}{z^2}}$
 
-r = z√[1 + ((x-x₀)² + (y-y₀)²)/z²]
+令 $\rho^2 = (x-x_0)^2 + (y-y_0)^2$。使用 $(1+\varepsilon)^{1/2} \approx 1 + \varepsilon/2 - \varepsilon^2/8 + \dots$ 对于 $\varepsilon \ll 1$：
 
-Let ρ² = (x-x₀)² + (y-y₀)². Using (1+ε)¹/² ≈ 1 + ε/2 - ε²/8 + ... for ε << 1:
+$r \approx z\left[1 + \frac{\rho^2}{2z^2} - \frac{\rho^4}{8z^4} + \dots\right]$
 
-r ≈ z[1 + ρ²/2z² - ρ⁴/8z⁴ + ...]
+对于相位项 $kr$，我们保留导致相位误差小于 $\pi/2$ 的项：
+- 一阶项：$kz$
+- 二阶项：$k\rho^2/2z$ (菲涅尔项)
+- 三阶项：$-k\rho^4/8z^3$ (通常忽略)
 
-For the phase term kr, we keep terms that contribute phase errors < π/2:
-- First order: kz
-- Second order: kρ²/2z (Fresnel term)
-- Third order: -kρ⁴/8z³ (usually neglected)
+对于振幅项 $1/r$，我们只保留主导项：
+$1/r \approx 1/z$
 
-For the amplitude term 1/r, we keep only the leading term:
-1/r ≈ 1/z
+这得到：
+$\frac{e^{ikr}}{r} \approx \left(\frac{e^{ikz}}{z}\right) \exp\left[\frac{ik\rho^2}{2z}\right] = \left(\frac{e^{ikz}}{z}\right) \exp\left[\frac{ik}{2z}((x-x_0)^2 + (y-y_0)^2)\right]$
 
-This yields:
-e^(ikr)/r ≈ (e^(ikz)/z) exp[ikρ²/2z] = (e^(ikz)/z) exp[ik/2z((x-x₀)² + (y-y₀)²)]
+### 菲涅尔衍射公式
 
-### Fresnel Diffraction Formula
+代入基尔霍夫积分：
 
-Substituting into the Kirchhoff integral:
+$u(x,y,z) = \left(\frac{e^{ikz}}{i\lambda z}\right) \iint_{\text{aperture}} u_0(x_0,y_0) \exp\left[\frac{ik}{2z}((x-x_0)^2 + (y-y_0)^2)\right] dx_0dy_0$
 
-u(x,y,z) = (e^(ikz)/iλz) ∫∫_aperture u₀(x₀,y₀) exp[ik/2z((x-x₀)² + (y-y₀)²)] dx₀dy₀
+展开二次项：
 
-Expanding the quadratic term:
+$u(x,y,z) = \left(\frac{e^{ikz}}{i\lambda z}\right) \exp\left[\frac{ik}{2z}(x^2 + y^2)\right] \times$
+           $\iint u_0(x_0,y_0) \exp\left[\frac{ik}{2z}(x_0^2 + y_0^2)\right] \exp\left[-\frac{ik}{z}(xx_0 + yy_0)\right] dx_0dy_0$
 
-u(x,y,z) = (e^(ikz)/iλz) exp[ik/2z(x² + y²)] × 
-           ∫∫ u₀(x₀,y₀) exp[ik/2z(x₀² + y₀²)] exp[-ik/z(xx₀ + yy₀)] dx₀dy₀
+### 有效性条件
 
-### Validity Conditions
+菲涅尔近似的有效性取决于被忽略项引起的相位误差。四次项贡献的相位为：
 
-The Fresnel approximation validity depends on the phase error from neglected terms. The quartic term contributes a phase:
+$\Phi_4 = -\frac{k\rho^4}{8z^3}$
 
-Φ₄ = -kρ₄/8z³
+要求 $|\Phi_4|_{\text{max}} < \pi/2$：
 
-Requiring |Φ₄|_max < π/2:
+$\frac{k\rho^4_{\text{max}}}{8z^3} < \frac{\pi}{2}$
 
-kρ₄_max/8z³ < π/2
+代入 $k = 2\pi/\lambda$ 并求解：
 
-Substituting k = 2π/λ and solving:
+$z^3 > \frac{\rho^4_{\text{max}}}{4\lambda} = \frac{[(x-x_0)^2 + (y-y_0)^2]^2_{\text{max}}}{4\lambda}$
 
-z³ > ρ₄_max/4λ = [(x-x₀)² + (y-y₀)²]²_max/(4λ)
+定义**菲涅尔数**：
 
-Define the **Fresnel number**:
+$F = \frac{a^2}{\lambda z}$
 
-F = a²/(λz)
+其中 $a$ 是特征孔径尺寸。近似的区域：
 
-where a is the characteristic aperture dimension. The approximation regimes:
+1. **$F \gg 1$**：几何阴影 (几何光学)
+2. **$F \sim 1$**：菲涅尔衍射 (近场)
+3. **$F \ll 1$**：夫琅和费衍射 (远场)
 
-1. **F >> 1**: Geometric shadow (ray optics)
-2. **F ~ 1**: Fresnel diffraction (near field)
-3. **F << 1**: Fraunhofer diffraction (far field)
+物理诠释：
+- $F$ 比较孔径面积 ($a^2$) 与衍射面积 ($\lambda z$)
+- 大 $F$：可见多个菲涅尔带，接近几何极限
+- 小 $F$：单个菲涅尔带，纯衍射
 
-Physical interpretation:
-- F compares aperture area (a²) to diffraction area (λz)
-- Large F: Many Fresnel zones visible, geometric limit
-- Small F: Single Fresnel zone, pure diffraction
+### 计算方法
 
-### Computational Methods
+#### 1. 直接积分
+菲涅尔积分的数值求积：
 
-#### 1. Direct Integration
-Numerical quadrature of the Fresnel integral:
+$u(x,y,z) = \left(\frac{e^{ikz}}{i\lambda z}\right) \iint u_0(x_0,y_0) \exp\left[\frac{ik}{2z}((x-x_0)^2 + (y-y_0)^2)\right] dx_0dy_0$
 
-u(x,y,z) = (e^(ikz)/iλz) ∬ u₀(x₀,y₀) exp[ik/2z((x-x₀)² + (y-y₀)²)] dx₀dy₀
+- 复杂度：对于 $N \times N$ 网格为 $O(N^4)$
+- 精确但计算成本高昂
+- 适用于不规则孔径或稀疏采样
 
-- Complexity: O(N⁴) for N×N grids
-- Accurate but computationally prohibitive
-- Useful for irregular apertures or sparse sampling
+#### 2. FFT 卷积法
+将菲涅尔积分重写为卷积形式：
 
-#### 2. FFT Convolution Method
-Rewrite the Fresnel integral as a convolution:
+$u(x,y,z) = C \times [u_0(x,y)\exp(ik(x^2+y^2)/2z)] \otimes \exp(ik(x^2+y^2)/2z)$
 
-u(x,y,z) = C × [u₀(x,y)exp(ik(x²+y²)/2z)] ⊗ exp(ik(x²+y²)/2z)
+其中 $C = \exp(ikz)/(i\lambda z)$ 且 $\otimes$ 表示卷积。
 
-where C = exp(ikz)/(iλz) and ⊗ denotes convolution.
+实现：
+1. 将输入乘以二次相位 (啁啾)
+2. FFT 到频域
+3. 乘以传递函数
+4. 逆 FFT
+5. 乘以输出啁啾
 
-Implementation:
-1. Multiply input by quadratic phase (chirp)
-2. FFT to frequency domain
-3. Multiply by transfer function
-4. Inverse FFT
-5. Multiply by output chirp
+- 复杂度：$O(N^2 \log N)$
+- 需要仔细采样以避免混叠
+- 需要零填充以提高精度
 
-- Complexity: O(N²log N)
-- Requires careful sampling to avoid aliasing
-- Zero-padding needed for accuracy
+#### 3. 角谱法
+在空间频域中传播场：
 
-#### 3. Angular Spectrum Method
-Propagate the field in the spatial frequency domain:
+$u(x,y,z) = \mathcal{F}^{-1}\{\mathcal{F}\{u_0(x_0,y_0)\} \times H(f_x,f_y,z)\}$
 
-u(x,y,z) = ℱ⁻¹{ℱ{u₀(x₀,y₀)} × H(fₓ,fᵧ,z)}
+其中传递函数：
+$H(f_x,f_y,z) = \exp\left[ikz\sqrt{1-(\lambda f_x)^2-(\lambda f_y)^2}\right]$
 
-where the transfer function:
-H(fₓ,fᵧ,z) = exp[ikz√(1-(λfₓ)²-(λfᵧ)²)]
+对于 $(\lambda f_x)^2 + (\lambda f_y)^2 < 1$：传播波
+对于 $(\lambda f_x)^2 + (\lambda f_y)^2 > 1$：倏逝波 (指数衰减)
 
-For (λfₓ)² + (λfᵧ)² < 1: Propagating waves
-For (λfₓ)² + (λfᵧ)² > 1: Evanescent waves (exponential decay)
+优点：
+- 最有效：$O(N^2 \log N)$
+- 在采样限制内精确
+- 处理任意传播距离
+- 倏逝波的自然处理
 
-Advantages:
-- Most efficient: O(N²log N)
-- Exact within sampling limits
-- Handles arbitrary propagation distances
-- Natural treatment of evanescent waves
+采样要求：
+$\Delta x < \lambda z/(2X)$ 其中 $X$ 是场范围
 
-Sampling requirement:
-Δx < λz/(2X) where X is the field extent
+## 15.4 夫琅和费衍射与傅里叶光学
 
-## 15.4 Fraunhofer Diffraction and Fourier Optics
+### 远场近似
 
-### Far-Field Approximation
+在夫琅和费 (远场) 区域，我们通过假设观察距离 $z$ 足够大来进一步近似菲涅尔积分：
 
-In the Fraunhofer (far-field) regime, we further approximate the Fresnel integral by assuming the observation distance z is so large that:
+$z \gg k(x_0^2 + y_0^2)_{\text{max}}/2$
 
-z >> k(x₀² + y₀²)_max/2
+这允许我们将二次相位项移到积分号外：
 
-This allows us to move the quadratic phase term outside the integral:
+$u(x,y,z) = \left(\frac{e^{ikz}}{i\lambda z}\right) \exp\left[\frac{ik}{2z}(x^2 + y^2)\right] \times$
+           $\iint u_0(x_0,y_0) \exp\left[-\frac{ik}{z}(xx_0 + yy_0)\right] dx_0dy_0$
 
-u(x,y,z) = (e^(ikz)/iλz) exp[ik/2z(x² + y²)] × 
-           ∫∫ u₀(x₀,y₀) exp[-ik/z(xx₀ + yy₀)] dx₀dy₀
+### 傅里叶变换关系
 
-### Fourier Transform Relationship
+该积分现在是孔径场的一个二维傅里叶变换：
 
-The integral is now a 2D Fourier transform of the aperture field:
+$u(x,y,z) = \left(\frac{e^{ikz}}{i\lambda z}\right) \exp\left[\frac{ik}{2z}(x^2 + y^2)\right] \times \mathcal{F}\{u_0(x_0,y_0)\}|_{f_x=x/\lambda z, f_y=y/\lambda z}$
 
-u(x,y,z) = (e^(ikz)/iλz) exp[ik/2z(x² + y²)] × ℱ{u₀(x₀,y₀)}|_{fₓ=x/λz, fᵧ=y/λz}
+对于入射到孔径上的平面波 ($u_0 = A(x_0,y_0)$，其中 $A$ 是孔径函数)：
 
-For a plane wave incident on the aperture (u₀ = A(x₀,y₀) where A is the aperture function):
+$u(x,y,z) \propto \mathcal{F}\{A(x_0,y_0)\}$
 
-u(x,y,z) ∝ ℱ{A(x₀,y₀)}
+**关键见解**：远场衍射图样是孔径的傅里叶变换。
 
-**Key insight**: The far-field diffraction pattern is the Fourier transform of the aperture.
+### 示例
 
-### Examples
+1. **矩形孔径** $A(x_0,y_0) = \text{rect}(x_0/a)\text{rect}(y_0/b)$：
+   $u(x,y) \propto \text{sinc}(ax/\lambda z)\text{sinc}(by/\lambda z)$
 
-1. **Rectangular aperture** A(x₀,y₀) = rect(x₀/a)rect(y₀/b):
-   u(x,y) ∝ sinc(ax/λz)sinc(by/λz)
+2. **圆形孔径**，半径为 $a$：
+   $u(r,\theta) \propto \frac{2J_1(kar/z)}{kar/z}$
+   其中 $J_1$ 是第一类贝塞尔函数。
 
-2. **Circular aperture** of radius a:
-   u(r,θ) ∝ 2J₁(kar/z)/(kar/z)
-   where J₁ is the Bessel function of the first kind.
+3. **双缝**，间距为 $d$：
+   $u(x) \propto \text{sinc}(ax/\lambda z)\cos(\pi dx/\lambda z)$
 
-3. **Double slit** with separation d:
-   u(x) ∝ sinc(ax/λz)cos(πdx/λz)
+### 角谱表示
 
-### Angular Spectrum Representation
+任何场都可以分解为沿不同方向传播的平面波：
 
-Any field can be decomposed into plane waves propagating in different directions:
+$u(x,y,z) = \iint A(k_x,k_y) \exp[i(k_xx + k_yy + k_rz)] dk_xdk_y$
 
-u(x,y,z) = ∫∫ A(kₓ,kᵧ) exp[i(kₓx + kᵧy + kᵣz)] dkₓdkᵧ
+其中波矢的 $z$ 分量：
+$k_r = \sqrt{k^2 - k_x^2 - k_y^2}$
 
-where the z-component of the wavevector:
-kᵣ = √(k² - kₓ² - kᵧ²)
+出现两种情况：
 
-Two cases arise:
+1. **传播波** ($k_x^2 + k_y^2 < k^2$)：
+   - $k_r$ 是实数
+   - 平面波无衰减传播
+   - 方向余弦：$(\alpha,\beta,\gamma) = (k_x/k, k_y/k, k_r/k)$
+   - 物理角度：$\theta_x = \arcsin(k_x/k)$, $\theta_y = \arcsin(k_y/k)$
 
-1. **Propagating waves** (kₓ² + kᵧ² < k²):
-   - kᵣ is real
-   - Plane waves propagate without decay
-   - Direction cosines: (α,β,γ) = (kₓ/k, kᵧ/k, kᵣ/k)
-   - Physical angles: θₓ = arcsin(kₓ/k), θᵧ = arcsin(kᵧ/k)
+2. **倏逝波** ($k_x^2 + k_y^2 > k^2$)：
+   - $k_r = i\kappa$ 其中 $\kappa = \sqrt{k_x^2 + k_y^2 - k^2}$
+   - 指数衰减：$\exp(-\kappa z)$
+   - 局限于近场 ($z \sim 1/\kappa \sim \lambda$)
+   - 携带亚波长信息
 
-2. **Evanescent waves** (kₓ² + kᵧ² > k²):
-   - kᵣ = iκ where κ = √(kₓ² + kᵧ² - k²)
-   - Exponential decay: exp(-κz)
-   - Confined to near-field (z ~ 1/κ ~ λ)
-   - Carry sub-wavelength information
+$z = 0$ 处的角谱：
+$A(k_x,k_y) = \left(\frac{1}{2\pi}\right)^2 \iint u(x,y,0) \exp[-i(k_xx + k_yy)] dxdy = \mathcal{F}\{u(x,y,0)\}$
 
-The angular spectrum at z = 0:
-A(kₓ,kᵧ) = (1/2π)² ∫∫ u(x,y,0) exp[-i(kₓx + kᵧy)] dxdy = ℱ{u(x,y,0)}
+这种表示提供了：
+- 场的完整描述
+- 自然传播：乘以 $\exp(ik_rz)$
+- 与傅里叶光学的直接联系
+- 理解分辨率限制的基础
 
-This representation provides:
-- Complete description of the field
-- Natural propagation: multiply by exp(ikᵣz)
-- Direct connection to Fourier optics
-- Basis for understanding resolution limits
+### 与渲染的联系
 
-### Connection to Rendering
+傅里叶光学框架为渲染提供了深刻的见解：
 
-The Fourier optics framework provides deep insights for rendering:
+#### 1. 材料的频率分析
+BRDF 在角频率空间中充当传递函数：
 
-#### 1. Frequency Analysis of Materials
-The BRDF acts as a transfer function in angular frequency space:
+- **空间 BRDF**：$\rho(\mathbf{x},\omega_0,\omega_i)$
+- **角谱**：$\tilde{\rho}(\mathbf{k},\omega_0,\omega_i) = \mathcal{F}_x\{\rho(\mathbf{x},\omega_0,\omega_i)\}$
+- **带宽**：决定所需的采样率
 
-- **Spatial BRDF**: ρ(x,ω₀,ωᵢ)
-- **Angular spectrum**: ρ̃(k,ω₀,ωᵢ) = ℱ_x{ρ(x,ω₀,ωᵢ)}
-- **Bandwidth**: Determines required sampling rate
+镜面：$\tilde{\rho} \sim \delta(\mathbf{k})$ (所有频率)
+漫反射：$\tilde{\rho} \sim \text{sinc}(\mathbf{k})$ (低通)
+光泽：中等带宽
 
-Mirror: ρ̃ ~ δ(k) (all frequencies)
-Diffuse: ρ̃ ~ sinc(k) (low-pass)
-Glossy: Intermediate bandwidth
+#### 2. 采样理论应用
 
-#### 2. Sampling Theory Applications
+渲染上下文中的**奈奎斯特-香农定理**：
+- 空间：$\Delta x < 1/(2f_{\text{max}})$，其中 $f_{\text{max}}$ 是最高空间频率
+- 角度：$\Delta \omega < \pi/k_{\text{max}}$ 用于 BRDF 采样
+- 时间：$\Delta t < 1/(2f_{\text{motion}})$ 用于运动模糊
 
-**Nyquist-Shannon theorem** in rendering context:
-- Spatial: Δx < 1/(2f_max) where f_max is highest spatial frequency
-- Angular: Δω < π/k_max for BRDF sampling
-- Temporal: Δt < 1/(2f_motion) for motion blur
+**实际意义**：
+- 纹理过滤：基于频率内容的 mipmap 级别
+- 阴影贴图分辨率：由光频率决定
+- 重要性采样：在 $|\tilde{\rho}|$ 较大的地方集中采样
 
-**Practical implications**:
-- Texture filtering: mipmap levels based on frequency content
-- Shadow map resolution: determined by light frequency
-- Importance sampling: concentrate samples where |ρ̃| is large
+#### 3. 抗锯齿作为滤波
 
-#### 3. Anti-aliasing as Filtering
+频域中的渲染管线：
 
-Rendering pipeline in frequency domain:
+1. **场景谱**：$\tilde{S}(\mathbf{k}) = \mathcal{F}\{\text{scene geometry/materials}\}$
+2. **采样**：与梳状函数相乘
+3. **重建**：与滤波器核卷积
+4. **显示**：受像素网格的带宽限制
 
-1. **Scene spectrum**: S̃(k) = ℱ{scene geometry/materials}
-2. **Sampling**: Multiplication by comb function
-3. **Reconstruction**: Convolution with filter kernel
-4. **Display**: Band-limited by pixel grid
+最佳抗锯齿：
+- 预滤波以去除高于奈奎斯特频率的频率
+- 常见滤波器：Box (sinc), Gaussian (高斯), Lanczos (窗函数 sinc)
+- 权衡：锐度与混叠
 
-Optimal anti-aliasing:
-- Pre-filter to remove frequencies > Nyquist
-- Common filters: Box (sinc), Gaussian (Gaussian), Lanczos (windowed sinc)
-- Trade-off: Sharpness vs. aliasing
+#### 4. 光场分析
 
-#### 4. Light Field Analysis
+4D 光场 $L(x,y,u,v)$ 具有 4D 傅里叶变换：
+$\tilde{L}(k_x,k_y,k_u,k_v)$
 
-4D light field L(x,y,u,v) has 4D Fourier transform:
-L̃(k_x,k_y,k_u,k_v)
+关键见解：
+- 朗伯表面：能量集中在 $k_u = k_v = 0$
+- 镜面：能量沿 $k_x = \lambda k_u, k_y = \lambda k_v$
+- 深度在频域中产生剪切
+- 实现最佳采样策略
 
-Key insights:
-- Lambertian surfaces: Energy concentrated at k_u = k_v = 0
-- Specular surfaces: Energy along k_x = λk_u, k_y = λk_v
-- Depth creates shearing in frequency domain
-- Enables optimal sampling strategies
+#### 5. 相干渲染效果
 
-#### 5. Coherent Rendering Effects
+扩展渲染方程以实现相干性：
 
-Extending rendering equation for coherence:
+$L(\mathbf{x},\omega) = L_0(\mathbf{x},\omega) + \int \rho(\mathbf{x},\omega'\to\omega)L(\mathbf{x},\omega')V(\mathbf{x},\mathbf{x}')G(\mathbf{x},\mathbf{x}')d\mathbf{x}'$
 
-L(x,ω) = L₀(x,ω) + ∫ ρ(x,ω'→ω)L(x,ω')V(x,x')G(x,x')dx'
+其中 $V(\mathbf{x},\mathbf{x}')$ 是互相关函数：
+$V(\mathbf{x},\mathbf{x}') = \frac{\langle E^*(\mathbf{x})E(\mathbf{x}')\rangle}{\sqrt{I(\mathbf{x})I(\mathbf{x}')}}$
 
-where V(x,x') is the mutual coherence function:
-V(x,x') = 〈E*(x)E(x')〉 / √(I(x)I(x'))
+这使得：
+- 激光散斑模拟
+- 全息显示
+- 薄膜干涉
+- 相干次表面散射
 
-This enables:
-- Laser speckle simulation
-- Holographic displays
-- Interference in thin films
-- Coherent subsurface scattering
+建模方法：
+- 具有相关长度 $\xi$ 的高度场 $h(x,y)$
+- 相位变化：$\phi = 2kh \cos\theta$
+- 散斑尺寸：$\Delta x \sim \lambda z/\xi$
+- 实现为法线贴图衍射
 
-## 15.5 Diffraction-Limited Imaging Systems
+**虹彩**：
+- 薄膜干涉
+- 周期性纳米结构产生的结构色
+- 波长相关的反射
+- 需要基于波的 BRDF 模型
 
-### Point Spread Function (PSF)
+## 15.5 衍射受限成像系统
 
-An ideal imaging system maps each object point to a unique image point. However, diffraction limits this ideal behavior. The image of a point source is the **Point Spread Function (PSF)**.
+### 点扩散函数 (PSF)
 
-For a circular aperture of diameter D and focal length f, the PSF in the image plane is:
+理想的成像系统将每个物体点映射到唯一的图像点。然而，衍射限制了这种理想行为。点光源的图像是**点扩散函数 (PSF)**。
 
-h(r) = |ℱ{P(x,y)}|² = [2J₁(πDr/λf)/(πDr/λf)]²
+对于直径为 $D$ 焦距为 $f$ 的圆形孔径，图像平面中的 PSF 为：
 
-where P(x,y) is the pupil function (1 inside aperture, 0 outside).
+$h(r) = |\mathcal{F}\{P(x,y)\}|^2 = \left[\frac{2J_1(\pi Dr/\lambda f)}{\pi Dr/\lambda f}\right]^2$
 
-### Airy Disk and Resolution
+其中 $P(x,y)$ 是瞳孔函数 (孔径内为 1，孔径外为 0)。
 
-The PSF for a circular aperture forms the **Airy pattern**:
+### 艾里斑与分辨率
 
-h(r) = [2J₁(πDr/λf)/(πDr/λf)]²
+圆形孔径的 PSF 形成**艾里图样**：
 
-Characteristics:
-- Central bright disk (Airy disk) contains 83.8% of total energy
-- First dark ring at r₁ = 1.22λf/D
-- First bright ring: 7.2% of energy
-- Second bright ring: 2.8% of energy
-- Ring radii: r_n ≈ (n + 0.22)λf/D for n ≥ 1
+$h(r) = \left[\frac{2J_1(\pi Dr/\lambda f)}{\pi Dr/\lambda f}\right]^2$
 
-The Airy disk radius (first zero):
+特点：
+- 中心亮斑 (艾里斑) 包含总能量的 83.8%
+- 第一个暗环在 $r_1 = 1.22\lambda f/D$ 处
+- 第一个亮环：7.2% 的能量
+- 第二个亮环：2.8% 的能量
+- 环半径：$r_n \approx (n + 0.22)\lambda f/D$ 对于 $n \ge 1$
 
-r₀ = 1.22λf/D = 1.22λF#
+艾里斑半径 (第一个零点)：
 
-where F# = f/D is the f-number.
+$r_0 = 1.22\lambda f/D = 1.22\lambda F\#$
 
-**Energy distribution**:
-- Within r₀: 83.8%
-- Within 2r₀: 91.0%
-- Within 3r₀: 93.8%
+其中 $F\# = f/D$ 是光圈数。
 
-This concentration of energy in the central disk is why the Airy disk radius serves as a practical measure of resolution.
+**能量分布**：
+- 在 $r_0$ 内：83.8%
+- 在 $2r_0$ 内：91.0%
+- 在 $3r_0$ 内：93.8%
 
-### Rayleigh Criterion
+能量集中在中心圆盘中是艾里斑半径作为分辨率实用度量的原因。
 
-Two point sources are "just resolved" when the maximum of one Airy disk falls on the first minimum of the other:
+### 瑞利判据
 
-θ_min = 1.22λ/D
+当一个艾里斑的最大值落在另一个艾里斑的第一个最小值上时，两个点光源“刚好分辨”：
 
-This angular resolution limit is fundamental to all imaging systems.
+$\theta_{\text{min}} = 1.22\lambda/D$
 
-### Coherent vs Incoherent Imaging
+这个角分辨率极限是所有成像系统的基本限制。
 
-**Incoherent imaging** (typical for natural light):
-- Intensities add: I_total = I₁ + I₂
-- Image intensity = |Object|² ⊗ |PSF|²
-- Linear in intensity
+### 相干与非相干成像
 
-**Coherent imaging** (laser illumination):
-- Fields add: U_total = U₁ + U₂
-- Image field = Object ⊗ PSF
-- Linear in complex amplitude
-- Can exhibit interference effects
+**非相干成像** (自然光典型)：
+- 强度相加：$I_{\text{total}} = I_1 + I_2$
+- 图像强度 = $|Object|^2 \otimes |PSF|^2$
+- 强度线性
 
-### Transfer Functions
+**相干成像** (激光照明)：
+- 场相加：$U_{\text{total}} = U_1 + U_2$
+- 图像场 = $Object \otimes PSF$
+- 复振幅线性
+- 可表现出干涉效应
 
-**Optical Transfer Function (OTF)** for incoherent imaging:
-OTF(f) = ℱ{|PSF|²}
+### 传递函数
 
-**Modulation Transfer Function (MTF)**:
-MTF(f) = |OTF(f)|
+非相干成像的**光学传递函数 (OTF)**：
+$\text{OTF}(f) = \mathcal{F}\{|PSF|^2\}$
 
-For a circular aperture:
-MTF(ν) = (2/π)[arccos(ν) - ν√(1-ν²)] for ν ≤ 1
-MTF(ν) = 0 for ν > 1
+**调制传递函数 (MTF)**：
+$\text{MTF}(f) = |\text{OTF}(f)|$
 
-where ν = λf·f_spatial/D is the normalized spatial frequency.
+对于圆形孔径：
+$\text{MTF}(\nu) = \frac{2}{\pi}\left[\arccos(\nu) - \nu\sqrt{1-\nu^2}\right]$ 对于 $\nu \le 1$
+$\text{MTF}(\nu) = 0$ 对于 $\nu > 1$
 
-### Implications for Computer Graphics
+其中 $\nu = \lambda f \cdot f_{\text{spatial}}/D$ 是归一化空间频率。
 
-#### 1. Depth of Field and Diffraction Limits
+### 对计算机图形学的影响
 
-The circle of confusion (CoC) has two contributions:
-- **Geometric**: C_geom = D|z - z_f|/z_f (defocus)
-- **Diffraction**: C_diff = 2.44λF# (Airy disk diameter)
+#### 1. 景深与衍射极限
 
-Total CoC: C_total = √(C_geom² + C_diff²)
+弥散圆 (CoC) 有两个贡献：
+- **几何**：$C_{\text{geom}} = D|z - z_f|/z_f$ (散焦)
+- **衍射**：$C_{\text{diff}} = 2.44\lambda F\#$ (艾里斑直径)
 
-Consequences:
-- Minimum CoC at optimal aperture: F# = √(|z - z_f|λ/(2.44z_f))
-- Diffraction-limited for F# > 8-11 in visible light
-- Hyperfocal distance: H = f²/(F#c) + f, where c includes diffraction
+总 CoC：$C_{\text{total}} = \sqrt{C_{\text{geom}}^2 + C_{\text{diff}}^2}$
 
-#### 2. Physically-Based Bokeh
+结果：
+- 最佳光圈处的最小 CoC：$F\# = \sqrt{|z - z_f|\lambda/(2.44z_f)}$
+- 在可见光下，当 $F\# > 8-11$ 时受衍射限制
+- 超焦距：$H = f^2/(F\#c) + f$，其中 $c$ 包含衍射
 
-Bokeh shape depends on:
+#### 2. 基于物理的焦外成像 (Bokeh)
 
-**Geometric limit** (F# < 5.6):
-- Shape matches aperture geometry
-- Sharp edges from aperture blades
-- Uniform intensity distribution
+焦外成像形状取决于：
 
-**Transition regime** (F# ~ 5.6-11):
-- Diffraction softens edges
-- Brightness varies: brighter center
-- Convolution: Bokeh = Aperture ⊗ Airy
+**几何极限** ($F\# < 5.6$)：
+- 形状与光圈几何形状匹配
+- 光圈叶片产生锐利边缘
+- 均匀的强度分布
 
-**Diffraction limit** (F# > 11):
-- Circular regardless of aperture shape
-- Airy pattern dominates
-- Rings may be visible in high contrast
+**过渡区域** ($F\# \sim 5.6-11$)：
+- 衍射使边缘柔化
+- 亮度变化：中心更亮
+- 卷积：Bokeh = Aperture $\otimes$ Airy
 
-Implementation approach:
-1. Compute geometric bokeh kernel
-2. Convolve with wavelength-dependent Airy function
-3. Sum over visible spectrum for color effects
+**衍射极限** ($F\# > 11$)：
+- 无论光圈形状如何，都是圆形
+- 艾里图样占主导
+- 高对比度下可见光环
 
-#### 3. Wave-Optical Material Effects
+实现方法：
+1. 计算几何焦外成像核
+2. 与波长相关的艾里函数卷积
+3. 对可见光谱求和以获得颜色效果
 
-**Glints and Sparkles**:
-- Caused by coherent reflection from rough surfaces
-- Each microfacet creates diffraction pattern
-- Interference between nearby facets
-- Statistics: I = |E₁ + E₂ + ...|u00b2 follows speckle statistics
+#### 3. 波光学材料效应
 
-Modeling approach:
-- Heightfield h(x,y) with correlation length ξ
-- Phase variation: φ = 2kh cosθ
-- Speckle size: Δx ~ λz/ξ
-- Implement as normal-mapped diffraction
+**闪光和闪烁**：
+- 由粗糙表面的相干反射引起
+- 每个微面产生衍射图样
+- 附近微面之间的干涉
+- 统计：$I = |E_1 + E_2 + \dots|^2$ 遵循散斑统计
 
-**Iridescence**:
-- Thin-film interference
-- Structural color from periodic nanostructures
-- Wavelength-dependent reflection
-- Requires wave-based BRDF models
+建模方法：
+- 具有相关长度 $\xi$ 的高度场 $h(x,y)$
+- 相位变化：$\phi = 2kh \cos\theta$
+- 散斑尺寸：$\Delta x \sim \lambda z/\xi$
+- 实现为法线贴图衍射
 
-#### 4. Advanced Camera Models
+**虹彩**：
+- 薄膜干涉
+- 周期性纳米结构产生的结构色
+- 波长相关的反射
+- 需要基于波的 BRDF 模型
 
-**Beyond thin lens**:
-1. **Wavefront aberrations**: Φ(x,y) = ∑ Z_n(x,y)
-   - Zernike polynomials Z_n describe aberrations
-   - PSF = |ℱ{P(x,y)exp(ikΦ(x,y))}|²
-   - Spatially-varying blur kernels
+#### 4. 高级相机模型
 
-2. **Chromatic effects**:
-   - Longitudinal: focal length f(λ)
-   - Lateral: magnification m(λ)
-   - PSF varies with wavelength
-   - Natural chromatic aberration
+**超越薄透镜**：
+1. **波前像差**：$\Phi(x,y) = \sum Z_n(x,y)$
+   - 泽尼克多项式 $Z_n$ 描述像差
+   - $\text{PSF} = |\mathcal{F}\{P(x,y)\exp(ik\Phi(x,y))\}|^2$
+   - 空间变化的模糊核
 
-3. **Polarization**:
-   - Fresnel coefficients depend on polarization
-   - Polarizing filters in lens systems
-   - Sky models with polarization
+2. **色差效应**：
+   - 纵向：焦距 $f(\lambda)$
+   - 横向：放大率 $m(\lambda)$
+   - PSF 随波长变化
+   - 自然色差
 
-4. **Coherence effects**:
-   - Partial coherence from extended sources
-   - Coherence area: A_c ~ λ²R²/A_s
-   - Affects contrast and resolution
+3. **偏振**：
+   - 菲涅尔系数取决于偏振
+   - 透镜系统中的偏振滤光片
+   - 带有偏振的天空模型
 
-## Summary
+4. **相干效应**：
+   - 扩展光源的部分相干性
+   - 相干区域：$A_c \sim \lambda^2 R^2/A_s$
+- 影响对比度和分辨率
 
-This chapter established the mathematical foundation for wave optics, transitioning from Maxwell's equations to practical diffraction formulas. Key concepts include:
+## 总结
 
-1. **Helmholtz Equation**: ∇²u + k²u = 0 - the fundamental equation for monochromatic wave propagation
-2. **Huygens-Fresnel Principle**: Each wavefront point acts as a secondary source
-3. **Fresnel Diffraction**: Near-field with quadratic phase approximation
-4. **Fraunhofer Diffraction**: Far-field reduces to Fourier transform
-5. **Resolution Limits**: Diffraction fundamentally limits imaging resolution
+本章建立了波动光学的数学基础，从麦克斯韦方程组过渡到实用的衍射公式。关键概念包括：
 
-The wave nature of light introduces phenomena beyond geometric optics:
-- Interference and diffraction patterns
-- Fundamental resolution limits (Rayleigh criterion)
-- Coherence effects in imaging
-- Frequency-domain analysis of optical systems
+1.  **亥姆霍兹方程（Helmholtz Equation）**：$\nabla^2u + k^2u = 0$ - 单色波传播的基本方程
+2.  **惠更斯-菲涅尔原理（Huygens-Fresnel Principle）**：每个波前点都可视为次级波源
+3.  **菲涅尔衍射（Fresnel Diffraction）**：近场，采用二次相位近似
+4.  **夫琅禾费衍射（Fraunhofer Diffraction）**：远场，简化为傅里叶变换
+5.  **分辨率极限（Resolution Limits）**：衍射从根本上限制了成像分辨率
 
-These concepts bridge to computer graphics through:
-- Physical camera models with diffraction
-- Wave-based material appearance (glints, iridescence)
-- Fourier analysis of rendering algorithms
-- Connection to volume rendering via Green's functions
+光的波动性引入了几何光学之外的现象：
+- 干涉和衍射图样
+- 基本分辨率极限（瑞利判据）
+- 成像中的相干性效应
+- 光学系统的频域分析
 
-## Exercises
+这些概念通过以下方式与计算机图形学联系起来：
+- 带有衍射的物理相机模型
+- 基于波的材质外观（闪光、虹彩）
+- 渲染算法的傅里叶分析
+- 通过格林函数与体渲染的联系
 
-### Basic Understanding (3 problems)
+## 练习
 
-**Exercise 15.1**: Helmholtz Equation Solutions
-Show that u(r) = (A/r)exp(ikr) is a solution to the Helmholtz equation in spherical coordinates. What physical wave does this represent?
+### 基本理解（3个问题）
 
-*Hint*: Use the spherical Laplacian: ∇²u = (1/r²)d/dr(r²du/dr) for spherically symmetric functions.
+**练习 15.1**：亥姆霍兹方程解
+证明 $u(r) = (A/r)\exp(ikr)$ 是球坐标系中亥姆霍兹方程的解。这代表了哪种物理波？
+
+*提示*：对于球对称函数，使用球坐标拉普拉斯算子：$\nabla^2u = (1/r^2)d/dr(r^2du/dr)$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For u(r) = (A/r)exp(ikr):
+对于 $u(r) = (A/r)\exp(ikr)$：
 
-du/dr = A[(-1/r²)exp(ikr) + (ik/r)exp(ikr)] = (A/r)exp(ikr)[ik - 1/r]
+$du/dr = A[(-1/r^2)\exp(ikr) + (ik/r)\exp(ikr)] = (A/r)\exp(ikr)[ik - 1/r]$
 
-r²du/dr = A·r·exp(ikr)[ik - 1/r] = A·exp(ikr)[ikr - 1]
+$r^2du/dr = A \cdot r \cdot \exp(ikr)[ik - 1/r] = A \cdot \exp(ikr)[ikr - 1]$
 
-d/dr(r²du/dr) = A[ik·exp(ikr)·[ikr - 1] + exp(ikr)·ik]
-                = A·exp(ikr)[−k²r + 2ik]
+$d/dr(r^2du/dr) = A[ik \cdot \exp(ikr) \cdot [ikr - 1] + \exp(ikr) \cdot ik]$
+                $= A \cdot \exp(ikr)[-k^2r + 2ik]$
 
-∇²u = (A/r²)exp(ikr)[−k²r + 2ik] = (A/r)exp(ikr)[−k²]
+$\nabla^2u = (A/r^2)\exp(ikr)[-k^2r + 2ik] = (A/r)\exp(ikr)[-k^2]$
 
-Therefore: ∇²u + k²u = (A/r)exp(ikr)[−k² + k²] = 0 ✓
+因此：$\nabla^2u + k^2u = (A/r)\exp(ikr)[-k^2 + k^2] = 0 \checkmark$
 
-This represents an outgoing spherical wave from a point source.
+这代表了从点源发出的向外传播的球面波。
 </details>
 
-**Exercise 15.2**: Fresnel Number
-A plane wave (λ = 500nm) illuminates a circular aperture of radius a = 1mm. At what distance z does the Fresnel number F = a²/λz equal 1? What approximation regime is this?
+**练习 15.2**：菲涅尔数
+一束平面波（$\lambda = 500\text{nm}$）照射一个半径为 $a = 1\text{mm}$ 的圆形孔径。在什么距离 $z$ 处，菲涅尔数 $F = a^2/\lambda z$ 等于 1？这属于哪种近似区域？
 
-*Hint*: The Fresnel approximation is valid for F ≳ 1, while Fraunhofer requires F << 1.
+*提示*：菲涅尔近似在 $F \gtrsim 1$ 时有效，而夫琅禾费近似要求 $F \ll 1$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Given: λ = 500 × 10⁻⁹ m, a = 1 × 10⁻³ m
+已知：$\lambda = 500 \times 10^{-9}\text{ m}$，$a = 1 \times 10^{-3}\text{ m}$
 
-F = a²/λz = 1
+$F = a^2/\lambda z = 1$
 
-Solving for z:
-z = a²/λ = (10⁻³)² / (500 × 10⁻⁹) = 10⁻⁶ / (5 × 10⁻⁷) = 2 m
+解 $z$：
+$z = a^2/\lambda = (10^{-3})^2 / (500 \times 10^{-9}) = 10^{-6} / (5 \times 10^{-7}) = 2\text{ m}$
 
-At z = 2m, we're at the transition between Fresnel (near-field) and Fraunhofer (far-field) regimes. For z < 2m, use Fresnel diffraction; for z >> 2m, Fraunhofer approximation is valid.
+在 $z = 2\text{m}$ 处，我们处于菲涅尔（近场）和夫琅禾费（远场）区域的过渡点。对于 $z < 2\text{m}$，使用菲涅尔衍射；对于 $z \gg 2\text{m}$，夫琅禾费近似有效。
 </details>
 
-**Exercise 15.3**: Airy Disk Size
-A camera lens has focal length f = 50mm and aperture diameter D = 25mm (f/2). Calculate the Airy disk radius for green light (λ = 550nm). How does this compare to typical pixel sizes?
+**练习 15.3**：艾里斑大小
+一个相机镜头焦距 $f = 50\text{mm}$，光圈直径 $D = 25\text{mm}$（f/2）。计算绿光（$\lambda = 550\text{nm}$）的艾里斑半径。这与典型的像素尺寸相比如何？
 
-*Hint*: The Airy disk radius is r₀ = 1.22λf/D.
+*提示*：艾里斑半径为 $r_0 = 1.22\lambda f/D$。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Given: f = 50mm, D = 25mm, λ = 550nm = 550 × 10⁻⁹ m
+已知：$f = 50\text{mm}$，$D = 25\text{mm}$，$\lambda = 550\text{nm} = 550 \times 10^{-9}\text{ m}$
 
-r₀ = 1.22λf/D = 1.22 × (550 × 10⁻⁹) × (50 × 10⁻³) / (25 × 10⁻³)
-   = 1.22 × 550 × 10⁻⁹ × 2
-   = 1.342 × 10⁻⁶ m = 1.34 μm
+$r_0 = 1.22\lambda f/D = 1.22 \times (550 \times 10^{-9}) \times (50 \times 10^{-3}) / (25 \times 10^{-3})$
+   $= 1.22 \times 550 \times 10^{-9} \times 2$
+   $= 1.342 \times 10^{-6}\text{ m} = 1.34\text{ μm}$
 
-Diameter = 2r₀ = 2.68 μm
+直径 $= 2r_0 = 2.68\text{ μm}$
 
-Modern camera sensors have pixel sizes of 1-5 μm, so the Airy disk spans approximately 1-3 pixels. This shows that many cameras are near the diffraction limit, especially at small apertures.
+现代相机传感器的像素尺寸为 $1-5\text{ μm}$，因此艾里斑大约跨越 $1-3$ 个像素。这表明许多相机接近衍射极限，尤其是在小光圈下。
 </details>
 
-### Advanced Problems (3 problems)
+### 高级问题（3个问题）
 
-**Exercise 15.4**: Fourier Optics and Rendering
-Show that the rendering equation in the Fourier domain becomes a convolution. Start with:
-L₀(x,ω₀) = ∫ ρ(x,ω₀,ωᵢ)L(x,ωᵢ)(ω₀·n)dωᵢ
+**练习 15.4**：傅里叶光学与渲染
+证明渲染方程在傅里叶域中变为卷积。从以下方程开始：
+$L_o(\mathbf{x},\omega_o) = \int \rho(\mathbf{x},\omega_o,\omega_i)L(\mathbf{x},\omega_i)(\omega_o \cdot \mathbf{n})d\omega_i$
 
-*Hint*: Take the 2D spatial Fourier transform and use the convolution theorem.
+*提示*：进行二维空间傅里叶变换并使用卷积定理。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Taking the 2D Fourier transform over x:
+对 $\mathbf{x}$ 进行二维傅里叶变换：
 
-ℱ{L₀(x,ω₀)} = ℱ{∫ ρ(x,ω₀,ωᵢ)L(x,ωᵢ)(ω₀·n)dωᵢ}
+$\mathcal{F}\{L_o(\mathbf{x},\omega_o)\} = \mathcal{F}\{\int \rho(\mathbf{x},\omega_o,\omega_i)L(\mathbf{x},\omega_i)(\omega_o \cdot \mathbf{n})d\omega_i\}$
 
-For spatially-invariant BRDF ρ(x,ω₀,ωᵢ) = ρ(ω₀,ωᵢ):
+对于空间不变的 BRDF $\rho(\mathbf{x},\omega_o,\omega_i) = \rho(\omega_o,\omega_i)$：
 
-L̃₀(k,ω₀) = ∫ ρ(ω₀,ωᵢ)ℱ{L(x,ωᵢ)}(ω₀·n)dωᵢ
-          = ∫ ρ(ω₀,ωᵢ)L̃(k,ωᵢ)(ω₀·n)dωᵢ
+$\tilde{L}_o(\mathbf{k},\omega_o) = \int \rho(\omega_o,\omega_i)\mathcal{F}\{L(\mathbf{x},\omega_i)\}(\omega_o \cdot \mathbf{n})d\omega_i$
+          $= \int \rho(\omega_o,\omega_i)\tilde{L}(\mathbf{k},\omega_i)(\omega_o \cdot \mathbf{n})d\omega_i$
 
-For textured surfaces where ρ varies with x:
+对于纹理表面，其中 $\rho$ 随 $\mathbf{x}$ 变化：
 
-L̃₀(k,ω₀) = ∫ [ρ̃(k,ω₀,ωᵢ) ⊗ L̃(k,ωᵢ)](ω₀·n)dωᵢ
+$\tilde{L}_o(\mathbf{k},\omega_o) = \int [\tilde{\rho}(\mathbf{k},\omega_o,\omega_i) \otimes \tilde{L}(\mathbf{k},\omega_i)](\omega_o \cdot \mathbf{n})d\omega_i$
 
-This shows that spatial texture variations cause frequency-domain convolution, leading to blur and aliasing if not properly sampled.
+这表明空间纹理变化会导致频域卷积，如果采样不当，会导致模糊和混叠。
 </details>
 
-**Exercise 15.5**: Kirchhoff Boundary Conditions
-Derive the Kirchhoff diffraction formula from the Helmholtz equation using Green's theorem. Show why the boundary conditions on an opaque screen are problematic.
+**练习 15.5**：基尔霍夫边界条件
+使用格林定理从亥姆霍兹方程推导基尔霍夫衍射公式。说明不透明屏幕上的边界条件为何存在问题。
 
-*Hint*: Use Green's function G = exp(ikr)/r and Green's theorem: ∫∫∫_V (ψ∇²φ - φ∇²ψ)dV = ∫∫_S (ψ∂φ/∂n - φ∂ψ/∂n)dS
+*提示*：使用格林函数 $G = \exp(ikr)/r$ 和格林定理：$\iiint_V (\psi\nabla^2\phi - \phi\nabla^2\psi)dV = \iint_S (\psi\partial\phi/\partial n - \phi\partial\psi/\partial n)dS$
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Let u satisfy (∇² + k²)u = 0 and G = exp(ikr)/r satisfy (∇² + k²)G = -4πδ(r).
+令 $u$ 满足 $(\nabla^2 + k^2)u = 0$，且 $G = \exp(ikr)/r$ 满足 $(\nabla^2 + k^2)G = -4\pi\delta(\mathbf{r})$。
 
-Applying Green's theorem with ψ = G and φ = u:
+将 $\psi = G$ 和 $\phi = u$ 应用于格林定理：
 
-∫∫∫_V [G∇²u - u∇²G]dV = ∫∫_S [G∂u/∂n - u∂G/∂n]dS
+$\iiint_V [G\nabla^2u - u\nabla^2G]dV = \iint_S [G\partial u/\partial n - u\partial G/\partial n]dS$
 
-Since ∇²u = -k²u and ∇²G = -k²G - 4πδ(r-r₀):
+由于 $\nabla^2u = -k^2u$ 且 $\nabla^2G = -k^2G - 4\pi\delta(\mathbf{r}-\mathbf{r}_0)$：
 
--4πu(r₀) = ∫∫_S [G∂u/∂n - u∂G/∂n]dS
+$-4\pi u(\mathbf{r}_0) = \iint_S [G\partial u/\partial n - u\partial G/\partial n]dS$
 
-u(P) = (1/4π) ∫∫_S [exp(ikr)/r ∂u/∂n - u ∂/∂n(exp(ikr)/r)]dS
+$u(P) = (1/4\pi) \iint_S [\exp(ikr)/r \partial u/\partial n - u \partial/\partial n(\exp(ikr)/r)]dS$
 
-Kirchhoff boundary conditions assume:
-- On aperture: u = u_incident, ∂u/∂n = ∂u_incident/∂n
-- On screen: u = 0, ∂u/∂n = 0
+基尔霍夫边界条件假设：
+- 在孔径上：$u = u_{\text{incident}}$，$\partial u/\partial n = \partial u_{\text{incident}}/\partial n$
+- 在屏幕上：$u = 0$，$\partial u/\partial n = 0$
 
-The problem: These conditions are inconsistent at the aperture edge where u must jump from u_incident to 0 discontinuously, violating the wave equation. This is the "Kirchhoff paradox" - the approximation works well in practice despite theoretical inconsistency.
+问题：这些条件在孔径边缘不一致，因为 $u$ 必须从 $u_{\text{incident}}$ 不连续地跳变到 $0$，这违反了波动方程。这就是“基尔霍夫悖论”——尽管存在理论上的不一致，但该近似在实践中效果良好。
 </details>
 
-**Exercise 15.6**: Volume Rendering Connection
-Show how the volume rendering equation with scattering reduces to the Huygens-Fresnel principle in the appropriate limit. Consider:
-L(x,ω) = ∫ σₛ(x')p(x',ω'→ω)G(x,x')L(x',ω')dx'
+**练习 15.6**：体渲染连接
+说明带有散射的体渲染方程在适当的极限下如何简化为惠更斯-菲涅尔原理。考虑：
+$L(\mathbf{x},\omega) = \int \sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\to\omega)G(\mathbf{x},\mathbf{x}')L(\mathbf{x}',\omega')d\mathbf{x}'$
 
-*Hint*: Consider a thin scattering layer and the Green's function for the Helmholtz equation.
+*提示*：考虑一个薄散射层和亥姆霍兹方程的格林函数。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For monochromatic light, the Green's function satisfies:
-(∇² + k²)G(x,x') = -δ(x-x')
+对于单色光，格林函数满足：
+$(\nabla^2 + k^2)G(\mathbf{x},\mathbf{x}') = -\delta(\mathbf{x}-\mathbf{x}')$
 
-In free space: G(x,x') = exp(ik|x-x'|)/(4π|x-x'|)
+在自由空间中：$G(\mathbf{x},\mathbf{x}') = \exp(ik|\mathbf{x}-\mathbf{x}'|)/(4\pi|\mathbf{x}-\mathbf{x}'|)$
 
-For a thin scattering layer at z = 0 with σₛ(x') = σ₀δ(z')A(x',y'):
+对于 $z = 0$ 处的薄散射层，其中 $\sigma_s(\mathbf{x}') = \sigma_0\delta(z')A(x',y')$：
 
-L(x,y,z) = ∫∫ σ₀A(x',y')p(θ)G(x,x')L₀(x',y')dx'dy'
+$L(x,y,z) = \iint \sigma_0A(x',y')p(\theta)G(\mathbf{x},\mathbf{x}')L_0(x',y')dx'dy'$
 
-For forward scattering p(θ) ≈ (1 + cos θ)/2 and incident field L₀:
+对于前向散射 $p(\theta) \approx (1 + \cos \theta)/2$ 和入射场 $L_0$：
 
-L(x,y,z) = σ₀/(4π) ∫∫ A(x',y')L₀(x',y') × 
-           [exp(ikr)/r][(1 + cos χ)/2]dx'dy'
+$L(x,y,z) = \sigma_0/(4\pi) \iint A(x',y')L_0(x',y') \times$
+           $[\exp(ikr)/r][(1 + \cos \chi)/2]dx'dy'$
 
-Setting σ₀/(4π) = 1/(iλ) recovers the Huygens-Fresnel formula:
+设置 $\sigma_0/(4\pi) = 1/(i\lambda)$ 即可恢复惠更斯-菲涅尔公式：
 
-u(P) = (1/iλ) ∫∫ u₀(Q)[exp(ikr)/r]K(χ)dS
+$u(P) = (1/i\lambda) \iint u_0(Q)[\exp(ikr)/r]K(\chi)dS$
 
-This shows that the Huygens-Fresnel principle emerges from volume scattering in the limit of a thin layer with appropriate scattering properties.
+这表明惠更斯-菲涅尔原理在具有适当散射特性的薄层极限下从体散射中产生。
 </details>
 
-### Challenge Problems (2 problems)
+### 挑战问题（2个问题）
 
-**Exercise 15.7**: Computational Complexity
-Compare the computational complexity of three methods for computing Fresnel diffraction patterns:
-1. Direct numerical integration
-2. FFT-based convolution  
-3. Angular spectrum method
+**练习 15.7**：计算复杂度
+比较三种计算菲涅尔衍射图样的方法的计算复杂度：
+1.  直接数值积分
+2.  基于 FFT 的卷积
+3.  角谱法
 
-For an N×N sampling grid, derive the complexity and discuss trade-offs.
+对于 $N \times N$ 采样网格，推导复杂度并讨论权衡。
 
-*Hint*: Consider both computational cost and memory requirements.
+*提示*：考虑计算成本和内存需求。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-1. **Direct Integration**: 
-   - For each output point (N² total), integrate over N² input points
-   - Complexity: O(N⁴)
-   - Memory: O(N²)
-   - Accurate but prohibitively slow for large N
+1.  **直接积分**：
+    - 对于每个输出点（总共 $N^2$ 个），对 $N^2$ 个输入点进行积分
+    - 复杂度：$O(N^4)$
+    - 内存：$O(N^2)$
+    - 精确但对于大 $N$ 来说速度极慢
 
-2. **FFT Convolution**:
-   - Fresnel integral as convolution with chirp function
-   - Steps: FFT input (O(N²log N)), multiply (O(N²)), inverse FFT (O(N²log N))
-   - Complexity: O(N²log N)
-   - Memory: O(N²)
-   - Requires careful sampling to avoid aliasing
+2.  **FFT 卷积**：
+    - 菲涅尔积分作为与啁啾函数的卷积
+    - 步骤：FFT 输入 ($O(N^2\log N)$)，乘法 ($O(N^2)$)，逆 FFT ($O(N^2\log N)$)
+    - 复杂度：$O(N^2\log N)$
+    - 内存：$O(N^2)$
+    - 需要仔细采样以避免混叠
 
-3. **Angular Spectrum**:
-   - Propagate in Fourier domain: H(fx,fy) = exp[ikz√(1-(λfx)²-(λfy)²)]
-   - Steps: FFT (O(N²log N)), multiply by H (O(N²)), inverse FFT (O(N²log N))
-   - Complexity: O(N²log N)
-   - Memory: O(N²)
-   - Most efficient, handles evanescent waves correctly
+3.  **角谱法**：
+    - 在傅里叶域中传播：$H(f_x,f_y) = \exp[ikz\sqrt{1-(\lambda f_x)^2-(\lambda f_y)^2}]$
+    - 步骤：FFT ($O(N^2\log N)$)，乘以 $H$ ($O(N^2)$)，逆 FFT ($O(N^2\log N)$)
+    - 复杂度：$O(N^2\log N)$
+    - 内存：$O(N^2)$
+    - 最有效，正确处理倏逝波
 
-Trade-offs:
-- Direct: Most flexible (arbitrary geometries) but slowest
-- FFT convolution: Fast but can have aliasing issues with quadratic phase
-- Angular spectrum: Fastest and most accurate for planar geometries
+权衡：
+- 直接：最灵活（任意几何形状）但最慢
+- FFT 卷积：快速但可能存在二次相位引起的混叠问题
+- 角谱法：对于平面几何形状最快、最精确
 
-For typical N = 1024: Direct takes ~10¹² operations vs ~10⁷ for FFT methods.
+对于典型的 $N = 1024$：直接方法需要约 $10^{12}$ 次操作，而 FFT 方法需要约 $10^7$ 次操作。
 </details>
 
-**Exercise 15.8**: Unified Framework
-Develop a unified mathematical framework that encompasses both geometric ray tracing and wave optics. Show how to transition smoothly between regimes based on the Fresnel number.
+**练习 15.8**：统一框架
+开发一个统一的数学框架，包含几何光线追踪和波动光学。说明如何根据菲涅尔数在不同区域之间平滑过渡。
 
-*Hint*: Consider the stationary phase approximation and the relationship between rays and wavefronts.
+*提示*：考虑驻相近似以及光线和波前之间的关系。
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-**Unified Framework**: Wigner Distribution Function (WDF)
+**统一框架**：维格纳分布函数（WDF）
 
-The WDF W(x,k) combines position and momentum (direction) information:
+WDF $W(\mathbf{x},\mathbf{k})$ 结合了位置和动量（方向）信息：
 
-W(x,k,z) = ∫ u*(x - ξ/2,z)u(x + ξ/2,z)exp(-ik·ξ)dξ
+$W(\mathbf{x},\mathbf{k},z) = \int u^*(\mathbf{x} - \xi/2,z)u(\mathbf{x} + \xi/2,z)\exp(-i\mathbf{k}\cdot\xi)d\xi$
 
-Properties:
-- Marginals give intensity and angular spectrum: ∫W dk = |u(x)|², ∫W dx = |ũ(k)|²
-- Evolution: ∂W/∂z + (k/k₀)·∇W = 0 (free space)
-- Reduces to ray density in geometric limit
+属性：
+- 边缘分布给出强度和角谱：$\int W d\mathbf{k} = |u(\mathbf{x})|^2$，$\int W d\mathbf{x} = |\tilde{u}(\mathbf{k})|^2$
+- 演化：$\partial W/\partial z + (\mathbf{k}/k_0)\cdot\nabla W = 0$（自由空间）
+- 在几何极限下简化为光线密度
 
-**Regime Transition**:
+**区域过渡**：
 
-Define normalized scale parameter: ε = λz/a² = 1/F
+定义归一化尺度参数：$\varepsilon = \lambda z/a^2 = 1/F$
 
-1. **Geometric Optics** (ε → 0, F → ∞):
-   - WDF → ray phase space density
-   - W(x,k) = ∑ᵢ δ(x - xᵢ(z))δ(k - kᵢ)
-   - Ray tracing valid
+1.  **几何光学**（$\varepsilon \to 0$，$F \to \infty$）：
+    - WDF $\to$ 光线相空间密度
+    - $W(\mathbf{x},\mathbf{k}) = \sum_i \delta(\mathbf{x} - \mathbf{x}_i(z))\delta(\mathbf{k} - \mathbf{k}_i)$
+    - 光线追踪有效
 
-2. **Fresnel Regime** (ε ~ 1, F ~ 1):
-   - Quadratic phase approximation
-   - W spreads in phase space
-   - Use Fresnel integrals
+2.  **菲涅尔区域**（$\varepsilon \sim 1$，$F \sim 1$）：
+    - 二次相位近似
+    - W 在相空间中扩散
+    - 使用菲涅尔积分
 
-3. **Fraunhofer Regime** (ε >> 1, F << 1):
-   - Position-momentum uncertainty maximized
-   - W(x,k) ≈ W₀(x)W̃₀(k)
-   - Fourier optics applies
+3.  **夫琅禾费区域**（$\varepsilon \gg 1$，$F \ll 1$）：
+    - 位置-动量不确定性最大化
+    - $W(\mathbf{x},\mathbf{k}) \approx W_0(\mathbf{x})\tilde{W}_0(\mathbf{k})$
+    - 傅里叶光学适用
 
-**Smooth Transition**:
+**平滑过渡**：
 
-Propagation operator: P(z) = exp[iz(k²/2k₀ + Φ(x,k,ε))]
+传播算子：$P(z) = \exp[iz(k^2/2k_0 + \Phi(\mathbf{x},\mathbf{k},\varepsilon))]$
 
-where Φ interpolates:
-- Φ → 0 as ε → 0 (geometric)
-- Φ → higher-order terms as ε increases
+其中 $\Phi$ 插值：
+- $\Phi \to 0$ 当 $\varepsilon \to 0$（几何）
+- $\Phi \to$ 高阶项 当 $\varepsilon$ 增加
 
-This framework unifies:
-- Ray tracing (ε → 0)
-- Gaussian beam propagation (intermediate ε)
-- Full wave optics (arbitrary ε)
+该框架统一了：
+- 光线追踪（$\varepsilon \to 0$）
+- 高斯光束传播（中间 $\varepsilon$）
+- 全波动光学（任意 $\varepsilon$）
 
-The WDF provides a phase-space representation that smoothly transitions between particle-like rays and wave-like diffraction, controlled by the Fresnel number.
+WDF 提供了一种相空间表示，可以平滑地在粒子状光线和波状衍射之间过渡，由菲涅尔数控制。
 </details>
 
-## Common Pitfalls and Errors
+## 常见陷阱和错误
 
-### Approximation Validity
-1. **Scalar Approximation**: Invalid for:
-   - Strong focusing (NA > 0.6)
-   - Near-field of subwavelength features
-   - Polarization-dependent effects
+### 近似有效性
+1.  **标量近似**：以下情况无效：
+    - 强聚焦（NA > 0.6）
+    - 亚波长特征的近场
+    - 偏振相关效应
 
-2. **Fresnel vs Fraunhofer**: 
-   - Fresnel: F ≳ 1 (near-field)
-   - Fraunhofer: F << 1 (far-field)
-   - Transition region needs careful handling
+2.  **菲涅尔与夫琅禾费**：
+    - 菲涅尔：$F \gtrsim 1$（近场）
+    - 夫琅禾费：$F \ll 1$（远场）
+    - 过渡区域需要仔细处理
 
-3. **Paraxial Approximation**: Breaks down for:
-   - Large angles (> 15-20°)
-   - Wide-aperture systems
-   - Off-axis points
+3.  **傍轴近似**：以下情况失效：
+    - 大角度（> 15-20°）
+    - 宽孔径系统
+    - 离轴点
 
-### Numerical Considerations
+### 数值考虑
 
-1. **Sampling Requirements**:
-   - Quadratic phase in Fresnel integral requires dense sampling
-   - Nyquist criterion: Δx < λz/(2X) where X is field extent
-   - Aliasing causes artificial fringes
+1.  **采样要求**：
+    - 菲涅尔积分中的二次相位需要密集采样
+    - 奈奎斯特准则：$\Delta x < \lambda z/(2X)$，其中 $X$ 是场范围
+    - 混叠导致人工条纹
 
-2. **FFT Artifacts**:
-   - Periodic boundary conditions create wraparound
-   - Zero-padding needed for accurate convolution
-   - Windowing functions reduce edge effects
+2.  **FFT 伪影**：
+    - 周期性边界条件产生环绕效应
+    - 精确卷积需要零填充
+    - 窗函数减少边缘效应
 
-3. **Phase Unwrapping**:
-   - Computed phase limited to [-π, π]
-   - Unwrapping algorithms needed for continuous phase
-   - Sensitive to noise and undersampling
+3.  **相位解缠**：
+    - 计算相位限制在 $[-\pi, \pi]$
+    - 连续相位需要解缠算法
+    - 对噪声和欠采样敏感
 
-4. **Numerical Precision**:
-   - Large k values cause precision loss
-   - exp(ikr) oscillates rapidly for large r
-   - Use differential propagation for long distances
+4.  **数值精度**：
+    - 大 $k$ 值导致精度损失
+    - $\exp(ikr)$ 对于大 $r$ 快速振荡
+    - 长距离传播使用微分传播
 
-## Best Practice Checklist
+## 最佳实践清单
 
-### Design Review Points
+### 设计审查点
 
-✓ **Physical Validity**
-- [ ] Wavelength range specified
-- [ ] Coherence properties defined
-- [ ] Polarization effects considered
-- [ ] Material dispersion included if needed
+✓ **物理有效性**
+- [ ] 指定波长范围
+- [ ] 定义相干性属性
+- [ ] 考虑偏振效应
+- [ ] 需要时包含材料色散
 
-✓ **Approximation Choice**
-- [ ] Fresnel number calculated
-- [ ] Appropriate regime selected
-- [ ] Error bounds estimated
-- [ ] Edge cases identified
+✓ **近似选择**
+- [ ] 计算菲涅尔数
+- [ ] 选择适当的区域
+- [ ] 估计误差范围
+- [ ] 识别边缘情况
 
-✓ **Numerical Implementation**
-- [ ] Sampling rate meets Nyquist criterion
-- [ ] FFT size includes padding
-- [ ] Boundary conditions properly handled
-- [ ] Precision adequate for phase calculations
+✓ **数值实现**
+- [ ] 采样率满足奈奎斯特准则
+- [ ] FFT 大小包含填充
+- [ ] 正确处理边界条件
+- [ ] 相位计算精度足够
 
-✓ **Performance Optimization**
-- [ ] Algorithm complexity analyzed
-- [ ] Memory requirements estimated
-- [ ] GPU acceleration considered
-- [ ] Multi-scale methods evaluated
+✓ **性能优化**
+- [ ] 分析算法复杂度
+- [ ] 估计内存需求
+- [ ] 考虑 GPU 加速
+- [ ] 评估多尺度方法
 
-✓ **Validation Strategy**
-- [ ] Analytical test cases verified
-- [ ] Energy conservation checked
-- [ ] Reciprocity maintained
-- [ ] Comparison with geometric limit
+✓ **验证策略**
+- [ ] 验证分析测试用例
+- [ ] 检查能量守恒
+- [ ] 保持互易性
+- [ ] 与几何极限比较
 
-✓ **Graphics Integration**
-- [ ] Rendering pipeline compatibility
-- [ ] Real-time constraints evaluated
-- [ ] Level-of-detail strategy defined
-- [ ] Perceptual importance assessed
+✓ **图形集成**
+- [ ] 渲染管线兼容性
+- [ ] 评估实时约束
+- [ ] 定义细节层次策略
+- [ ] 评估感知重要性
