@@ -1,6 +1,6 @@
 # 第14章：神经逆向渲染
 
-神经逆向渲染将深度学习与物理渲染原理相结合，从观测图像中推断场景的三维结构、材质属性和光照条件。本章探讨如何利用神经表示解决渲染方程的逆问题，包括分解表示、生成先验的引入、少样本学习以及实时系统的设计。我们将看到，通过巧妙地参数化和约束，可以将不适定的逆向问题转化为可优化的目标函数。
+神经逆向渲染将深度学习与物理渲染原理相结合，从观测图像中推断场景的三维结构、材质属性和光照条件。本章探讨如何利用神经表示解决渲染方程的逆问题，包括分解表示、生成先验的引入、少样本学习以及实时系统的设计。我们将看到，通过巧妙地参数化和约束，可以将不适定的逆向问题转化为可优化的目标函数。这一领域结合了计算机视觉、机器学习和计算机图形学的前沿技术，在虚拟现实、增强现实、数字孪生等应用中具有重要价值。
 
 ## 学习目标
 
@@ -32,6 +32,12 @@ $$\Theta^* = \arg\min_\Theta \mathcal{L}(\mathcal{R}(\Theta), I_{\text{obs}}) + 
 - 位置编码参数 $\gamma$
 - 特征网格或其他显式表示
 
+**信息论视角**：逆向渲染可以视为信息恢复问题。观测图像 $I_{\text{obs}}$ 包含的信息量为：
+
+$$I(I_{\text{obs}}; \Theta) = H(\Theta) - H(\Theta|I_{\text{obs}})$$
+
+其中 $H(\cdot)$ 是熵函数。逆向渲染的目标是最大化这个互信息。
+
 逆向渲染的数学框架可以从变分推断角度理解。给定观测 $I_{\text{obs}}$，我们希望推断后验分布：
 
 $$p(\Theta|I_{\text{obs}}) = \frac{p(I_{\text{obs}}|\Theta)p(\Theta)}{p(I_{\text{obs}})}$$
@@ -42,6 +48,16 @@ $$\Theta^* = \arg\max_\Theta \log p(I_{\text{obs}}|\Theta) + \log p(\Theta)$$
 
 其中 $-\log p(I_{\text{obs}}|\Theta)$ 对应重建损失，$-\log p(\Theta)$ 对应正则化项。
 
+**Hadamard 不适定性分析**：逆向渲染问题通常违反 Hadamard 适定性条件：
+1. **存在性**：解可能不存在（噪声数据）
+2. **唯一性**：多个场景可能产生相同图像
+3. **稳定性**：小扰动可能导致大变化
+
+形式化地，条件数：
+$$\kappa = \frac{\|\delta \Theta\|}{\|\Theta\|} / \frac{\|\delta I\|}{\|I\|}$$
+
+对于逆向渲染，$\kappa \gg 1$，表明问题的不适定性。
+
 ### 14.1.2 神经场参数化的梯度计算
 
 考虑标准的体积渲染方程：
@@ -49,6 +65,15 @@ $$\Theta^* = \arg\max_\Theta \log p(I_{\text{obs}}|\Theta) + \log p(\Theta)$$
 $$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
 
 其中透射率 $T(t) = \exp\left(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds\right)$。
+
+**伴随状态方法**：为了高效计算梯度，引入伴随变量 $\lambda(t)$：
+
+$$\lambda(t) = \frac{\partial \mathcal{L}}{\partial T(t)}$$
+
+伴随方程为：
+$$\frac{d\lambda}{dt} = -\lambda(t) \sigma(\mathbf{r}(t)) - \frac{\partial \mathcal{L}}{\partial \mathbf{c}(\mathbf{r}(t))}$$
+
+边界条件：$\lambda(t_f) = 0$。
 
 对网络参数 $\mathbf{W}$ 的梯度通过链式法则计算：
 
@@ -61,6 +86,10 @@ $$\frac{\partial C(\mathbf{r})}{\partial \mathbf{W}} = \int_{t_n}^{t_f} \left[ \
 其中透射率的梯度涉及路径积分：
 
 $$\frac{\partial T(t)}{\partial \mathbf{W}} = -T(t) \int_{t_n}^t \frac{\partial \sigma(\mathbf{r}(s))}{\partial \mathbf{W}} ds$$
+
+**隐式微分技术**：对于隐式定义的表面 $F(\mathbf{x}, \Theta) = 0$，使用隐函数定理：
+
+$$\frac{\partial \mathbf{x}}{\partial \Theta} = -\left(\frac{\partial F}{\partial \mathbf{x}}\right)^{-1} \frac{\partial F}{\partial \Theta}$$
 
 **数值实现的关键考虑**：
 
@@ -80,6 +109,11 @@ $$\frac{\partial T(t)}{\partial \mathbf{W}} = -T(t) \int_{t_n}^t \frac{\partial 
 4. **重要性采样**：根据透射率分布自适应调整采样密度
    $$p(t) \propto T(t)\sigma(t)$$
 
+5. **梯度估计的方差减少**：
+   - **控制变量**：$\nabla_{\text{CV}} = \nabla - c(\nabla_{\text{baseline}} - \mathbb{E}[\nabla_{\text{baseline}}])$
+   - **Rao-Blackwellization**：利用条件期望减少方差
+   - **多重重要性采样**：结合多个采样策略
+
 **二阶优化方法**：
 
 Hessian 矩阵的近似计算：
@@ -89,6 +123,12 @@ $$\mathbf{H} \approx \mathbf{J}^T\mathbf{J} + \lambda\mathbf{I}$$
 
 $$\mathbf{W}_{k+1} = \mathbf{W}_k - (\mathbf{H} + \mu\mathbf{I})^{-1}\nabla_{\mathbf{W}}\mathcal{L}$$
 
+**自然梯度方法**：考虑参数空间的黎曼几何：
+$$\mathbf{W}_{k+1} = \mathbf{W}_k - \eta \mathbf{F}^{-1} \nabla_{\mathbf{W}}\mathcal{L}$$
+
+其中 $\mathbf{F}$ 是 Fisher 信息矩阵：
+$$\mathbf{F} = \mathbb{E}\left[\left(\frac{\partial \log p(I|\Theta)}{\partial \Theta}\right)\left(\frac{\partial \log p(I|\Theta)}{\partial \Theta}\right)^T\right]$$
+
 ### 14.1.3 多视图一致性约束
 
 给定 $N$ 个视图 $\{I_i\}_{i=1}^N$ 及其相机参数 $\{\mathbf{P}_i\}_{i=1}^N$，多视图重建损失为：
@@ -97,11 +137,25 @@ $$\mathcal{L}_{\text{multi}} = \sum_{i=1}^N \sum_{\mathbf{p} \in I_i} \rho\left(
 
 其中 $\rho$ 是鲁棒损失函数（如 Huber loss）。
 
+**Huber 损失的选择理由**：
+$$\rho(x) = \begin{cases}
+\frac{1}{2}x^2 & |x| \leq \delta \\
+\delta(|x| - \frac{1}{2}\delta) & |x| > \delta
+\end{cases}$$
+
+这提供了 L2 损失的平滑性和 L1 损失的鲁棒性，对离群点不敏感。
+
 **几何一致性**通过深度图约束实现：
 
 $$\mathcal{L}_{\text{depth}} = \sum_{i,j} \sum_{\mathbf{p}} w_{ij}(\mathbf{p}) \|D_i(\mathbf{p}) - \Pi_{ij}(D_j(\Pi_{ji}(\mathbf{p})))\|$$
 
 其中 $\Pi_{ij}$ 是从视图 $j$ 到视图 $i$ 的投影变换，$w_{ij}$ 是可见性权重。
+
+**深度重投影的数学细节**：给定深度 $d_j$ 和像素 $\mathbf{p}_j$，3D 点为：
+$$\mathbf{X} = d_j \mathbf{K}_j^{-1}[\mathbf{p}_j; 1]$$
+
+投影到视图 $i$：
+$$[\mathbf{p}_i; 1] = \mathbf{K}_i \mathbf{R}_{ij}(\mathbf{X} - \mathbf{t}_{ij})/z_i$$
 
 **光度一致性约束**：
 
@@ -113,13 +167,25 @@ $$\mathcal{L}_{\text{photo}} = \sum_{\mathbf{X}} \sum_{i,j} v_{ij}(\mathbf{X}) \
 
 其中可见性函数 $v_{ij}(\mathbf{X})$ 检查 $\mathbf{X}$ 在两个视图中是否都可见。
 
+**遮挡感知的可见性计算**：
+$$v_{ij}(\mathbf{X}) = \exp\left(-\alpha \max(0, D_i(\mathbf{p}_i) - d_i(\mathbf{X}))\right)$$
+
+其中 $d_i(\mathbf{X})$ 是 $\mathbf{X}$ 到相机 $i$ 的距离。
+
 **极线约束**：
 
 对于对应点 $\mathbf{p}_i$、$\mathbf{p}_j$，必须满足：
 $$\mathbf{p}_j^T \mathbf{F}_{ij} \mathbf{p}_i = 0$$
 
 其中 $\mathbf{F}_{ij}$ 是基础矩阵。这可以作为软约束加入：
-$$\mathcal{L}_{\text{epipolar}} = \sum_{(\mathbf{p}_i, \mathbf{p}_j)} (\mathbf{p}_j^T \mathbf{F}_{ij} \mathbf{p}_i)^2$$
+$$\mathcal{L}_{\text{epipolar}} = \sum_{(\mathbf{p}_i, \mathbf{p}_j)} \frac{(\mathbf{p}_j^T \mathbf{F}_{ij} \mathbf{p}_i)^2}{\|\mathbf{F}_{ij}^T\mathbf{p}_j\|^2_{[1:2]} + \|\mathbf{F}_{ij}\mathbf{p}_i\|^2_{[1:2]}}$$
+
+分母项（Sampson 距离）提供了几何上有意义的归一化。
+
+**多尺度一致性**：
+$$\mathcal{L}_{\text{multiscale}} = \sum_{s=0}^S w_s \|\mathcal{R}_s(\Theta) - \text{Downsample}^s(I_{\text{obs}})\|$$
+
+其中 $\mathcal{R}_s$ 是尺度 $s$ 的渲染器。
 
 **时间一致性**（对于视频序列）：
 
@@ -127,11 +193,24 @@ $$\mathcal{L}_{\text{temporal}} = \sum_t \|\Theta(t) - \Theta(t-1)\|^2_{\text{sm
 
 其中 $\mathcal{F}$ 是光流或场景流约束。
 
+**场景流的具体形式**：
+$$\mathcal{F}(\Theta_t, \Theta_{t-1}) = \int_{\mathcal{V}} \|\mathbf{v}(\mathbf{x}, t) - \frac{\mathbf{x}_t - \mathbf{x}_{t-1}}{\Delta t}\|^2 d\mathbf{x}$$
+
+其中 $\mathbf{v}$ 是预测的速度场。
+
+**循环一致性约束**：
+$$\mathcal{L}_{\text{cycle}} = \sum_{i,j,k} \|\mathbf{p}_i - \Pi_{ik}^{-1}(\Pi_{kj}^{-1}(\Pi_{ji}(\mathbf{p}_i)))\|$$
+
 **联合优化框架**：
 
 $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{multi}} + \lambda_d \mathcal{L}_{\text{depth}} + \lambda_p \mathcal{L}_{\text{photo}} + \lambda_e \mathcal{L}_{\text{epipolar}} + \lambda_t \mathcal{L}_{\text{temporal}}$$
 
 权重 $\{\lambda_d, \lambda_p, \lambda_e, \lambda_t\}$ 需要仔细调节以平衡不同约束的贡献。
+
+**自适应权重策略**：使用不确定性加权：
+$$\mathcal{L}_{\text{total}} = \sum_i \frac{1}{2\sigma_i^2}\mathcal{L}_i + \log \sigma_i$$
+
+其中 $\sigma_i$ 是可学习的不确定性参数。
 
 ### 14.1.4 正则化策略与收敛性分析
 
@@ -141,20 +220,39 @@ $$\mathcal{R}_{\text{density}} = \int_{\mathcal{V}} \sigma(\mathbf{x}) \log \sig
 
 这是信息熵的负值，鼓励稀疏的密度分布。
 
+**信息论解释**：最小化熵等价于最大化密度分布的确定性，防止"雾状"解。
+
 **平滑性正则化**：
 
 $$\mathcal{R}_{\text{smooth}} = \int_{\mathcal{V}} \|\nabla \sigma(\mathbf{x})\|^2 + \|\nabla \mathbf{c}(\mathbf{x})\|^2 d\mathbf{x}$$
 
+**Sobolev 空间视角**：这对应于 $H^1$ 范数，控制函数的 Sobolev 正则性。
+
 **分布正则化**：
 
 1. **Lipschitz 正则化**：限制函数的变化率
-   $$\mathcal{R}_{\text{Lip}} = \max_{\mathbf{x}_1, \mathbf{x}_2} \frac{\|f(\mathbf{x}_1) - f(\mathbf{x}_2)\|}{\|\mathbf{x}_1 - \mathbf{x}_2\|}$$
+   $$\mathcal{R}_{\text{Lip}} = \mathbb{E}_{\mathbf{x}_1, \mathbf{x}_2}\left[\max\left(0, \frac{\|f(\mathbf{x}_1) - f(\mathbf{x}_2)\|}{\|\mathbf{x}_1 - \mathbf{x}_2\|} - L\right)^2\right]$$
 
 2. **TV 正则化**：保持边缘的同时促进平滑
    $$\mathcal{R}_{\text{TV}} = \int_{\mathcal{V}} \|\nabla \sigma(\mathbf{x})\|_1 d\mathbf{x}$$
+   
+   **各向异性 TV**：
+   $$\mathcal{R}_{\text{ATV}} = \int_{\mathcal{V}} \sum_{i=1}^3 |\partial_i \sigma(\mathbf{x})| d\mathbf{x}$$
 
 3. **频谱正则化**：在频域控制复杂度
-   $$\mathcal{R}_{\text{freq}} = \int_{\boldsymbol{\omega}} |\boldsymbol{\omega}|^2 |\hat{f}(\boldsymbol{\omega})|^2 d\boldsymbol{\omega}$$
+   $$\mathcal{R}_{\text{freq}} = \int_{\boldsymbol{\omega}} |\boldsymbol{\omega}|^{2s} |\hat{f}(\boldsymbol{\omega})|^2 d\boldsymbol{\omega}$$
+   
+   其中 $s > 0$ 控制平滑度（$s=1$ 对应 $H^1$ 正则化）。
+
+**几何正则化**：
+
+1. **曲率正则化**：
+   $$\mathcal{R}_{\text{curv}} = \int_{\mathcal{S}} (\kappa_1^2 + \kappa_2^2) dS$$
+   
+   其中 $\kappa_1, \kappa_2$ 是主曲率。
+
+2. **最小表面正则化**：
+   $$\mathcal{R}_{\text{area}} = \int_{\mathcal{S}} dS$$
 
 **收敛性分析**：考虑梯度下降 $\Theta_{k+1} = \Theta_k - \eta_k \nabla_\Theta \mathcal{L}$
 
@@ -166,17 +264,23 @@ $$\mathcal{L}(\Theta_k) - \mathcal{L}(\Theta^*) \leq \frac{\|\Theta_0 - \Theta^*
 
 **非凸优化的理论保证**：
 
-1. **梯度主导条件**：如果满足
-   $$\langle \nabla \mathcal{L}(\Theta), \Theta - \Theta^* \rangle \geq \mu \|\Theta - \Theta^*\|^2 + \frac{1}{2L}\|\nabla \mathcal{L}(\Theta)\|^2$$
-   则可以保证全局收敛。
+1. **梯度主导条件**（Polyak-Łojasiewicz）：如果满足
+   $$\|\nabla \mathcal{L}(\Theta)\|^2 \geq 2\mu (\mathcal{L}(\Theta) - \mathcal{L}(\Theta^*))$$
+   则梯度下降线性收敛：
+   $$\mathcal{L}(\Theta_k) - \mathcal{L}(\Theta^*) \leq (1-2\mu\eta)^k(\mathcal{L}(\Theta_0) - \mathcal{L}(\Theta^*))$$
 
 2. **景观分析**：对于过参数化网络，局部极小值往往接近全局最优
-   $$\mathcal{L}(\Theta_{\text{local}}) - \mathcal{L}(\Theta^*) = O(1/\sqrt{m})$$
-   其中 $m$ 是网络宽度。
+   $$\mathbb{P}[\mathcal{L}(\Theta_{\text{local}}) - \mathcal{L}(\Theta^*) > \epsilon] \leq \exp(-cm\epsilon^2)$$
+   其中 $m$ 是网络宽度，$c$ 是常数。
 
 3. **逃逸鞍点**：使用随机梯度或二阶方法
    $$\Theta_{k+1} = \Theta_k - \eta\nabla\mathcal{L} + \sqrt{2\eta\beta^{-1}}\xi_k$$
    其中 $\xi_k \sim \mathcal{N}(0, \mathbf{I})$ 是噪声项。
+   
+   **逃逸时间分析**：
+   $$\mathbb{E}[T_{\text{escape}}] = O\left(\frac{\log(1/\epsilon)}{\lambda_{\min}(\mathbf{H})}\right)$$
+   
+   其中 $\lambda_{\min}(\mathbf{H})$ 是 Hessian 的最小负特征值。
 
 **自适应学习率策略**：
 
@@ -187,6 +291,22 @@ $$\mathcal{L}(\Theta_k) - \mathcal{L}(\Theta^*) \leq \frac{\|\Theta_0 - \Theta^*
    $$\eta_k = \eta_0 (1 - k/K)^p$$
 
 3. **重启机制**：周期性重置学习率以逃离局部极小值
+   $$\eta_k = \eta_0 \cdot 2^{-\lfloor k/T \rfloor}$$
+   
+   其中 $T$ 是重启周期。
+
+4. **自适应方法的统一视角**：
+   $$\Theta_{k+1} = \Theta_k - \eta \mathbf{G}_k^{-1/2} \nabla\mathcal{L}$$
+   
+   - Adam: $\mathbf{G}_k = \text{diag}(\mathbf{v}_k) + \epsilon\mathbf{I}$
+   - AdaGrad: $\mathbf{G}_k = \sum_{i=1}^k \nabla_i \nabla_i^T$
+   - Natural Gradient: $\mathbf{G}_k = \mathbf{F}_k$ (Fisher 信息矩阵)
+
+**收敛性诊断**：
+
+1. **梯度范数监控**：$\|\nabla\mathcal{L}\| < \epsilon_g$
+2. **损失平台检测**：$|\mathcal{L}_k - \mathcal{L}_{k-w}|/w < \epsilon_l$
+3. **参数变化**：$\|\Theta_k - \Theta_{k-1}\| < \epsilon_\theta$
 
 ## 14.2 分解表示：几何、材质、光照
 
