@@ -1,705 +1,696 @@
-# Chapter 1: Geometric Optics and Rendering Fundamentals
+# 第1章：几何光学与渲染基础
 
-This chapter establishes the mathematical foundation for computer graphics through the lens of geometric optics. We develop the rendering equation as our central framework, introduce key radiometric concepts, and establish the path integral formulation that will unify all subsequent rendering techniques. By treating light transport as a high-dimensional integration problem, we set the stage for understanding point-based, image-based, and neural rendering methods as different approaches to solving the same fundamental equation.
+本章通过几何光学的视角建立计算机图形学的数学基础。我们将渲染方程作为核心框架，介绍关键的辐射度量概念，并建立路径积分表述，这将统一所有后续的渲染技术。通过将光传输视为高维积分问题，我们为理解基于点的渲染、基于图像的渲染和神经渲染方法作为解决同一基本方程的不同方法奠定了基础。
 
-## Learning Objectives
+## 学习目标
 
-After completing this chapter, you will be able to:
-1. Derive the rendering equation from first principles using energy conservation
-2. Transform between different coordinate systems while preserving radiometric quantities
-3. Analyze BRDF properties and verify physical plausibility
-4. Apply Monte Carlo methods to estimate high-dimensional integrals with known error bounds
-5. Express light transport as a path integral and connect it to volume rendering
+完成本章后，您将能够：
+1. 使用能量守恒从第一性原理推导渲染方程
+2. 在保持辐射度量不变的情况下在不同坐标系之间转换
+3. 分析BRDF属性并验证物理合理性
+4. 应用蒙特卡洛方法估计具有已知误差界限的高维积分
+5. 将光传输表达为路径积分并将其与体积渲染联系起来
 
-## 1.1 Ray Tracing Basics and the Rendering Equation
+## 1.1 光线追踪基础与渲染方程
 
-### Light as Rays in Geometric Optics
+### 几何光学中的光线
 
-In geometric optics, we model light propagation using rays—infinitesimal beams that travel in straight lines through homogeneous media. This approximation holds when wavelength λ << feature size, allowing us to ignore diffraction and interference. A ray is parameterized as:
+在几何光学中，我们使用光线来建模光的传播——在均匀介质中沿直线传播的无限细光束。当波长 λ << 特征尺寸时，这种近似成立，使我们可以忽略衍射和干涉。光线参数化为：
 
 **r**(t) = **o** + t**d**
 
-where **o** ∈ ℝ³ is the origin, **d** ∈ ℝ³ is the direction (||**d**|| = 1), and t ≥ 0 is the parameter along the ray.
+其中 **o** ∈ ℝ³ 是原点，**d** ∈ ℝ³ 是方向（||**d**|| = 1），t ≥ 0 是沿光线的参数。
 
-The ray equation emerges from the eikonal equation ∇S = n**k̂** in the limit λ → 0, where S is the phase and n is the refractive index. In inhomogeneous media, rays follow curved paths satisfying:
+光线方程源自程函方程 ∇S = n**k̂** 在 λ → 0 极限下的结果，其中 S 是相位，n 是折射率。在非均匀介质中，光线遵循满足以下方程的曲线路径：
 
-d/ds(n d**r**/ds) = ∇n
+$\frac{d}{ds}\left(n \frac{d\mathbf{r}}{ds}\right) = \nabla n$
 
-This reduces to straight lines when n is constant.
+当 n 为常数时，这简化为直线。
 
-**Connection to Wave Optics**: The geometric optics approximation emerges from the WKB (Wentzel-Kramers-Brillouin) approximation of the wave equation. When we substitute ψ = A exp(ikS) into the Helmholtz equation and take k → ∞:
+**与波动光学的联系**：几何光学近似源自波动方程的WKB（Wentzel-Kramers-Brillouin）近似。当我们将 ψ = A exp(ikS) 代入亥姆霍兹方程并取 k → ∞ 时：
 
-∇²ψ + k²n²ψ = 0 → (∇S)² = n² (eikonal equation)
+$\nabla^2\psi + k^2n^2\psi = 0 \rightarrow (\nabla S)^2 = n^2$ （程函方程）
 
-The surfaces of constant phase S = const are wavefronts, and rays are orthogonal trajectories to these wavefronts. This connection becomes crucial when we extend to wave optics in later chapters.
+等相位面 S = const 是波前，光线是这些波前的正交轨迹。当我们在后续章节扩展到波动光学时，这种联系变得至关重要。
 
-**Ray Optics Validity**: The geometric optics approximation breaks down when:
-1. Feature size ~ wavelength (diffraction becomes significant)
-2. Near caustics where ray density → ∞
-3. In the presence of sharp edges or discontinuities
-4. For coherent phenomena requiring phase information
+**光线光学的有效性**：几何光学近似在以下情况下失效：
+1. 特征尺寸 ~ 波长（衍射变得显著）
+2. 靠近焦散面，光线密度 → ∞
+3. 存在尖锐边缘或不连续性
+4. 需要相位信息的相干现象
 
-**Fermat's Principle**: Rays follow paths of stationary optical path length:
+**费马原理**：光线遵循光程稳定的路径：
 
-δ∫ n(**r**) ds = 0
+$\delta\int n(\mathbf{r}) ds = 0$
 
-This variational principle unifies ray behavior: straight lines in homogeneous media, Snell's law at interfaces, and curved paths in gradient-index media. It also connects to the principle of least action in physics and the geodesic equation in differential geometry.
+这个变分原理统一了光线行为：在均匀介质中的直线、界面处的斯涅尔定律以及梯度折射率介质中的曲线路径。它还与物理学中的最小作用量原理和微分几何中的测地线方程相关联。
 
-### Radiometric Quantities
+### 辐射度量
 
-Before deriving the rendering equation, we must establish our radiometric framework. These quantities form a hierarchy, each building upon the previous:
+在推导渲染方程之前，我们必须建立辐射度量框架。这些量形成一个层次结构，每个都建立在前一个的基础上：
 
-**Radiant energy** Q measures total electromagnetic energy:
+**辐射能** Q 测量总电磁能量：
 Q [J]
 
-**Radiant flux (power)** Φ measures energy per unit time:
-Φ = dQ/dt [W]
+**辐射通量（功率）** Φ 测量单位时间的能量：
+$\Phi = \frac{dQ}{dt}$ [W]
 
-**Radiant intensity** I measures flux per unit solid angle from a point source:
-I = dΦ/dω [W/sr]
+**辐射强度** I 测量点源单位立体角的通量：
+$I = \frac{d\Phi}{d\omega}$ [W/sr]
 
-**Irradiance** E measures flux incident per unit area:
-E = dΦ/dA [W/m²]
+**辐照度** E 测量入射单位面积的通量：
+$E = \frac{d\Phi}{dA}$ [W/m²]
 
-**Radiant exitance** M measures flux leaving per unit area:
-M = dΦ/dA [W/m²]
+**辐射出射度** M 测量离开单位面积的通量：
+$M = \frac{d\Phi}{dA}$ [W/m²]
 
-**Radiance** L measures flux per unit area per unit solid angle:
-L = d²Φ/(dA cos θ dω) = d²Φ/(dA⊥ dω) [W/(m²·sr)]
+**辐射率** L 测量单位面积单位立体角的通量：
+$L = \frac{d^2\Phi}{dA \cos \theta d\omega} = \frac{d^2\Phi}{dA_\perp d\omega}$ [W/(m²·sr)]
 
-where dA⊥ = dA cos θ is the projected area perpendicular to the ray direction.
+其中 $dA_\perp = dA \cos \theta$ 是垂直于光线方向的投影面积。
 
-Radiance is the fundamental quantity in rendering because:
-1. It remains constant along rays in vacuum (radiance invariance theorem)
-2. It's what cameras and eyes measure
-3. All other radiometric quantities can be derived from it
+辐射率是渲染中的基本量，因为：
+1. 它在真空中沿光线保持恒定（辐射率不变性定理）
+2. 它是相机和眼睛测量的量
+3. 所有其他辐射度量都可以从它导出
 
-**Photometric vs Radiometric Quantities**: While we focus on radiometric quantities (physical energy), rendering for human perception often uses photometric quantities:
-- Luminous flux [lm] = Radiant flux [W] × luminous efficacy
-- Luminance [cd/m²] = Radiance × photopic response V(λ)
-- The CIE luminosity function V(λ) peaks at 555 nm (green)
+**光度量与辐射度量**：虽然我们关注辐射度量（物理能量），但为人类感知进行渲染时通常使用光度量：
+- 光通量 [lm] = 辐射通量 [W] × 光效能
+- 亮度 [cd/m²] = 辐射率 × 明视觉响应 V(λ)
+- CIE光度函数 V(λ) 在555 nm（绿色）处达到峰值
 
-**Spectral Radiance**: In reality, radiance varies with wavelength:
-L(x, ω, λ) [W/(m²·sr·nm)]
+**光谱辐射率**：实际上，辐射率随波长变化：
+$L(\mathbf{x}, \omega, \lambda)$ [W/(m²·sr·nm)]
 
-For rendering, we typically use:
-- RGB approximation: 3 samples of the spectrum
-- Spectral rendering: N wavelength samples (typ. 10-100)
-- Hero wavelengths: Stochastic sampling of spectrum
+对于渲染，我们通常使用：
+- RGB近似：光谱的3个样本
+- 光谱渲染：N个波长样本（通常10-100）
+- 主波长：光谱的随机采样
 
-**Coherent vs Incoherent Addition**: Radiometry assumes incoherent light—intensities add directly. For coherent sources (lasers), we must track phase and add complex amplitudes:
-I_total = |E₁ + E₂|² ≠ |E₁|² + |E₂|² (in general)
+**相干与非相干叠加**：辐射度量假设非相干光——强度直接相加。对于相干光源（激光），我们必须跟踪相位并叠加复振幅：
+$I_{\text{total}} = |E_1 + E_2|^2 \neq |E_1|^2 + |E_2|^2$ （一般情况下）
 
-### The Rendering Equation
+### 渲染方程
 
-The rendering equation, introduced by Kajiya (1986), describes the equilibrium distribution of light in a scene. It emerges from power balance: at any surface point, outgoing power equals emitted plus reflected power.
+渲染方程由Kajiya（1986）提出，描述场景中光的平衡分布。它源于功率平衡：在任何表面点，输出功率等于发射功率加反射功率。
 
-At surface point **x** with normal **n**, the outgoing radiance L_o in direction **ω**_o satisfies:
+在具有法线 **n** 的表面点 **x** 处，沿方向 $\omega_o$ 的出射辐射率 $L_o$ 满足：
 
-L_o(**x**, **ω**_o) = L_e(**x**, **ω**_o) + ∫_Ω f_r(**x**, **ω**_i, **ω**_o) L_i(**x**, **ω**_i) (**ω**_i · **n**) dω_i
+$L_o(\mathbf{x}, \omega_o) = L_e(\mathbf{x}, \omega_o) + \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) L_i(\mathbf{x}, \omega_i) (\omega_i \cdot \mathbf{n}) d\omega_i$
 
-where:
-- L_e(**x**, **ω**_o) is emitted radiance from **x** in direction **ω**_o
-- f_r(**x**, **ω**_i, **ω**_o) is the BRDF [sr⁻¹]
-- L_i(**x**, **ω**_i) is incident radiance at **x** from direction **ω**_i
-- Ω is the hemisphere above **x** (where **ω** · **n** > 0)
-- (**ω**_i · **n**) = cos θ_i accounts for projected area
+其中：
+- $L_e(\mathbf{x}, \omega_o)$ 是从 **x** 沿方向 $\omega_o$ 的发射辐射率
+- $f_r(\mathbf{x}, \omega_i, \omega_o)$ 是BRDF [sr⁻¹]
+- $L_i(\mathbf{x}, \omega_i)$ 是在 **x** 处来自方向 $\omega_i$ 的入射辐射率
+- Ω 是 **x** 上方的半球（其中 $\omega \cdot \mathbf{n} > 0$）
+- $(\omega_i \cdot \mathbf{n}) = \cos \theta_i$ 考虑了投影面积
 
-The integral represents the scattering integral—summing contributions from all incident directions, weighted by the BRDF and cosine foreshortening.
+积分表示散射积分——对所有入射方向的贡献求和，由BRDF和余弦投影加权。
 
-### Energy Conservation and the Measurement Equation
+### 能量守恒与测量方程
 
-Energy conservation constrains the BRDF. The directional-hemispherical reflectance (albedo) must satisfy:
+能量守恒约束BRDF。方向-半球反射率（反照率）必须满足：
 
-ρ(**ω**_o) = ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_i dω_i ≤ 1 for all **ω**_o
+$\rho(\omega_o) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i d\omega_i \leq 1$ 对所有 $\omega_o$
 
-Equality holds for lossless surfaces. The white furnace test verifies energy conservation: in a uniformly lit environment (L_i = L_0), a closed surface should neither gain nor lose energy.
+对于无损表面，等号成立。白炉测试验证能量守恒：在均匀照明环境中（$L_i = L_0$），封闭表面既不应获得也不应失去能量。
 
-**Detailed Energy Balance**: For a surface element dA, conservation requires:
+**详细能量平衡**：对于表面元素 dA，守恒要求：
 
-∫_Ω L_o(**x**, **ω**) cos θ dω dA = L_e dA + ∫_Ω L_i(**x**, **ω**) cos θ dω dA
+$\int_\Omega L_o(\mathbf{x}, \omega) \cos \theta d\omega dA = L_e dA + \int_\Omega L_i(\mathbf{x}, \omega) \cos \theta d\omega dA$
 
-In a closed system at thermal equilibrium, Kirchhoff's law relates emissivity to absorptivity:
-ε(λ, θ) = α(λ, θ) = 1 - ρ(λ, θ)
+在热平衡的封闭系统中，基尔霍夫定律将发射率与吸收率关联：
+$\varepsilon(\lambda, \theta) = \alpha(\lambda, \theta) = 1 - \rho(\lambda, \theta)$
 
-**The Measurement Equation**: The measurement equation connects scene radiance to sensor response:
+**测量方程**：测量方程将场景辐射率与传感器响应联系起来：
 
-I_j = ∫_A ∫_Ω W_j(**x**, **ω**) L(**x**, **ω**) cos θ dω dA
+$I_j = \int_A \int_\Omega W_j(\mathbf{x}, \omega) L(\mathbf{x}, \omega) \cos \theta d\omega dA$
 
-where W_j(**x**, **ω**) is the importance (sensitivity) function for pixel j. This duality between radiance and importance enables bidirectional algorithms.
+其中 $W_j(\mathbf{x}, \omega)$ 是像素 j 的重要性（灵敏度）函数。辐射率和重要性之间的这种对偶性使双向算法成为可能。
 
-**Importance Transport**: Importance satisfies an adjoint equation:
+**重要性传输**：重要性满足伴随方程：
 
-W(**x**, **ω**) = W_e(**x**, **ω**) + ∫_Ω f_r(**x**, **ω**, **ω**') W(**x**, **ω**') cos θ' dω'
+$W(\mathbf{x}, \omega) = W_e(\mathbf{x}, \omega) + \int_\Omega f_r(\mathbf{x}, \omega, \omega') W(\mathbf{x}, \omega') \cos \theta' d\omega'$
 
-This symmetry leads to:
-- Bidirectional path tracing
-- Photon mapping (forward light, backward importance)
-- Adjoint methods for gradient computation
+这种对称性导致：
+- 双向路径追踪
+- 光子映射（正向光，反向重要性）
+- 梯度计算的伴随方法
 
-For a pinhole camera with pixel j subtending solid angle Ω_j from the pinhole:
+对于针孔相机，像素 j 从针孔张成立体角 $\Omega_j$：
 
-I_j = ∫_{Ω_j} L(**x**_lens, **ω**) cos⁴ θ dω
+$I_j = \int_{\Omega_j} L(\mathbf{x}_{\text{lens}}, \omega) \cos^4 \theta d\omega$
 
-The cos⁴ θ term accounts for:
-- cos θ: projected lens area
-- cos³ θ: inverse square falloff and pixel foreshortening
+$\cos^4 \theta$ 项考虑了：
+- $\cos \theta$：投影透镜面积
+- $\cos^3 \theta$：平方反比衰减和像素投影
 
-**Finite Aperture Cameras**: For realistic cameras with aperture A_lens:
+**有限孔径相机**：对于具有孔径 $A_{\text{lens}}$ 的真实相机：
 
-I_j = (1/A_lens) ∫_{A_lens} ∫_{A_pixel} L(**x**_lens → **x**_pixel) G(**x**_lens ↔ **x**_pixel) dA_pixel dA_lens
+$I_j = \frac{1}{A_{\text{lens}}} \int_{A_{\text{lens}}} \int_{A_{\text{pixel}}} L(\mathbf{x}_{\text{lens}} \rightarrow \mathbf{x}_{\text{pixel}}) G(\mathbf{x}_{\text{lens}} \leftrightarrow \mathbf{x}_{\text{pixel}}) dA_{\text{pixel}} dA_{\text{lens}}$
 
-This leads to depth of field effects and requires careful sampling strategies.
+这导致景深效果并需要仔细的采样策略。
 
-### Operator Form and Neumann Series
+### 算子形式与诺伊曼级数
 
-The rendering equation admits an elegant operator formulation. Define the transport operator 𝒯:
+渲染方程允许优雅的算子表述。定义传输算子 𝒯：
 
-(𝒯L)(**x**, **ω**) = ∫_Ω f_r(**x**, **ω**', **ω**) L(**x**, **ω**') (**ω**' · **n**) dω'
+$(\mathcal{T}L)(\mathbf{x}, \omega) = \int_\Omega f_r(\mathbf{x}, \omega', \omega) L(\mathbf{x}, \omega') (\omega' \cdot \mathbf{n}) d\omega'$
 
-Then the rendering equation becomes:
+则渲染方程变为：
 
-L = L_e + 𝒯L
+$L = L_e + \mathcal{T}L$
 
-This is a Fredholm equation of the second kind. The solution via Neumann series:
+这是第二类弗雷德霍姆方程。通过诺伊曼级数的解：
 
-L = (I - 𝒯)⁻¹L_e = ∑_{k=0}^∞ 𝒯^k L_e = L_e + 𝒯L_e + 𝒯²L_e + ...
+$L = (I - \mathcal{T})^{-1}L_e = \sum_{k=0}^\infty \mathcal{T}^k L_e = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + ...$
 
-Each term has physical meaning:
-- L_e: Direct illumination (emission only)
-- 𝒯L_e: Single-bounce illumination
-- 𝒯²L_e: Two-bounce illumination
-- 𝒯^k L_e: k-bounce illumination
+每项都有物理意义：
+- $L_e$：直接照明（仅发射）
+- $\mathcal{T}L_e$：单次反弹照明
+- $\mathcal{T}^2L_e$：两次反弹照明
+- $\mathcal{T}^k L_e$：k次反弹照明
 
-The series converges when ||𝒯|| < 1, which occurs when max albedo < 1. This decomposition naturally leads to path tracing algorithms that sample paths of increasing length.
+当 $||\mathcal{T}|| < 1$ 时级数收敛，这在最大反照率 < 1 时发生。这种分解自然导致采样路径长度递增的路径追踪算法。
 
-### Three-Point Form and Geometric Coupling
+### 三点形式与几何耦合
 
-The rendering equation can be rewritten in three-point form, making the geometric coupling explicit:
+渲染方程可以改写为三点形式，使几何耦合明确：
 
-L(**x** → **x**') = L_e(**x** → **x**') + ∫_M f_r(**x**'' → **x** → **x**') L(**x**'' → **x**) G(**x**'' ↔ **x**) dA(**x**'')
+$L(\mathbf{x} \rightarrow \mathbf{x}') = L_e(\mathbf{x} \rightarrow \mathbf{x}') + \int_M f_r(\mathbf{x}'' \rightarrow \mathbf{x} \rightarrow \mathbf{x}') L(\mathbf{x}'' \rightarrow \mathbf{x}) G(\mathbf{x}'' \leftrightarrow \mathbf{x}) dA(\mathbf{x}'')$
 
-where the geometry factor is:
+其中几何因子是：
 
-G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**'||²
+$G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathbf{x}') \frac{\cos \theta \cos \theta'}{||\mathbf{x} - \mathbf{x}'||^2}$
 
-with:
-- V(**x** ↔ **x**'): binary visibility function (1 if mutually visible, 0 otherwise)
-- cos θ, cos θ': angles between surface normals and connecting line
-- ||**x** - **x**'||²: squared distance for inverse square falloff
+其中：
+- $V(\mathbf{x} \leftrightarrow \mathbf{x}')$：二元可见性函数（相互可见为1，否则为0）
+- $\cos \theta, \cos \theta'$：表面法线与连接线之间的角度
+- $||\mathbf{x} - \mathbf{x}'||^2$：平方反比衰减的平方距离
 
-This form emphasizes that light transport couples all surface points, leading to the path integral formulation.
+这种形式强调光传输耦合所有表面点，导致路径积分表述。
 
-**Visibility Complexity**: The visibility function V(**x** ↔ **x**') makes the rendering equation non-linear and non-local:
-- Discontinuous: Creates hard shadows and occlusion boundaries
-- Expensive to evaluate: Requires ray-scene intersection
-- Couples all geometry: Changes anywhere affect visibility everywhere
+**可见性复杂性**：可见性函数 $V(\mathbf{x} \leftrightarrow \mathbf{x}')$ 使渲染方程成为非线性和非局部的：
+- 不连续：创建硬阴影和遮挡边界
+- 计算昂贵：需要光线-场景相交
+- 耦合所有几何：任何地方的变化都会影响所有地方的可见性
 
-**Kernel Properties**: The transport kernel K(**x**'' → **x**) = f_r G V has important properties:
-- Singular along **x** = **x**'' (requires careful regularization)
-- Discontinuous at occlusion boundaries
-- Satisfies reciprocity: K(**x** → **x**') = K(**x**' → **x**)
+**核函数性质**：传输核 $K(\mathbf{x}'' \rightarrow \mathbf{x}) = f_r G V$ 具有重要性质：
+- 沿 $\mathbf{x} = \mathbf{x}''$ 奇异（需要仔细正则化）
+- 在遮挡边界处不连续
+- 满足互易性：$K(\mathbf{x} \rightarrow \mathbf{x}') = K(\mathbf{x}' \rightarrow \mathbf{x})$
 
-**Connection to Heat Equation**: Without visibility, the rendering equation resembles the heat equation with a non-local kernel. This analogy helps understand:
-- Smoothing properties of multiple scattering
-- Diffusion approximation for optically thick media
-- Finite element and multigrid solution methods
+**与热方程的联系**：没有可见性时，渲染方程类似于具有非局部核的热方程。这个类比有助于理解：
+- 多重散射的平滑性质
+- 光学厚介质的扩散近似
+- 有限元和多重网格求解方法
 
-## 1.2 Coordinate Systems and Transformations
+## 1.2 坐标系统与变换
 
-### World, Camera, and Object Spaces
+### 世界、相机和物体空间
 
-Rendering pipelines involve a hierarchy of coordinate systems, each optimized for specific calculations:
+渲染管线涉及坐标系统层次结构，每个都针对特定计算进行优化：
 
-1. **Object space (Model space)**: Geometry defined in canonical form
-   - Origin typically at object center or base
-   - Axes aligned with natural symmetries
-   - Simplifies modeling and animation
+1. **物体空间（模型空间）**：以规范形式定义的几何
+   - 原点通常在物体中心或底部
+   - 轴与自然对称性对齐
+   - 简化建模和动画
 
-2. **World space**: Unified scene coordinates
-   - All objects transformed to common frame
-   - Lighting and physics calculations
-   - Ray-object intersections
+2. **世界空间**：统一的场景坐标
+   - 所有物体变换到公共框架
+   - 光照和物理计算
+   - 光线-物体相交
 
-3. **Camera space (View space)**: Observer-centric coordinates
-   - Origin at eye point
-   - -z axis along view direction (OpenGL convention)
-   - +z into screen (DirectX convention)
-   - Simplifies projection and culling
+3. **相机空间（视图空间）**：以观察者为中心的坐标
+   - 原点在眼点
+   - -z轴沿视线方向（OpenGL约定）
+   - +z进入屏幕（DirectX约定）
+   - 简化投影和剔除
 
-4. **Clip space**: Post-projection homogeneous coordinates
-   - 4D coordinates before perspective divide
-   - View frustum becomes [-1,1]³ cube (NDC)
+4. **裁剪空间**：投影后的齐次坐标
+   - 透视除法前的4D坐标
+   - 视锥体变为[-1,1]³立方体（NDC）
 
-5. **Screen space (Raster space)**: Final 2D image coordinates
-   - Integer pixel coordinates
-   - Origin at top-left or bottom-left
+5. **屏幕空间（光栅空间）**：最终的2D图像坐标
+   - 整数像素坐标
+   - 原点在左上角或左下角
 
-### Homogeneous Coordinates and Transformations
+### 齐次坐标与变换
 
-Homogeneous coordinates unify translation and linear transformations. A 3D point **p** = (x, y, z) becomes **p̃** = (x, y, z, 1), while vectors use **ṽ** = (x, y, z, 0).
+齐次坐标统一了平移和线性变换。3D点 **p** = (x, y, z) 变为 **p̃** = (x, y, z, 1)，而向量使用 **ṽ** = (x, y, z, 0)。
 
-The general affine transformation matrix:
+一般仿射变换矩阵：
 
-**M** = [**A** **t**]
-      [**0** 1  ]
+$\mathbf{M} = \begin{bmatrix} \mathbf{A} & \mathbf{t} \\ \mathbf{0} & 1 \end{bmatrix}$
 
-where **A** is 3×3 linear part and **t** is translation. Common transformations:
+其中 **A** 是3×3线性部分，**t** 是平移。常见变换：
 
-**Translation by (tx, ty, tz):**
-[1  0  0  tx]
-[0  1  0  ty]
-[0  0  1  tz]
-[0  0  0  1 ]
+**平移 (tx, ty, tz)：**
+$\begin{bmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
-**Rotation around axis **a** by angle θ:**
-**R** = cos θ **I** + (1 - cos θ) **a****a**^T + sin θ [**a**]_×
+**绕轴 **a** 旋转角度 θ：**
+$\mathbf{R} = \cos \theta \mathbf{I} + (1 - \cos \theta) \mathbf{a}\mathbf{a}^T + \sin \theta [\mathbf{a}]_\times$
 
-where [**a**]_× is the skew-symmetric cross-product matrix.
+其中 $[\mathbf{a}]_\times$ 是反对称叉积矩阵。
 
-**Scale by (sx, sy, sz):**
-[sx 0  0  0]
-[0  sy 0  0]
-[0  0  sz 0]
-[0  0  0  1]
+**缩放 (sx, sy, sz)：**
+$\begin{bmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$
 
-### Normal and Tangent Transformations
+### 法线和切线变换
 
-Normals must transform to remain perpendicular to surfaces. Given transformation **M** for points:
+法线必须变换以保持与表面垂直。给定点的变换 **M**：
 
-**n**' = (**M**^{-T})^{3×3} **n** / ||(**M**^{-T})^{3×3} **n**||
+$\mathbf{n}' = \frac{(\mathbf{M}^{-T})^{3×3} \mathbf{n}}{||(\mathbf{M}^{-T})^{3×3} \mathbf{n}||}$
 
-Proof: For tangent **t** on surface, **n** · **t** = 0. After transformation:
-**n**' · **t**' = (**M**^{-T}**n**) · (**M****t**) = **n**^T **M**^{-1} **M** **t** = **n** · **t** = 0
+证明：对于表面上的切线 **t**，$\mathbf{n} \cdot \mathbf{t} = 0$。变换后：
+$\mathbf{n}' \cdot \mathbf{t}' = (\mathbf{M}^{-T}\mathbf{n}) \cdot (\mathbf{M}\mathbf{t}) = \mathbf{n}^T \mathbf{M}^{-1} \mathbf{M} \mathbf{t} = \mathbf{n} \cdot \mathbf{t} = 0$
 
-For orthonormal tangent frames {**t**, **b**, **n**}:
-- Forward: transform **t** and **b**, then **n** = **t** × **b**
-- Or transform **n** as above, then reconstruct frame
+对于正交标架 {**t**, **b**, **n**}：
+- 正向：变换 **t** 和 **b**，然后 $\mathbf{n} = \mathbf{t} \times \mathbf{b}$
+- 或如上变换 **n**，然后重建标架
 
-**Area and Volume Elements**: Under transformation **M**, differential elements scale as:
-- Length: dl' = ||**M****v**|| dl (for direction **v**)
-- Area: dA' = |det(**M**)| ||(**M**^{-T})**n**|| dA
-- Volume: dV' = |det(**M**)| dV
+**面积和体积元素**：在变换 **M** 下，微分元素缩放为：
+- 长度：$dl' = ||\mathbf{M}\mathbf{v}|| dl$（对于方向 **v**）
+- 面积：$dA' = |\det(\mathbf{M})| ||(\mathbf{M}^{-T})\mathbf{n}|| dA$
+- 体积：$dV' = |\det(\mathbf{M})| dV$
 
-**Non-uniform Scaling Issues**: Non-uniform scaling breaks isotropy:
-- Spheres → ellipsoids
-- Isotropic BRDFs → anisotropic BRDFs
-- Care needed for physically-based materials
+**非均匀缩放问题**：非均匀缩放破坏各向同性：
+- 球体 → 椭球体
+- 各向同性BRDF → 各向异性BRDF
+- 需要注意基于物理的材质
 
-**Handedness Preservation**: When det(**M**) < 0, the transformation flips orientation:
-- Right-handed → left-handed coordinate system
-- Normal directions must be flipped
-- Critical for consistent front/back face determination
+**手性保持**：当 $\det(\mathbf{M}) < 0$ 时，变换翻转方向：
+- 右手系 → 左手系坐标系统
+- 法线方向必须翻转
+- 对一致的正面/背面判定至关重要
 
-### Spherical and Solid Angle Parameterizations
+### 球面和立体角参数化
 
-Spherical coordinates provide natural parameterization for directions:
+球面坐标为方向提供自然参数化：
 
-**ω** = (sin θ cos φ, sin θ sin φ, cos θ)
+$\omega = (\sin \theta \cos \phi, \sin \theta \sin \phi, \cos \theta)$
 
-where:
-- θ ∈ [0, π]: polar angle from +z axis
-- φ ∈ [0, 2π]: azimuthal angle from +x axis
+其中：
+- $\theta \in [0, \pi]$：从+z轴的极角
+- $\phi \in [0, 2\pi]$：从+x轴的方位角
 
-The Jacobian gives differential solid angle:
+雅可比给出微分立体角：
 
-dω = |∂(ω_x, ω_y)/∂(θ, φ)| dθ dφ = sin θ dθ dφ
+$d\omega = \left|\frac{\partial(\omega_x, \omega_y)}{\partial(\theta, \phi)}\right| d\theta d\phi = \sin \theta d\theta d\phi$
 
-Total solid angle of hemisphere: ∫_Ω dω = 2π
+半球总立体角：$\int_\Omega d\omega = 2\pi$
 
-Alternative parameterizations useful for sampling:
+用于采样的替代参数化：
 
-**Concentric disk mapping** (Shirley-Chiu):
-(u, v) ∈ [-1, 1]² → (r, φ) → (x, y) on unit disk
+**同心圆盘映射**（Shirley-Chiu）：
+$(u, v) \in [-1, 1]^2 \rightarrow (r, \phi) \rightarrow (x, y)$ 在单位圆盘上
 
-**Octahedral mapping**:
-Unit sphere → octahedron → unit square
-Preserves area better than spherical coordinates
+**八面体映射**：
+单位球面 → 八面体 → 单位正方形
+比球面坐标更好地保持面积
 
-### Change of Variables in Integrals
+### 积分中的变量替换
 
-The general change of variables formula for integrals:
+积分的一般变量替换公式：
 
-∫_Ω f(**x**) d**x** = ∫_Ω' f(**x**(**u**)) |det(∂**x**/∂**u**)| d**u**
+$\int_\Omega f(\mathbf{x}) d\mathbf{x} = \int_{\Omega'} f(\mathbf{x}(\mathbf{u})) \left|\det\left(\frac{\partial\mathbf{x}}{\partial\mathbf{u}}\right)\right| d\mathbf{u}$
 
-Critical for rendering:
+对渲染至关重要：
 
-**Solid angle to area**:
-∫_Ω L(**x**, **ω**) cos θ dω = ∫_A L(**x**, **ω**(**x**')) G(**x** ↔ **x**') dA'
+**立体角到面积**：
+$\int_\Omega L(\mathbf{x}, \omega) \cos \theta d\omega = \int_A L(\mathbf{x}, \omega(\mathbf{x}')) G(\mathbf{x} \leftrightarrow \mathbf{x}') dA'$
 
-where G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**'||²
+其中 $G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathbf{x}') \frac{\cos \theta \cos \theta'}{||\mathbf{x} - \mathbf{x}'||^2}$
 
-**Hemisphere to disk** (for cosine-weighted sampling):
-Map (θ, φ) → (r, φ) where r = sin θ
-Then p(r, φ) = p(θ, φ) |∂(θ, φ)/∂(r, φ)| = p(θ, φ) / cos θ
+**半球到圆盘**（用于余弦加权采样）：
+映射 $(\theta, \phi) \rightarrow (r, \phi)$ 其中 $r = \sin \theta$
+则 $p(r, \phi) = p(\theta, \phi) \left|\frac{\partial(\theta, \phi)}{\partial(r, \phi)}\right| = \frac{p(\theta, \phi)}{\cos \theta}$
 
-**Measure Theory Foundation**: The change of variables formula has measure-theoretic underpinnings:
-- Pushforward measure: μ'(A) = μ(f^{-1}(A))
-- Radon-Nikodym derivative gives the Jacobian
-- Critical for understanding Monte Carlo convergence
+**测度论基础**：变量替换公式具有测度论基础：
+- 推前测度：$\mu'(A) = \mu(f^{-1}(A))$
+- Radon-Nikodym导数给出雅可比
+- 对理解蒙特卡洛收敛性至关重要
 
-### Projective Transformations and Perspective
+### 投影变换与透视
 
-The perspective projection matrix maps view frustum to clip space:
+透视投影矩阵将视锥体映射到裁剪空间：
 
-**P** = [n/r   0     0          0     ]
-       [0     n/t   0          0     ]
-       [0     0     -(f+n)/(f-n)  -2fn/(f-n)]
-       [0     0     -1         0     ]
+$\mathbf{P} = \begin{bmatrix} 
+n/r & 0 & 0 & 0 \\
+0 & n/t & 0 & 0 \\
+0 & 0 & -(f+n)/(f-n) & -2fn/(f-n) \\
+0 & 0 & -1 & 0
+\end{bmatrix}$
 
-where n, f are near/far planes, r, t are right/top at near plane.
+其中 n, f 是近/远平面，r, t 是近平面的右/顶。
 
-After perspective divide by w:
-- x_ndc = x_clip / w_clip ∈ [-1, 1]
-- y_ndc = y_clip / w_clip ∈ [-1, 1]
-- z_ndc = z_clip / w_clip ∈ [-1, 1]
+透视除法后：
+- $x_{ndc} = x_{clip} / w_{clip} \in [-1, 1]$
+- $y_{ndc} = y_{clip} / w_{clip} \in [-1, 1]$
+- $z_{ndc} = z_{clip} / w_{clip} \in [-1, 1]$
 
-Important properties:
-- Lines remain lines (except through eye)
-- Planes remain planes
-- Depth precision is non-linear (more near than far)
+重要性质：
+- 直线保持为直线（除了通过眼点的）
+- 平面保持为平面
+- 深度精度是非线性的（近处比远处精度高）
 
-### Barycentric Coordinates and Interpolation
+### 重心坐标与插值
 
-For triangle with vertices **v**₀, **v**₁, **v**₂, barycentric coordinates (u, v, w) satisfy:
+对于具有顶点 $\mathbf{v}_0, \mathbf{v}_1, \mathbf{v}_2$ 的三角形，重心坐标 (u, v, w) 满足：
 
-**p** = u**v**₀ + v**v**₁ + w**v**₂
+$\mathbf{p} = u\mathbf{v}_0 + v\mathbf{v}_1 + w\mathbf{v}_2$
 
-with constraint u + v + w = 1. Computation via areas:
+约束条件 $u + v + w = 1$。通过面积计算：
 
-u = Area(**p**, **v**₁, **v**₂) / Area(**v**₀, **v**₁, **v**₂)
+$u = \frac{\text{Area}(\mathbf{p}, \mathbf{v}_1, \mathbf{v}_2)}{\text{Area}(\mathbf{v}_0, \mathbf{v}_1, \mathbf{v}_2)}$
 
-Properties:
-- u, v, w ∈ [0, 1] iff **p** inside triangle
-- Linear interpolation: f(**p**) = uf₀ + vf₁ + wf₂
-- Perspective-correct interpolation requires 1/z correction
+性质：
+- $u, v, w \in [0, 1]$ 当且仅当 **p** 在三角形内
+- 线性插值：$f(\mathbf{p}) = uf_0 + vf_1 + wf_2$
+- 透视正确的插值需要 1/z 校正
 
-For perspective-correct attribute interpolation:
-1. Interpolate a/z, b/z, c/z and 1/z in screen space
-2. Recover attributes: a = (a/z)/(1/z)
+透视正确的属性插值：
+1. 在屏幕空间插值 a/z, b/z, c/z 和 1/z
+2. 恢复属性：$a = (a/z)/(1/z)$
 
-### Differential Geometry and Local Frames
+### 微分几何与局部标架
 
-At each surface point, we construct a local frame for shading calculations:
+在每个表面点，我们构建用于着色计算的局部标架：
 
-**Tangent space basis**:
-- **n**: surface normal (∂**p**/∂u × ∂**p**/∂v normalized)
-- **t**: tangent (often ∂**p**/∂u normalized)
-- **b**: bitangent (**n** × **t**)
+**切空间基**：
+- **n**：表面法线（$\frac{\partial\mathbf{p}}{\partial u} \times \frac{\partial\mathbf{p}}{\partial v}$ 归一化）
+- **t**：切线（通常 $\frac{\partial\mathbf{p}}{\partial u}$ 归一化）
+- **b**：副切线（$\mathbf{n} \times \mathbf{t}$）
 
-**First Fundamental Form**: The metric tensor describes local surface geometry:
-**I** = [E F]
-      [F G]
+**第一基本形式**：度量张量描述局部表面几何：
+$\mathbf{I} = \begin{bmatrix} E & F \\ F & G \end{bmatrix}$
 
-where:
-- E = ∂**p**/∂u · ∂**p**/∂u
-- F = ∂**p**/∂u · ∂**p**/∂v
-- G = ∂**p**/∂v · ∂**p**/∂v
+其中：
+- $E = \frac{\partial\mathbf{p}}{\partial u} \cdot \frac{\partial\mathbf{p}}{\partial u}$
+- $F = \frac{\partial\mathbf{p}}{\partial u} \cdot \frac{\partial\mathbf{p}}{\partial v}$
+- $G = \frac{\partial\mathbf{p}}{\partial v} \cdot \frac{\partial\mathbf{p}}{\partial v}$
 
-Arc length: ds² = E du² + 2F du dv + G dv²
-Area element: dA = √(EG - F²) du dv
+弧长：$ds^2 = E du^2 + 2F du dv + G dv^2$
+面积元素：$dA = \sqrt{EG - F^2} du dv$
 
-**Second Fundamental Form**: Describes surface curvature:
-**II** = [e f]
-       [f g]
+**第二基本形式**：描述表面曲率：
+$\mathbf{II} = \begin{bmatrix} e & f \\ f & g \end{bmatrix}$
 
-where e = **n** · ∂²**p**/∂u², etc.
+其中 $e = \mathbf{n} \cdot \frac{\partial^2\mathbf{p}}{\partial u^2}$ 等。
 
-Principal curvatures κ₁, κ₂ are eigenvalues of **II****I**^{-1}
-- Mean curvature: H = (κ₁ + κ₂)/2
-- Gaussian curvature: K = κ₁κ₂
+主曲率 $\kappa_1, \kappa_2$ 是 $\mathbf{II}\mathbf{I}^{-1}$ 的特征值
+- 平均曲率：$H = (\kappa_1 + \kappa_2)/2$
+- 高斯曲率：$K = \kappa_1\kappa_2$
 
-**Transformation to/from world space**:
-[**t**_world]   [t_x t_y t_z] [**t**_local]
-[**b**_world] = [b_x b_y b_z] [**b**_local]
-[**n**_world]   [n_x n_y n_z] [**n**_local]
+**世界空间的变换**：
+$\begin{bmatrix} \mathbf{t}_{world} \\ \mathbf{b}_{world} \\ \mathbf{n}_{world} \end{bmatrix} = \begin{bmatrix} t_x & t_y & t_z \\ b_x & b_y & b_z \\ n_x & n_y & n_z \end{bmatrix} \begin{bmatrix} \mathbf{t}_{local} \\ \mathbf{b}_{local} \\ \mathbf{n}_{local} \end{bmatrix}$
 
-This orthonormal matrix can be inverted by transpose.
+这个正交矩阵可以通过转置求逆。
 
-**Anisotropic BRDF parameterization**:
-Many BRDFs depend on angle relative to tangent:
-- φ_h: azimuthal angle of half-vector in tangent space
-- Enables modeling of brushed metals, fabrics, hair
+**各向异性BRDF参数化**：
+许多BRDF依赖于相对于切线的角度：
+- $\phi_h$：半向量在切空间中的方位角
+- 能够建模拉丝金属、织物、毛发
 
-**Parallel Transport**: When tracing rays on surfaces, tangent frames must be parallel transported:
-- Maintains orientation consistency
-- Preserves anisotropic appearance
-- Related to geometric phase in optics
+**平行传输**：在表面上追踪光线时，切标架必须平行传输：
+- 保持方向一致性
+- 保留各向异性外观
+- 与光学中的几何相位相关
 
-## 1.3 BRDF, BSDF, and BSSRDF
+## 1.3 BRDF、BSDF和BSSRDF
 
-### Bidirectional Reflectance Distribution Function (BRDF)
+### 双向反射分布函数（BRDF）
 
-The BRDF f_r quantifies the differential relationship between incident irradiance and reflected radiance:
+BRDF $f_r$ 量化入射辐照度和反射辐射率之间的微分关系：
 
-f_r(**x**, **ω**_i, **ω**_o) = dL_o(**x**, **ω**_o) / dE_i(**x**, **ω**_i) = dL_o(**x**, **ω**_o) / (L_i(**x**, **ω**_i) cos θ_i dω_i) [sr⁻¹]
+$f_r(\mathbf{x}, \omega_i, \omega_o) = \frac{dL_o(\mathbf{x}, \omega_o)}{dE_i(\mathbf{x}, \omega_i)} = \frac{dL_o(\mathbf{x}, \omega_o)}{L_i(\mathbf{x}, \omega_i) \cos \theta_i d\omega_i}$ [sr⁻¹]
 
-Physically, it represents the probability density (after normalization) that a photon from direction **ω**_i scatters into direction **ω**_o.
+物理上，它表示来自方向 $\omega_i$ 的光子散射到方向 $\omega_o$ 的概率密度（归一化后）。
 
-The BRDF can be decomposed into components:
-f_r = f_d + f_s + f_g + ...
+BRDF可以分解为分量：
+$f_r = f_d + f_s + f_g + ...$
 
-where f_d is diffuse, f_s is specular, f_g is glossy, etc. This decomposition aids importance sampling.
+其中 $f_d$ 是漫反射，$f_s$ 是镜面反射，$f_g$ 是光泽反射等。这种分解有助于重要性采样。
 
-### Fundamental BRDF Properties
+### BRDF基本性质
 
-**Helmholtz Reciprocity:**
-f_r(**x**, **ω**_i, **ω**_o) = f_r(**x**, **ω**_o, **ω**_i)
+**亥姆霍兹互易性：**
+$f_r(\mathbf{x}, \omega_i, \omega_o) = f_r(\mathbf{x}, \omega_o, \omega_i)$
 
-This follows from time-reversal symmetry of Maxwell's equations and the principle of detailed balance. It enables bidirectional path tracing and photon mapping.
+这源自麦克斯韦方程的时间反演对称性和细致平衡原理。它使双向路径追踪和光子映射成为可能。
 
-**Energy Conservation:**
-The directional-hemispherical reflectance must satisfy:
+**能量守恒：**
+方向-半球反射率必须满足：
 
-ρ(**ω**_i) = ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_o dω_o ≤ 1 for all **ω**_i
+$\rho(\omega_i) = \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \leq 1$ 对所有 $\omega_i$
 
-For energy-conserving BRDFs, equality holds when absorption is zero. The hemispherical-hemispherical reflectance:
+对于能量守恒的BRDF，当吸收为零时等号成立。半球-半球反射率：
 
-ρ_hh = (1/π) ∫_Ω ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_i cos θ_o dω_i dω_o ≤ 1
+$\rho_{hh} = \frac{1}{\pi} \int_\Omega \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_i \cos \theta_o d\omega_i d\omega_o \leq 1$
 
-**Non-negativity:**
-f_r(**x**, **ω**_i, **ω**_o) ≥ 0
+**非负性：**
+$f_r(\mathbf{x}, \omega_i, \omega_o) \geq 0$
 
-Negative values would imply energy absorption dependent on outgoing direction, violating causality.
+负值将意味着依赖于出射方向的能量吸收，违反因果性。
 
-**Measurability and Integrability:**
-For Monte Carlo integration convergence:
-f_r ∈ L²(Ω × Ω) (square-integrable)
+**可测性和可积性：**
+对于蒙特卡洛积分收敛：
+$f_r \in L^2(\Omega \times \Omega)$ （平方可积）
 
-### Classical BRDF Models
+### 经典BRDF模型
 
-**Lambertian (Perfectly Diffuse):**
-f_r = ρ_d/π
+**朗伯（完全漫反射）：**
+$f_r = \frac{\rho_d}{\pi}$
 
-where ρ_d ∈ [0, 1] is the diffuse albedo. Energy-conserving by construction.
+其中 $\rho_d \in [0, 1]$ 是漫反射率。构造上能量守恒。
 
-**Phong Model:**
-f_r = (ρ_d/π) + ρ_s (n+2)/(2π) (**r** · **ω**_o)^n
+**Phong模型：**
+$f_r = \frac{\rho_d}{\pi} + \rho_s \frac{n+2}{2\pi} (\mathbf{r} \cdot \omega_o)^n$
 
-where **r** = 2(**n** · **ω**_i)**n** - **ω**_i is the reflection direction. Not reciprocal!
+其中 $\mathbf{r} = 2(\mathbf{n} \cdot \omega_i)\mathbf{n} - \omega_i$ 是反射方向。不满足互易性！
 
-**Blinn-Phong (Reciprocal):**
-f_r = (ρ_d/π) + ρ_s (n+2)/(8π) (**n** · **h**)^n / max(cos θ_i, cos θ_o)
+**Blinn-Phong（互易）：**
+$f_r = \frac{\rho_d}{\pi} + \rho_s \frac{n+2}{8\pi} \frac{(\mathbf{n} \cdot \mathbf{h})^n}{\max(\cos \theta_i, \cos \theta_o)}$
 
-where **h** = (**ω**_i + **ω**_o)/||**ω**_i + **ω**_o|| is the half-vector.
+其中 $\mathbf{h} = \frac{\omega_i + \omega_o}{||\omega_i + \omega_o||}$ 是半向量。
 
-**Cook-Torrance Microfacet Model:**
-f_r = (ρ_d/π) + D(**h**)G(**ω**_i, **ω**_o)F(**ω**_i, **h**) / (4 cos θ_i cos θ_o)
+**Cook-Torrance微面元模型：**
+$f_r = \frac{\rho_d}{\pi} + \frac{D(\mathbf{h})G(\omega_i, \omega_o)F(\omega_i, \mathbf{h})}{4 \cos \theta_i \cos \theta_o}$
 
-where:
-- D(**h**): Normal distribution function (e.g., GGX)
-- G(**ω**_i, **ω**_o): Geometric attenuation (masking/shadowing)
-- F(**ω**_i, **h**): Fresnel reflectance
+其中：
+- $D(\mathbf{h})$：法线分布函数（如GGX）
+- $G(\omega_i, \omega_o)$：几何衰减（遮蔽/阴影）
+- $F(\omega_i, \mathbf{h})$：菲涅尔反射率
 
-### Extension to BSDF
+### 扩展到BSDF
 
-The Bidirectional Scattering Distribution Function (BSDF) unifies reflection and transmission:
+双向散射分布函数（BSDF）统一了反射和透射：
 
-f_s(**x**, **ω**_i, **ω**_o) = {
-  f_r(**x**, **ω**_i, **ω**_o) if **ω**_i · **n** and **ω**_o · **n** have same sign
-  f_t(**x**, **ω**_i, **ω**_o) if **ω**_i · **n** and **ω**_o · **n** have opposite sign
-}
+$f_s(\mathbf{x}, \omega_i, \omega_o) = \begin{cases}
+f_r(\mathbf{x}, \omega_i, \omega_o) & \text{如果 } \omega_i \cdot \mathbf{n} \text{ 和 } \omega_o \cdot \mathbf{n} \text{ 同号} \\
+f_t(\mathbf{x}, \omega_i, \omega_o) & \text{如果 } \omega_i \cdot \mathbf{n} \text{ 和 } \omega_o \cdot \mathbf{n} \text{ 异号}
+\end{cases}$
 
-For dielectric interfaces (e.g., glass), Snell's law governs refraction:
-n_i sin θ_i = n_o sin θ_o
+对于电介质界面（如玻璃），斯涅尔定律控制折射：
+$n_i \sin \theta_i = n_o \sin \theta_o$
 
-The Fresnel equations determine reflection/transmission probabilities:
-F_r = ((n_i cos θ_i - n_o cos θ_o)/(n_i cos θ_i + n_o cos θ_o))² (s-polarized)
+菲涅尔方程确定反射/透射概率：
+$F_r = \left(\frac{n_i \cos \theta_i - n_o \cos \theta_o}{n_i \cos \theta_i + n_o \cos \theta_o}\right)^2$ （s偏振）
 
-**Generalized Reciprocity for BTDF:**
-Due to radiance compression/expansion across interfaces:
+**BTDF的广义互易性：**
+由于界面上的辐射率压缩/扩展：
 
-n_i² f_t(**x**, **ω**_i, **ω**_o) = n_o² f_t(**x**, **ω**_o, **ω**_i)
+$n_i^2 f_t(\mathbf{x}, \omega_i, \omega_o) = n_o^2 f_t(\mathbf{x}, \omega_o, \omega_i)$
 
-This accounts for the n² factor in radiance L/n² being invariant.
+这解释了辐射率 $L/n^2$ 不变中的 $n^2$ 因子。
 
-### BSSRDF for Subsurface Scattering
+### 次表面散射的BSSRDF
 
-The Bidirectional Scattering Surface Reflectance Distribution Function generalizes the BRDF to non-local transport:
+双向散射表面反射分布函数将BRDF推广到非局部传输：
 
-S(**x**_i, **ω**_i, **x**_o, **ω**_o) = dL_o(**x**_o, **ω**_o) / dΦ_i(**x**_i, **ω**_i) [m⁻²sr⁻¹]
+$S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) = \frac{dL_o(\mathbf{x}_o, \omega_o)}{d\Phi_i(\mathbf{x}_i, \omega_i)}$ [m⁻²sr⁻¹]
 
-Key differences from BRDF:
-- Couples different surface points
-- Units include inverse area
-- No longer a pure material property (depends on geometry)
+与BRDF的关键区别：
+- 耦合不同的表面点
+- 单位包含逆面积
+- 不再是纯材质属性（依赖于几何）
 
-The rendering equation with BSSRDF:
+带BSSRDF的渲染方程：
 
-L_o(**x**_o, **ω**_o) = L_e(**x**_o, **ω**_o) + ∫_A ∫_Ω S(**x**_i, **ω**_i, **x**_o, **ω**_o) L_i(**x**_i, **ω**_i) cos θ_i dω_i dA_i
+$L_o(\mathbf{x}_o, \omega_o) = L_e(\mathbf{x}_o, \omega_o) + \int_A \int_\Omega S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) L_i(\mathbf{x}_i, \omega_i) \cos \theta_i d\omega_i dA_i$
 
-**Diffusion Approximation:**
-For highly scattering media, the BSSRDF can be approximated:
+**扩散近似：**
+对于高散射介质，BSSRDF可以近似为：
 
-S(**x**_i, **ω**_i, **x**_o, **ω**_o) ≈ (1/π)F_t(**ω**_i)R(||**x**_i - **x**_o||)F_t(**ω**_o)
+$S(\mathbf{x}_i, \omega_i, \mathbf{x}_o, \omega_o) \approx \frac{1}{\pi}F_t(\omega_i)R(||\mathbf{x}_i - \mathbf{x}_o||)F_t(\omega_o)$
 
-where R(r) is the diffusion profile and F_t is the Fresnel transmittance.
+其中 $R(r)$ 是扩散轮廓，$F_t$ 是菲涅尔透射率。
 
-### Mathematical Constraints and Physical Plausibility
+### 数学约束与物理合理性
 
-A physically valid BRDF must satisfy:
+物理有效的BRDF必须满足：
 
-1. **Reciprocity**: f_r(**x**, **ω**_i, **ω**_o) = f_r(**x**, **ω**_o, **ω**_i)
-   - Test: Render scene with swapped lights and cameras
+1. **互易性**：$f_r(\mathbf{x}, \omega_i, \omega_o) = f_r(\mathbf{x}, \omega_o, \omega_i)$
+   - 测试：交换光源和相机渲染场景
 
-2. **Energy Conservation**: ∀**ω**_i: ∫_Ω f_r(**x**, **ω**_i, **ω**_o) cos θ_o dω_o ≤ 1
-   - Test: White furnace test (uniform illumination)
+2. **能量守恒**：$\forall \omega_i: \int_\Omega f_r(\mathbf{x}, \omega_i, \omega_o) \cos \theta_o d\omega_o \leq 1$
+   - 测试：白炉测试（均匀照明）
 
-3. **Non-negativity**: f_r(**x**, **ω**_i, **ω**_o) ≥ 0
-   - Violations cause energy absorption anomalies
+3. **非负性**：$f_r(\mathbf{x}, \omega_i, \omega_o) \geq 0$
+   - 违反会导致能量吸收异常
 
-4. **Smoothness**: f_r should be C⁰ continuous (C¹ preferred)
-   - Discontinuities cause sampling difficulties
+4. **平滑性**：$f_r$ 应该是 $C^0$ 连续的（$C^1$ 更好）
+   - 不连续性导致采样困难
 
-5. **Fresnel Behavior**: f_r → 1 as θ → π/2 for smooth surfaces
-   - All surfaces become mirrors at grazing angles
+5. **菲涅尔行为**：对于光滑表面，当 $\theta \rightarrow \pi/2$ 时 $f_r \rightarrow 1$
+   - 所有表面在掠射角度都变成镜面
 
-### Anisotropic BRDFs
+### 各向异性BRDF
 
-For materials with directional structure (brushed metal, fabric, hair), the BRDF depends on the azimuthal angle:
+对于具有方向结构的材料（拉丝金属、织物、毛发），BRDF依赖于方位角：
 
-f_r(**x**, **ω**_i, **ω**_o, φ) 
+$f_r(\mathbf{x}, \omega_i, \omega_o, \phi)$
 
-where φ is the angle between the half-vector projection and tangent direction.
+其中 $\phi$ 是半向量投影与切线方向之间的角度。
 
-**Ward Anisotropic Model:**
-f_r = (ρ_d/π) + ρ_s exp(-tan²θ_h(cos²φ/α_x² + sin²φ/α_y²)) / (4π α_x α_y √(cos θ_i cos θ_o))
+**Ward各向异性模型：**
+$f_r = \frac{\rho_d}{\pi} + \frac{\rho_s \exp\left(-\tan^2\theta_h\left(\frac{\cos^2\phi}{\alpha_x^2} + \frac{\sin^2\phi}{\alpha_y^2}\right)\right)}{4\pi \alpha_x \alpha_y \sqrt{\cos \theta_i \cos \theta_o}}$
 
-where α_x, α_y control anisotropic roughness.
+其中 $\alpha_x, \alpha_y$ 控制各向异性粗糙度。
 
-### Spatially Varying BRDFs (SVBRDFs)
+### 空间变化BRDF（SVBRDF）
 
-Real materials exhibit spatial variation:
-f_r(**x**, **ω**_i, **ω**_o) = f_r(u, v, **ω**_i, **ω**_o)
+真实材料表现出空间变化：
+$f_r(\mathbf{x}, \omega_i, \omega_o) = f_r(u, v, \omega_i, \omega_o)$
 
-where (u, v) are texture coordinates. This enables:
-- Texture mapping of material properties
-- Measured BRDF data (BTF - Bidirectional Texture Function)
-- Procedural material variation
+其中 $(u, v)$ 是纹理坐标。这使得以下成为可能：
+- 材质属性的纹理映射
+- 测量的BRDF数据（BTF - 双向纹理函数）
+- 过程化材质变化
 
-## 1.4 Monte Carlo Integration in Rendering
+## 1.4 渲染中的蒙特卡洛积分
 
-### Expected Value and Variance
+### 期望值与方差
 
-Monte Carlo integration estimates integrals using random sampling:
+蒙特卡洛积分使用随机采样估计积分：
 
-I = ∫_Ω f(**x**) d**x** ≈ (1/N) ∑_{i=1}^N f(**X**_i)/p(**X**_i)
+$I = \int_\Omega f(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N} \sum_{i=1}^N \frac{f(\mathbf{X}_i)}{p(\mathbf{X}_i)}$
 
-where **X**_i ~ p(**x**) are samples from probability density p.
+其中 $\mathbf{X}_i \sim p(\mathbf{x})$ 是来自概率密度 $p$ 的样本。
 
-The estimator is unbiased: E[Î] = I
+估计器是无偏的：$E[\hat{I}] = I$
 
-The variance is:
-Var[Î] = (1/N) ∫_Ω (f(**x**)/p(**x**) - I)² p(**x**) d**x**
+方差是：
+$\text{Var}[\hat{I}] = \frac{1}{N} \int_\Omega \left(\frac{f(\mathbf{x})}{p(\mathbf{x})} - I\right)^2 p(\mathbf{x}) d\mathbf{x}$
 
-### Importance Sampling
+### 重要性采样
 
-Optimal sampling minimizes variance by matching p to |f|:
+最优采样通过匹配 $p$ 和 $|f|$ 来最小化方差：
 
-p*(**x**) = |f(**x**)| / ∫_Ω |f(**x**)| d**x**
+$p^*(\mathbf{x}) = \frac{|f(\mathbf{x})|}{\int_\Omega |f(\mathbf{x})| d\mathbf{x}}$
 
-For the rendering equation, good sampling strategies include:
-- BRDF sampling: p(**ω**) ∝ f_r(**ω**_i, **ω**_o)
-- Light sampling: p(**ω**) ∝ L_e
-- Cosine sampling: p(**ω**) ∝ cos θ
+对于渲染方程，好的采样策略包括：
+- BRDF采样：$p(\omega) \propto f_r(\omega_i, \omega_o)$
+- 光源采样：$p(\omega) \propto L_e$
+- 余弦采样：$p(\omega) \propto \cos \theta$
 
-### Multiple Importance Sampling (MIS)
+### 多重重要性采样（MIS）
 
-When multiple sampling strategies are available, MIS combines them optimally:
+当有多个采样策略可用时，MIS将它们最优地组合：
 
-Î = ∑_{i=1}^{n_f} w_f(**X**_{f,i}) f(**X**_{f,i})/p_f(**X**_{f,i}) + ∑_{j=1}^{n_g} w_g(**X**_{g,j}) f(**X**_{g,j})/p_g(**X**_{g,j})
+$\hat{I} = \sum_{i=1}^{n_f} w_f(\mathbf{X}_{f,i}) \frac{f(\mathbf{X}_{f,i})}{p_f(\mathbf{X}_{f,i})} + \sum_{j=1}^{n_g} w_g(\mathbf{X}_{g,j}) \frac{f(\mathbf{X}_{g,j})}{p_g(\mathbf{X}_{g,j})}$
 
-The balance heuristic provides good weights:
-w_f(**x**) = n_f p_f(**x**) / (n_f p_f(**x**) + n_g p_g(**x**))
+平衡启发式提供好的权重：
+$w_f(\mathbf{x}) = \frac{n_f p_f(\mathbf{x})}{n_f p_f(\mathbf{x}) + n_g p_g(\mathbf{x})}$
 
-### Russian Roulette
+### 俄罗斯轮盘赌
 
-To create unbiased estimators with finite computation, Russian roulette randomly terminates paths:
+为了用有限计算创建无偏估计器，俄罗斯轮盘赌随机终止路径：
 
-L'_i = {
-  L_i/q  with probability q
-  0      with probability 1-q
-}
+$L'_i = \begin{cases}
+L_i/q & \text{以概率 } q \\
+0 & \text{以概率 } 1-q
+\end{cases}$
 
-This maintains E[L'_i] = L_i while bounding computation.
+这保持 $E[L'_i] = L_i$ 同时限制计算量。
 
-### Convergence Rates and Error Bounds
+### 收敛速率与误差界限
 
-Monte Carlo convergence follows the Central Limit Theorem:
+蒙特卡洛收敛遵循中心极限定理：
 
-P(|Î - I| ≤ ε) ≈ 2Φ(ε√N/σ) - 1
+$P(|\hat{I} - I| \leq \varepsilon) \approx 2\Phi(\varepsilon\sqrt{N}/\sigma) - 1$
 
-where Φ is the normal CDF and σ² is the variance. The error decreases as O(1/√N), independent of dimension—crucial for high-dimensional light transport.
+其中 $\Phi$ 是正态分布CDF，$\sigma^2$ 是方差。误差以 $O(1/\sqrt{N})$ 递减，与维度无关——这对高维光传输至关重要。
 
-## 1.5 Path Integral Formulation
+## 1.5 路径积分表述
 
-### Light Transport as Path Integration
+### 光传输作为路径积分
 
-We can reformulate the rendering equation as an integral over all possible light paths. A path of length k is:
+我们可以将渲染方程重新表述为对所有可能光路径的积分。长度为k的路径是：
 
-**x̄** = **x**₀**x**₁...**x**_k
+$\bar{\mathbf{x}} = \mathbf{x}_0\mathbf{x}_1...\mathbf{x}_k$
 
-where **x**₀ is on a light source and **x**_k is on the camera sensor.
+其中 $\mathbf{x}_0$ 在光源上，$\mathbf{x}_k$ 在相机传感器上。
 
-### Path Space and Measure
+### 路径空间与测度
 
-The path space Ω̄_k consists of all valid paths of length k. The measure for a path is:
+路径空间 $\bar{\Omega}_k$ 包含所有长度为k的有效路径。路径的测度是：
 
-dμ(**x̄**) = dA(**x**₀) ∏_{i=1}^{k} dA(**x**_i)
+$d\mu(\bar{\mathbf{x}}) = dA(\mathbf{x}_0) \prod_{i=1}^{k} dA(\mathbf{x}_i)$
 
-The contribution of a path is:
+路径的贡献是：
 
-f(**x̄**) = L_e(**x**₀ → **x**₁) (∏_{i=1}^{k-1} f_s(**x**_{i-1} → **x**_i → **x**_{i+1}) G(**x**_i ↔ **x**_{i+1})) W(**x**_{k-1} → **x**_k)
+$f(\bar{\mathbf{x}}) = L_e(\mathbf{x}_0 \rightarrow \mathbf{x}_1) \left(\prod_{i=1}^{k-1} f_s(\mathbf{x}_{i-1} \rightarrow \mathbf{x}_i \rightarrow \mathbf{x}_{i+1}) G(\mathbf{x}_i \leftrightarrow \mathbf{x}_{i+1})\right) W(\mathbf{x}_{k-1} \rightarrow \mathbf{x}_k)$
 
-where G is the geometry factor:
+其中G是几何因子：
 
-G(**x** ↔ **x**') = V(**x** ↔ **x**') cos θ cos θ' / ||**x** - **x**'||²
+$G(\mathbf{x} \leftrightarrow \mathbf{x}') = V(\mathbf{x} \leftrightarrow \mathbf{x}') \frac{\cos \theta \cos \theta'}{||\mathbf{x} - \mathbf{x}'||^2}$
 
-### Connection to Feynman Path Integrals
+### 与费曼路径积分的联系
 
-The path integral formulation resembles Feynman's approach to quantum mechanics:
+路径积分表述类似于费曼对量子力学的方法：
 
-I = ∑_{k=2}^∞ ∫_{Ω̄_k} f(**x̄**) dμ(**x̄**)
+$I = \sum_{k=2}^\infty \int_{\bar{\Omega}_k} f(\bar{\mathbf{x}}) d\mu(\bar{\mathbf{x}})$
 
-This infinite sum over all path lengths captures global illumination. Each term represents paths with k-1 bounces.
+这个对所有路径长度的无限和捕获了全局光照。每一项代表k-1次反弹的路径。
 
-### Recursive Formulation and Neumann Series
+### 递归表述与诺伊曼级数
 
-The value at a point satisfies the recursive relation:
+点上的值满足递归关系：
 
-L(**x**, **ω**) = L_e(**x**, **ω**) + ∫_M f_s(**y** → **x** → **ω**) L(**y**, **x** - **y**) G(**y** ↔ **x**) dA(**y**)
+$L(\mathbf{x}, \omega) = L_e(\mathbf{x}, \omega) + \int_M f_s(\mathbf{y} \rightarrow \mathbf{x} \rightarrow \omega) L(\mathbf{y}, \mathbf{x} - \mathbf{y}) G(\mathbf{y} \leftrightarrow \mathbf{x}) dA(\mathbf{y})$
 
-This leads to the Neumann series solution:
+这导致诺伊曼级数解：
 
-L = L^{(0)} + L^{(1)} + L^{(2)} + ...
+$L = L^{(0)} + L^{(1)} + L^{(2)} + ...$
 
-where L^{(k)} represents k-bounce illumination.
+其中 $L^{(k)}$ 代表k次反弹照明。
 
-### Volume Rendering Equation Preview
+### 体积渲染方程预览
 
-The path integral naturally extends to participating media. For a volume with absorption σ_a, scattering σ_s, and phase function p:
+路径积分自然扩展到参与介质。对于具有吸收 $\sigma_a$、散射 $\sigma_s$ 和相位函数 $p$ 的体积：
 
-L(**x**, **ω**) = ∫₀^∞ T(0,t) [σ_a L_e + σ_s ∫_{S²} p(**ω**', **ω**) L(**x**+t**ω**, **ω**') dω'] dt + T(0,∞) L_∞
+$L(\mathbf{x}, \omega) = \int_0^\infty T(0,t) \left[\sigma_a L_e + \sigma_s \int_{S^2} p(\omega', \omega) L(\mathbf{x}+t\omega, \omega') d\omega'\right] dt + T(0,\infty) L_\infty$
 
-where T(s,t) = exp(-∫_s^t σ_t(**x**+u**ω**) du) is transmittance.
+其中 $T(s,t) = \exp\left(-\int_s^t \sigma_t(\mathbf{x}+u\omega) du\right)$ 是透射率。
 
-This unified formulation will connect all rendering methods in subsequent chapters.
+这个统一的表述将在后续章节中连接所有渲染方法。
 
-## Chapter Summary
+## 本章小结
 
-This chapter established the mathematical foundation for computer graphics through geometric optics:
+本章通过几何光学建立了计算机图形学的数学基础：
 
-1. **The rendering equation** L_o = L_e + ∫ f_r L_i cos θ dω governs light transport
-2. **Coordinate transformations** preserve radiometric quantities when properly applied
-3. **BRDFs** must satisfy reciprocity, energy conservation, and non-negativity
-4. **Monte Carlo methods** solve high-dimensional integrals with O(1/√N) convergence
-5. **Path integrals** unify light transport as integration over all possible paths
+1. **渲染方程** $L_o = L_e + \int f_r L_i \cos \theta d\omega$ 控制光传输
+2. **坐标变换** 在正确应用时保持辐射度量
+3. **BRDF** 必须满足互易性、能量守恒和非负性
+4. **蒙特卡洛方法** 以 $O(1/\sqrt{N})$ 收敛率求解高维积分
+5. **路径积分** 将光传输统一为对所有可能路径的积分
 
-These concepts form the basis for all rendering algorithms. The path integral formulation particularly enables our unified treatment of point-based, image-based, and neural rendering methods as different approaches to the same fundamental equation.
+这些概念构成了所有渲染算法的基础。路径积分表述特别使我们能够将基于点的、基于图像的和神经渲染方法统一处理为解决同一基本方程的不同方法。
 
-## Exercises
+## 练习题
 
-### Exercise 1.1: Radiance Along a Ray
+### 练习 1.1：沿光线的辐射率
 Prove that radiance remains constant along a ray in vacuum. Start from the definition of radiance and use the inverse square law.
 
 **Hint:** Consider two differential areas dA₁ and dA₂ along the ray and show that L₁ = L₂.
