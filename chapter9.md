@@ -29,6 +29,33 @@ $$C(\mathbf{r}) = \sum_{n=1}^{N_{\text{samples}}} T_n \alpha_n \mathbf{c}_n$$
 这个离散化引入了 $O(\delta^2)$ 的误差，根据中点法则：
 $$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}{24}\max_{t \in [a,b]}|f''(t)|$$
 
+**采样策略与误差分析**
+
+为了减少离散化误差，可以采用更高阶的数值积分方法：
+
+1. **梯形法则**：使用端点值的平均，误差降至 $O(\delta^2)$
+   $$\int_{t_i}^{t_{i+1}} f(t)dt \approx \frac{\delta}{2}[f(t_i) + f(t_{i+1})]$$
+
+2. **Simpson法则**：使用二次插值，误差为 $O(\delta^4)$
+   $$\int_{t_i}^{t_{i+2}} f(t)dt \approx \frac{\delta}{3}[f(t_i) + 4f(t_{i+1}) + f(t_{i+2})]$$
+
+3. **自适应采样**：在高频区域（边界、细节）增加采样密度
+   - 基于梯度的细化：$\delta_{\text{local}} = \delta_0 / (1 + \|\nabla\sigma\|)$
+   - 基于曲率的细化：考虑二阶导数 $\nabla^2\sigma$
+
+**体素遍历算法**
+
+光线与体素网格的相交使用3D DDA（Digital Differential Analyzer）算法：
+
+1. **初始化**：计算光线进入边界框的参数 $t_{\text{min}}$
+2. **步进计算**：
+   $$t_{\text{next},d} = t_{\text{current}} + \frac{\text{sign}(\mathbf{d}_d)}{\mathbf{d}_d} \cdot \text{voxelSize}_d$$
+   其中 $d \in \{x,y,z\}$
+3. **选择最近边界**：$t_{\text{next}} = \min(t_{\text{next},x}, t_{\text{next},y}, t_{\text{next},z})$
+4. **更新体素索引**：根据最小 $t$ 对应的维度递增
+
+该算法的复杂度为 $O(N)$，其中 $N$ 是光线穿过的体素数，最坏情况下为 $O(N_{\text{grid}})$。
+
 ### 9.1.2 三线性插值
 
 为避免块状伪影，我们在体素中心之间进行三线性插值。给定查询点 $\mathbf{x}$，首先找到包含它的体素 $(i,j,k)$，然后计算局部坐标：
@@ -46,6 +73,56 @@ u_d & \text{if } d'=1
 $$f(\mathbf{x}) = \text{lerp}_z\left(\text{lerp}_y\left(\text{lerp}_x(f_{000}, f_{100}, u_x), \text{lerp}_x(f_{010}, f_{110}, u_x), u_y\right), \ldots, u_z\right)$$
 
 这保证了 $C^0$ 连续性但在体素边界处导数不连续，导致法线计算时出现阶跃。
+
+**插值权重的几何解释**
+
+三线性插值的权重具有直观的几何意义——每个顶点的贡献与查询点到对角顶点形成的子体积成正比：
+
+$$w_{ijk} = \prod_{d \in \{x,y,z\}} \begin{cases}
+(1-u_d) & \text{if bit}_d(ijk) = 0 \\
+u_d & \text{if bit}_d(ijk) = 1
+\end{cases}$$
+
+其中 $\text{bit}_d(ijk)$ 提取索引的第 $d$ 位。
+
+**梯度计算**
+
+尽管函数值连续，梯度在体素边界不连续。体素内部的梯度为：
+
+$$\nabla f(\mathbf{x}) = \begin{pmatrix}
+\frac{\partial f}{\partial x} \\
+\frac{\partial f}{\partial y} \\
+\frac{\partial f}{\partial z}
+\end{pmatrix} = \begin{pmatrix}
+\frac{1}{\Delta x} \sum_{j',k'} (f_{1,j',k'} - f_{0,j',k'}) w_{j',k'}^{yz} \\
+\frac{1}{\Delta y} \sum_{i',k'} (f_{i',1,k'} - f_{i',0,k'}) w_{i',k'}^{xz} \\
+\frac{1}{\Delta z} \sum_{i',j'} (f_{i',j',1} - f_{i',j',0}) w_{i',j'}^{xy}
+\end{pmatrix}$$
+
+其中 $w^{yz}$ 表示仅在 $y,z$ 维度的权重积。
+
+**高阶插值方案**
+
+为获得更平滑的结果，可以使用高阶插值：
+
+1. **三次样条插值**：保证 $C^2$ 连续性
+   $$f(\mathbf{x}) = \sum_{i=-1}^{2}\sum_{j=-1}^{2}\sum_{k=-1}^{2} f_{i+i_0,j+j_0,k+k_0} \cdot B(u_x-i)B(u_y-j)B(u_z-k)$$
+   其中 $B(t)$ 是三次B样条基函数
+
+2. **Catmull-Rom插值**：通过4个点的三次插值
+   $$f(u) = \frac{1}{2}\begin{pmatrix} u^3 & u^2 & u & 1 \end{pmatrix} \begin{pmatrix}
+   -1 & 3 & -3 & 1 \\
+   2 & -5 & 4 & -1 \\
+   -1 & 0 & 1 & 0 \\
+   0 & 2 & 0 & 0
+   \end{pmatrix} \begin{pmatrix} f_{-1} \\ f_0 \\ f_1 \\ f_2 \end{pmatrix}$$
+
+3. **Kaiser-Bessel窗插值**：最小化频谱泄漏
+   $$w(r) = \begin{cases}
+   \frac{I_0(\beta\sqrt{1-r^2})}{I_0(\beta)} & |r| \leq 1 \\
+   0 & |r| > 1
+   \end{cases}$$
+   其中 $I_0$ 是修正贝塞尔函数，$\beta$ 控制窗口形状
 
 ### 9.1.3 稀疏八叉树
 
@@ -78,6 +155,70 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
 遍历的期望复杂度为 $O(\log N)$，其中 $N$ 是叶节点数。证明基于平衡树的高度为 $\lceil \log_8 N \rceil$。
 
 存储复杂度从密集网格的 $O(N^3)$ 降低到 $O(N_{\text{occupied}})$，其中 $N_{\text{occupied}}$ 是非空体素的数量。实际压缩率取决于场景稀疏性。
+
+**高效光线-八叉树相交**
+
+优化的遍历算法利用空间相干性：
+
+1. **参数化相交测试**：对于光线 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$，计算与节点边界的进入/退出参数：
+   $$t_{\text{near}} = \max_{i \in \{x,y,z\}} \frac{(\mathbf{c}_i - h_i - \mathbf{o}_i)}{\mathbf{d}_i}, \quad t_{\text{far}} = \min_{i \in \{x,y,z\}} \frac{(\mathbf{c}_i + h_i - \mathbf{o}_i)}{\mathbf{d}_i}$$
+   其中 $\mathbf{c}$ 是节点中心，$h$ 是半边长
+
+2. **子节点访问顺序**：基于光线方向确定遍历顺序，优先访问更近的子节点：
+   ```
+   childOrder = ComputeTraversalOrder(rayDirection)
+   for i in childOrder:
+       if RayIntersectsChild(ray, children[i]):
+           TraverseChild(ray, children[i])
+   ```
+
+3. **早期终止**：当累积透明度低于阈值时停止遍历：
+   $$T < \epsilon \Rightarrow \text{terminate}$$
+
+**自适应细分准则**
+
+决定何时细分节点的准则包括：
+
+1. **基于密度的细分**：当节点内密度变化超过阈值
+   $$\text{var}(\sigma) > \tau_{\sigma} \Rightarrow \text{subdivide}$$
+
+2. **基于梯度的细分**：在边界区域增加分辨率
+   $$\|\nabla\sigma\| > \tau_{\nabla} \Rightarrow \text{subdivide}$$
+
+3. **视点相关细分**：基于投影大小动态调整
+   $$\frac{\text{nodeSize}}{\|\mathbf{x} - \mathbf{o}_{\text{camera}}\|} > \tau_{\text{pixel}} \Rightarrow \text{subdivide}$$
+
+**内存优化技术**
+
+1. **线性八叉树**：使用Morton编码将树结构线性化
+   $$\text{MortonCode}(x,y,z) = \sum_{i=0}^{L-1} 2^{3i}[(x_i) + 2(y_i) + 4(z_i)]$$
+   其中 $x_i, y_i, z_i$ 是坐标的第 $i$ 位
+
+2. **节点池分配**：预分配大块内存，减少碎片
+   ```
+   nodePool = AllocateBlock(MAX_NODES * sizeof(OctreeNode))
+   freeList = InitializeFreeList(nodePool)
+   ```
+
+3. **LOD（细节层次）**：存储多分辨率版本
+   - 粗糙级别用于远处物体
+   - 精细级别用于近处细节
+   - 级别间的平滑过渡
+
+**并行构建算法**
+
+利用GPU并行性加速八叉树构建：
+
+1. **自顶向下构建**：
+   - 并行计算每个节点的占用状态
+   - 使用原子操作分配子节点
+   - 复杂度：$O(\log N)$ 并行步骤
+
+2. **自底向上构建**：
+   - 首先对所有点进行空间排序（Morton编码）
+   - 并行识别节点边界
+   - 自底向上合并构建树
+   - 复杂度：$O(N \log N)$ 工作量，$O(\log N)$ 深度
 
 ## 9.2 Plenoxels：球谐函数体素
 
