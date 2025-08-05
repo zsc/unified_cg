@@ -2,11 +2,13 @@
 
 Adaptive optics and wavefront shaping represent the frontier where computational control meets physical optics. In this chapter, we explore how controlled manipulation of optical wavefronts enables focusing through scattering media, aberration correction, and optimization of light transport. We'll establish mathematical foundations using Zernike polynomials, examine spatial light modulators, and connect these concepts to adaptive sampling strategies in computer graphics.
 
+The journey from aberrated wavefronts to diffraction-limited imaging parallels the evolution from naive Monte Carlo sampling to sophisticated adaptive techniques in rendering. Just as adaptive optics corrects atmospheric distortions in real-time, modern rendering algorithms dynamically adjust sampling patterns to minimize variance. This deep connection extends beyond analogy—the mathematical frameworks of wavefront optimization and importance sampling share fundamental principles rooted in signal reconstruction and optimization theory.
+
 ## 17.1 Zernike Polynomials and Wavefront Description
 
 ### 17.1.1 Mathematical Foundation
 
-Zernike polynomials form a complete orthogonal basis over the unit disk, ideal for describing wavefront aberrations in circular pupils. The polynomials are defined as:
+Zernike polynomials form a complete orthogonal basis over the unit disk, ideal for describing wavefront aberrations in circular pupils. Named after Frits Zernike, who won the 1953 Nobel Prize for inventing phase contrast microscopy, these polynomials possess unique properties that make them indispensable in optics. The polynomials are defined as:
 
 $$Z_n^m(\rho, \theta) = R_n^{|m|}(\rho) \times \begin{cases}
 \cos(m\theta) & m \geq 0 \\
@@ -22,29 +24,46 @@ The indices follow constraints:
 - -n ≤ m ≤ n (azimuthal frequency)
 - n - |m| is even
 
+This last constraint ensures that R_n^m(ρ) contains only even or odd powers of ρ, maintaining the polynomial's parity properties. The radial polynomial can also be expressed using Jacobi polynomials:
+
+$$R_n^m(\rho) = (-1)^{(n-m)/2} \rho^m P_{(n-m)/2}^{(m,0)}(2\rho^2 - 1)$$
+
+where P_k^{(α,β)} are Jacobi polynomials. This connection reveals deeper mathematical structure and enables efficient computation using recurrence relations.
+
 For normalization, we include the factor:
 $$N_n^m = \sqrt{\frac{2(n+1)}{1 + \delta_{m0}}}$$
 
 making the normalized polynomials:
 $$\tilde{Z}_n^m(\rho, \theta) = N_n^m Z_n^m(\rho, \theta)$$
 
+The normalization ensures unit variance for each mode when integrated over the unit disk, crucial for comparing aberration strengths across different orders.
+
 ### 17.1.2 Orthogonality Properties
 
-The orthogonality relation over the unit disk:
+The orthogonality relation over the unit disk forms the mathematical backbone of wavefront analysis:
 
 $$\int_0^{2\pi} \int_0^1 Z_n^m(\rho, \theta) Z_{n'}^{m'}(\rho, \theta) \rho d\rho d\theta = \frac{\pi}{2n+2} \delta_{nn'} \delta_{mm'}$$
 
-This orthogonality arises from two separate integrations:
+This orthogonality arises from two separate integrations that decouple due to the polynomial structure:
 
 **Angular orthogonality:**
 $$\int_0^{2\pi} \cos(m\theta)\cos(m'\theta) d\theta = \pi\delta_{mm'} \quad (m, m' > 0)$$
 $$\int_0^{2\pi} \sin(m\theta)\sin(m'\theta) d\theta = \pi\delta_{mm'} \quad (m, m' > 0)$$
 $$\int_0^{2\pi} \cos(m\theta)\sin(m'\theta) d\theta = 0$$
 
+These relations follow from the orthogonality of trigonometric functions over a complete period. The cross terms vanish due to the odd symmetry of the integrand.
+
 **Radial orthogonality:**
 $$\int_0^1 R_n^m(\rho) R_{n'}^m(\rho) \rho d\rho = \frac{1}{2(n+1)} \delta_{nn'}$$
 
-The weight function ρ in the integral arises from the Jacobian in polar coordinates and ensures proper orthogonality over the circular domain.
+The weight function ρ in the integral arises from the Jacobian in polar coordinates and ensures proper orthogonality over the circular domain. This weight is crucial—without it, the radial polynomials would not be orthogonal. The specific form of R_n^m is carefully constructed to achieve orthogonality with respect to this measure.
+
+**Completeness and Parseval's Identity:**
+Any square-integrable function over the unit disk can be expanded in Zernike polynomials, with Parseval's identity guaranteeing energy conservation:
+
+$$\int_0^{2\pi} \int_0^1 |W(\rho, \theta)|^2 \rho d\rho d\theta = \sum_{n=0}^{\infty} \sum_{m=-n}^n |a_n^m|^2 \frac{\pi}{2n+2}$$
+
+This relationship enables direct computation of wavefront variance from Zernike coefficients, fundamental for aberration budgeting in optical design.
 
 ### 17.1.3 Wavefront Expansion
 
@@ -52,11 +71,18 @@ Any wavefront W(ρ, θ) can be expanded as:
 
 $$W(\rho, \theta) = \sum_{n=0}^{\infty} \sum_{m=-n}^n a_n^m Z_n^m(\rho, \theta)$$
 
-The coefficients are computed via:
+The coefficients are computed via the inner product:
 
 $$a_n^m = \frac{2n+2}{\pi \epsilon_m} \int_0^{2\pi} \int_0^1 W(\rho, \theta) Z_n^m(\rho, \theta) \rho d\rho d\theta$$
 
-where εₘ = 2 for m = 0 and εₘ = 1 otherwise.
+where εₘ = 2 for m = 0 and εₘ = 1 otherwise. This factor accounts for the different normalization of the m = 0 (rotationally symmetric) terms.
+
+**Efficient Coefficient Computation:**
+For measured wavefront data on a discrete grid, the coefficients can be computed using least squares:
+
+$$\mathbf{a} = (\mathbf{Z}^T \mathbf{Z})^{-1} \mathbf{Z}^T \mathbf{w}$$
+
+where **Z** is the matrix of Zernike polynomial values at measurement points, and **w** is the vector of wavefront measurements. For a regular grid with proper sampling, Z^T Z becomes nearly diagonal, simplifying inversion.
 
 In practice, we truncate the expansion at some maximum order N:
 $$W(\rho, \theta) \approx \sum_{n=0}^{N} \sum_{m=-n}^n a_n^m Z_n^m(\rho, \theta)$$
@@ -69,9 +95,16 @@ For example:
 - N = 4: J = 15 terms (includes spherical aberration)
 - N = 8: J = 45 terms (high-order aberrations)
 
+**Truncation Error Analysis:**
+The RMS error from truncating at order N follows:
+
+$$\sigma_{truncation}^2 = \sum_{n=N+1}^{\infty} \sum_{m=-n}^n |a_n^m|^2$$
+
+For atmospheric turbulence, this error decreases as N^(-α/2) where α ≈ 11/3, providing guidance for selecting truncation order based on desired accuracy.
+
 ### 17.1.4 Conversion Between Indices
 
-Several indexing schemes exist for Zernike polynomials:
+Several indexing schemes exist for Zernike polynomials, each with specific advantages for different applications:
 
 **Noll notation (single index j):**
 $$j = \frac{n(n+1)}{2} + |m| + \begin{cases}
@@ -80,40 +113,82 @@ $$j = \frac{n(n+1)}{2} + |m| + \begin{cases}
 1 & \text{otherwise}
 \end{cases}$$
 
+This ordering alternates between sine and cosine terms to maintain a logical progression of aberration types. The first few Noll indices correspond to:
+- j = 1: Piston (Z₀⁰)
+- j = 2,3: Tip/Tilt (Z₁¹, Z₁⁻¹)
+- j = 4,5,6: Astigmatism and Defocus (Z₂⁻², Z₂⁰, Z₂²)
+
 **OSA/ANSI standard:**
 $$j = \frac{n(n+2) + m}{2}$$
 
+This simpler formula creates a monotonic ordering that's easier to compute but less intuitive for aberration analysis.
+
 **Wyant ordering:**
-Groups terms by polynomial order, then by azimuthal frequency.
+Groups terms by polynomial order, then by azimuthal frequency. This ordering facilitates:
+- Systematic increase in polynomial complexity
+- Clear separation of radial orders
+- Simplified error propagation analysis
 
-The choice of ordering affects coefficient interpretation but not the mathematical properties.
+**Fringe/University of Arizona notation:**
+Orders by increasing spatial frequency, useful for interferometric analysis where higher frequencies correspond to finer fringe patterns.
 
-### 17.1.4 Common Aberrations
+The choice of ordering affects coefficient interpretation but not the mathematical properties. Conversion matrices between orderings are sparse and can be precomputed for efficiency.
 
-The first few Zernike terms correspond to familiar optical aberrations:
+### 17.1.5 Common Aberrations
+
+The first few Zernike terms correspond to familiar optical aberrations, each with distinct physical origins and visual effects:
 
 **Low-order terms (n ≤ 2):**
-- $Z_0^0 = 1$: Piston (constant phase offset)
-- $Z_1^{-1} = 2\rho\sin\theta$: Vertical tilt (y-tilt)
-- $Z_1^1 = 2\rho\cos\theta$: Horizontal tilt (x-tilt)
-- $Z_2^{-2} = \sqrt{6}\rho^2\sin(2\theta)$: Oblique astigmatism (45°)
-- $Z_2^0 = \sqrt{3}(2\rho^2 - 1)$: Defocus
-- $Z_2^2 = \sqrt{6}\rho^2\cos(2\theta)$: Vertical astigmatism (0°/90°)
+- $Z_0^0 = 1$: **Piston** (constant phase offset)
+  - No effect on image quality, only absolute phase
+  - Important for interferometry and coherent imaging
+  
+- $Z_1^{-1} = 2\rho\sin\theta$: **Vertical tilt** (y-tilt)
+- $Z_1^1 = 2\rho\cos\theta$: **Horizontal tilt** (x-tilt)
+  - Cause image displacement without blur
+  - Arise from wedge in optical elements or misalignment
+  
+- $Z_2^{-2} = \sqrt{6}\rho^2\sin(2\theta)$: **Oblique astigmatism** (45°)
+- $Z_2^2 = \sqrt{6}\rho^2\cos(2\theta)$: **Vertical astigmatism** (0°/90°)
+  - Create orthogonal line foci at different distances
+  - Common in cylindrical optical elements and eye aberrations
+  
+- $Z_2^0 = \sqrt{3}(2\rho^2 - 1)$: **Defocus**
+  - Symmetric blur, shifts best focus position
+  - Equivalent to longitudinal shift of image plane
 
 **Third-order terms (n = 3):**
-- $Z_3^{-3} = \sqrt{8}\rho^3\sin(3\theta)$: Trefoil
-- $Z_3^{-1} = \sqrt{8}(3\rho^3 - 2\rho)\sin\theta$: Vertical coma
-- $Z_3^1 = \sqrt{8}(3\rho^3 - 2\rho)\cos\theta$: Horizontal coma
-- $Z_3^3 = \sqrt{8}\rho^3\cos(3\theta)$: Trefoil
+- $Z_3^{-3} = \sqrt{8}\rho^3\sin(3\theta)$: **Trefoil**
+- $Z_3^3 = \sqrt{8}\rho^3\cos(3\theta)$: **Trefoil**
+  - Three-fold symmetric distortion
+  - Often from stressed optical mounts
+  
+- $Z_3^{-1} = \sqrt{8}(3\rho^3 - 2\rho)\sin\theta$: **Vertical coma**
+- $Z_3^1 = \sqrt{8}(3\rho^3 - 2\rho)\cos\theta$: **Horizontal coma**
+  - Comet-like blur increasing with field angle
+  - Fundamental limit in off-axis imaging
 
 **Fourth-order terms (n = 4):**
-- $Z_4^{-4} = \sqrt{10}\rho^4\sin(4\theta)$: Tetrafoil
-- $Z_4^{-2} = \sqrt{10}(4\rho^4 - 3\rho^2)\sin(2\theta)$: Secondary astigmatism
-- $Z_4^0 = \sqrt{5}(6\rho^4 - 6\rho^2 + 1)$: Primary spherical aberration
-- $Z_4^2 = \sqrt{10}(4\rho^4 - 3\rho^2)\cos(2\theta)$: Secondary astigmatism
-- $Z_4^4 = \sqrt{10}\rho^4\cos(4\theta)$: Tetrafoil
+- $Z_4^{-4} = \sqrt{10}\rho^4\sin(4\theta)$: **Tetrafoil**
+- $Z_4^4 = \sqrt{10}\rho^4\cos(4\theta)$: **Tetrafoil**
+  - Four-fold symmetric, square-like distortion
+  
+- $Z_4^{-2} = \sqrt{10}(4\rho^4 - 3\rho^2)\sin(2\theta)$: **Secondary astigmatism**
+- $Z_4^2 = \sqrt{10}(4\rho^4 - 3\rho^2)\cos(2\theta)$: **Secondary astigmatism**
+  - Higher-order astigmatic effects
+  
+- $Z_4^0 = \sqrt{5}(6\rho^4 - 6\rho^2 + 1)$: **Primary spherical aberration**
+  - Radially symmetric blur increasing with aperture
+  - Fundamental limit of spherical surfaces
 
-### 17.1.5 Physical Interpretation and Seidel Connection
+**Visual Impact:**
+Each aberration creates characteristic point spread function (PSF) distortions:
+- Coma: Comet-shaped PSF with tail pointing radially
+- Astigmatism: Elliptical PSF rotating with focus position
+- Spherical: Circular halo with bright core
+- Trefoil/Tetrafoil: Multi-lobed PSF patterns
+
+### 17.1.6 Physical Interpretation and Seidel Connection
 
 The Zernike polynomials relate to classical Seidel aberrations through coordinate transformation. For a point at field angle α and pupil coordinates (ρ, θ):
 
@@ -124,10 +199,27 @@ The Zernike polynomials relate to classical Seidel aberrations through coordinat
 - Field curvature: $W_{220} = a_2^0 Z_2^0$
 - Distortion: $W_{311} = a_1^1 Z_1^1 \cos\alpha + a_1^{-1} Z_1^{-1} \sin\alpha$
 
+The classical Seidel aberration coefficients emerge from ray tracing, while Zernike coefficients come from wavefront fitting. The transformation between them involves:
+
+$$W_{Seidel}(h, \rho, \theta, \phi) = \sum_{i,j,k,l} S_{ijkl} h^i \rho^j \cos^k(\theta-\phi)$$
+
+where h is the normalized field height, and the indices satisfy i + j = 2(k + l). This power series expansion can be rewritten in Zernike form through trigonometric identities.
+
+**Field Dependence:**
+Unlike pupil-only Zernike polynomials, full field aberrations require additional field coordinates:
+$$W(h_x, h_y, \rho, \theta) = \sum_{p,q,n,m} b_{pqnm} h_x^p h_y^q Z_n^m(\rho, \theta)$$
+
+This field-dependent Zernike expansion enables:
+- Nodal aberration theory for wide-field systems
+- Efficient storage of measured aberration fields
+- Direct optimization of field-averaged performance
+
 The wavefront variance contribution from each aberration:
 $$\sigma_n^2 = \sum_{m=-n}^n (a_n^m)^2$$
 
-### 17.1.6 RMS Wavefront Error
+This decomposition reveals which orders dominate the aberration budget, guiding correction strategies.
+
+### 17.1.7 RMS Wavefront Error
 
 The root-mean-square wavefront error is elegantly expressed in the Zernike basis:
 
@@ -137,12 +229,30 @@ This orthogonality property makes Zernike coefficients ideal for optimization al
 
 $$\sigma_{RMS}^2 = \sum_{n=0}^{\infty} \sigma_n^2 = \sum_{n=0}^{\infty} \sum_{m=-n}^n (a_n^m)^2$$
 
+**Physical Significance:**
+The RMS wavefront error directly relates to optical performance metrics:
+- Strehl ratio (peak intensity): $S \approx \exp(-\sigma_{RMS}^2)$ for $\sigma_{RMS} < 1$ radian
+- Encircled energy: Fraction of light within given radius decreases with σ_RMS
+- Resolution: Effective PSF width increases approximately as $(1 + \sigma_{RMS}^2)^{1/2}$
+
 For atmospheric turbulence following Kolmogorov statistics:
 $$\langle (a_n^m)^2 \rangle \propto (n + 1)^{-\alpha}$$
 
 where α ≈ 11/3 for fully developed turbulence. This power-law decay justifies truncating the expansion at finite order.
 
-### 17.1.7 Strehl Ratio and Performance Metrics
+**Fried Parameter Connection:**
+The seeing-limited resolution is characterized by the Fried parameter r₀:
+$$\sigma_{RMS}^2 = 1.03(D/r_0)^{5/3}$$
+
+where D is the telescope diameter. For D >> r₀, the wavefront error is dominated by low-order modes, particularly tip-tilt which contains ~87% of the total variance.
+
+**Temporal Evolution:**
+Atmospheric aberrations evolve with characteristic timescales:
+$$\tau_n \approx \frac{r_0}{v_{wind}} \cdot n^{-3/5}$$
+
+Higher-order aberrations change more rapidly, requiring faster correction loops. This temporal spectrum guides adaptive optics control system design.
+
+### 17.1.8 Strehl Ratio and Performance Metrics
 
 For small aberrations, the Strehl ratio (peak intensity ratio) approximates to:
 
@@ -153,7 +263,16 @@ where σ_RMS is in radians. This provides a direct connection between wavefront 
 **Extended Maréchal approximation:**
 $$S \approx \exp\left[-\sigma_{RMS}^2 + \frac{1}{2}\sigma_{RMS}^4(\kappa_4 - 1)\right]$$
 
-where κ₄ is the normalized fourth moment of the phase distribution. For Gaussian statistics, κ₄ = 3.
+where κ₄ is the normalized fourth moment of the phase distribution. For Gaussian statistics, κ₄ = 3. Non-Gaussian phase screens (e.g., from strong scintillation) require this correction.
+
+**Higher-Order Statistics:**
+Beyond RMS, the phase structure function provides additional insight:
+$$D_\phi(\mathbf{r}) = \langle[W(\mathbf{x} + \mathbf{r}) - W(\mathbf{x})]^2\rangle$$
+
+For Kolmogorov turbulence:
+$$D_\phi(r) = 6.88(r/r_0)^{5/3}$$
+
+This structure function determines the correlation length of aberrations and guides actuator spacing in deformable mirrors.
 
 **Diffraction-limited criterion:**
 - Rayleigh criterion: λ/4 peak-to-valley → S ≈ 0.80
@@ -165,25 +284,55 @@ $$\text{PSF}(x,y) = \left|\mathcal{F}\left\{P(\xi,\eta)\exp\left[i\frac{2\pi}{\l
 
 where P is the pupil function and W is the wavefront error.
 
-### 17.1.8 Adaptive Optics Performance
+**Partial Correction Effects:**
+When only correcting up to Zernike order N:
+$$S_{corrected} = S_{uncorrected} \cdot \exp\left(\sum_{n=0}^N \sum_{m=-n}^n |a_n^m|^2\right)$$
 
-The residual wavefront error after correction:
-$$\sigma_{residual}^2 = \sigma_{fitting}^2 + \sigma_{temporal}^2 + \sigma_{measurement}^2 + \sigma_{calibration}^2$$
+This shows exponential improvement with each corrected mode, motivating hierarchical correction schemes.
+
+### 17.1.9 Adaptive Optics Performance
+
+The residual wavefront error after correction decomposes into independent error sources:
+$$\sigma_{residual}^2 = \sigma_{fitting}^2 + \sigma_{temporal}^2 + \sigma_{measurement}^2 + \sigma_{calibration}^2 + \sigma_{anisoplanatic}^2$$
+
+Each term represents a fundamental limitation in adaptive optics systems:
 
 **Fitting error (finite actuators):**
 $$\sigma_{fitting}^2 \approx 0.28\left(\frac{d}{r_0}\right)^{5/3}$$
 
-where d is actuator spacing and r₀ is the Fried parameter.
+where d is actuator spacing and r₀ is the Fried parameter. This error arises from the deformable mirror's inability to reproduce high spatial frequencies. The coefficient 0.28 assumes Kolmogorov turbulence and continuous-facesheet mirrors.
 
 **Temporal error (finite bandwidth):**
 $$\sigma_{temporal}^2 \approx \left(\frac{f_G}{f_0}\right)^{5/3}$$
 
-where f_G is the Greenwood frequency and f₀ is the control loop bandwidth.
+where the Greenwood frequency is:
+$$f_G = 0.43 \frac{v_{wind}}{r_0}$$
+
+and f₀ is the control loop bandwidth. This error accumulates when atmospheric changes outpace the correction system.
 
 **Measurement noise propagation:**
 $$\sigma_{measurement}^2 = \left(\frac{\partial W}{\partial s}\right)^2 \sigma_s^2$$
 
-where s represents sensor measurements.
+where s represents sensor measurements. For Shack-Hartmann sensors:
+$$\sigma_{measurement}^2 \propto \frac{1}{N_{photons}} + \frac{\sigma_{read}^2}{N_{photons}^2}$$
+
+The first term is photon noise, the second is read noise contribution.
+
+**Anisoplanatic error:**
+$$\sigma_{anisoplanatic}^2 = \left(\frac{\theta}{\theta_0}\right)^{5/3}$$
+
+where θ is the angular separation from the guide star and θ₀ is the isoplanatic angle:
+$$\theta_0 = 0.314 \frac{r_0}{H_{eff}}$$
+
+with H_{eff} being the effective turbulence height.
+
+**Error Budget Optimization:**
+The total error minimization requires balancing:
+- More actuators reduce fitting error but increase cost
+- Higher bandwidth reduces temporal error but amplifies noise
+- Brighter guide stars reduce measurement error but limit sky coverage
+
+This optimization problem parallels variance reduction in Monte Carlo rendering, where sample allocation must balance different error sources.
 
 ## 17.2 Spatial Light Modulator (SLM) Principles
 
