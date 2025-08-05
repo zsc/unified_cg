@@ -104,84 +104,212 @@ $$H(\mathbf{x}) \approx |U_r|^2[1 + 2\frac{|U_o|}{|U_r|}\cos(\phi_o - \phi_r)]$$
 
 $$U_{trans}(\mathbf{x}) = H(\mathbf{x}) \cdot U_r(\mathbf{x})$$
 
-展开后得到四项：
+将全息图透过率函数 $H(\mathbf{x}) = T_0 + \beta I(\mathbf{x})$ 代入：
 
-$$U_{trans} = |U_o|^2 U_r + |U_r|^2 U_r + U_o |U_r|^2 + U_o^* U_r^2$$
+$$U_{trans} = [T_0 + \beta(|U_o|^2 + |U_r|^2 + U_o U_r^* + U_o^* U_r)]U_r$$
 
-各项的物理意义：
-1. **零级衍射**：$(|U_o|^2 + |U_r|^2)U_r$ - 直透光
-2. **+1级衍射**：$U_o |U_r|^2$ - 虚像（原始物光波）
-3. **-1级衍射**：$U_o^* U_r^2$ - 实像（共轭波）
+展开后得到多项：
 
-虚像项准确重现原始物光波：
+$$U_{trans} = T_0 U_r + \beta(|U_o|^2 + |U_r|^2)U_r + \beta U_o |U_r|^2 + \beta U_o^* U_r^2$$
 
-$$U_{virtual}(\mathbf{x}) = U_o(\mathbf{x}) |U_r(\mathbf{x})|^2$$
+各项的物理意义和空间分布：
+1. **零级衍射**：$[T_0 + \beta(|U_o|^2 + |U_r|^2)]U_r$ - 直透光，沿参考光方向传播
+2. **+1级衍射**：$\beta U_o |U_r|^2$ - 虚像（原始物光波的准确重现）
+3. **-1级衍射**：$\beta U_o^* U_r^2$ - 实像（共轭波，产生赝像）
 
-实像项产生共轭波：
+**虚像的形成机理**：
+虚像项 $U_{virtual}(\mathbf{x}) = \beta U_o(\mathbf{x}) |U_r(\mathbf{x})|^2$ 准确重现原始物光波。当 $|U_r|$ 为常数（平面参考波）时：
 
-$$U_{real}(\mathbf{x}) = U_o^*(\mathbf{x}) U_r^2(\mathbf{x})$$
+$$U_{virtual} \propto U_o(\mathbf{x})$$
 
-在空间上，如果物体位于 $z = z_o$，则：
-- 虚像位于原物体位置 $z = z_o$
+这解释了为什么虚像保持原始物体的所有光学特性，包括深度信息和视差。
+
+**实像的共轭性质**：
+实像项 $U_{real}(\mathbf{x}) = \beta U_o^*(\mathbf{x}) U_r^2(\mathbf{x})$ 产生相位共轭波。对于球面波物光：
+
+$$U_o = \frac{A_o}{r_o} \exp(ikr_o) \Rightarrow U_o^* = \frac{A_o^*}{r_o} \exp(-ikr_o)$$
+
+共轭波向内汇聚而非向外发散，形成实像。空间位置关系：
+- 虚像位于原物体位置 $z = z_o$（保持原始深度）
 - 实像位于 $z = -z_o + 2z_r$（相对于参考源的镜像位置）
 
-离轴配置的优势在于这三个衍射级在空间上分离，便于观察单一重建像。
+**角度分离条件**：
+离轴配置使不同衍射级在角度上分离。设参考光入射角为 $\theta_r$，物光平均出射角为 $\theta_o$，则：
+- 零级：沿 $\theta_r$ 方向
+- +1级：沿 $\theta_o$ 方向
+- -1级：沿 $2\theta_r - \theta_o$ 方向
+
+为避免重叠，需要：
+$$|\theta_o - \theta_r| > \Delta\theta_{obj} + \Delta\theta_{ref}$$
+
+其中 $\Delta\theta$ 是光束发散角。
 
 **衍射效率分析**：
 对于振幅全息图，一级衍射效率定义为：
 
-$$\eta = \frac{|U_{+1}|^2}{|U_{incident}|^2}$$
+$$\eta = \frac{|U_{+1}|^2}{|U_{incident}|^2} = \frac{|\beta U_o |U_r|^2|^2}{|U_r|^2}$$
 
-在线性记录条件下（$|U_o| << |U_r|$），效率为：
+在线性记录条件下（$|U_o| << |U_r|$），且透过率调制度 $m = \beta |U_o||U_r|/T_0$：
 
-$$\eta = \left(\frac{\beta |U_o||U_r|}{2}\right)^2$$
+$$\eta = \left(\frac{m T_0}{2}\right)^2$$
 
-理论最大效率约为6.25%。相位全息图可达到更高效率（理论上100%）。
+对于理想的正弦光栅（$m = 1$），当 $T_0 = 0.5$ 时：
+$$\eta_{max} = \left(\frac{1 \times 0.5}{2}\right)^2 = 0.0625 = 6.25\%$$
+
+**厚全息图的耦合波分析**：
+对于体积全息图，使用Kogelnik的耦合波理论。定义耦合参数：
+$$\nu = \frac{\pi n_1 d}{\lambda \cos\theta_B}$$
+
+透射型相位光栅的衍射效率：
+$$\eta = \sin^2(\nu) = \sin^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+
+当 $\nu = \pi/2$ 时达到100%效率，需要：
+$$n_1 d = \frac{\lambda \cos\theta_B}{2}$$
+
+反射型相位光栅：
+$$\eta = \tanh^2(\nu) = \tanh^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+
+大耦合强度下趋向100%。这解释了为什么相位全息图比振幅全息图效率更高。
 
 **像质评估**：
-重建像的质量受多种因素影响：
+重建像的质量受多种因素影响，可通过系统分析量化：
 
 1. **记录介质的MTF（调制传递函数）**：
-   $$MTF(f) = \frac{M_{out}(f)}{M_{in}(f)}$$
+   $$MTF(f) = \frac{M_{out}(f)}{M_{in}(f)} = \frac{|H(f)|}{|H(0)|}$$
    
-   其中 $M$ 是调制度。高频衰减导致细节损失。
-
-2. **参考光的相干性**：
-   时间相干长度 $l_c = c\tau_c = \frac{\lambda^2}{\Delta\lambda}$ 限制了可记录的最大光程差。
+   其中 $M$ 是调制度，$H(f)$ 是系统传递函数。对于典型的卤化银乳胶：
+   $$MTF(f) \approx \exp\left(-\frac{f^2}{2f_c^2}\right)$$
    
-   空间相干宽度 $w_c = \frac{\lambda D}{s}$ 影响干涉条纹的可见度，其中 $D$ 是到光源的距离，$s$ 是光源尺寸。
+   截止频率 $f_c \approx 3000-5000$ 线/mm。高频衰减导致细节损失，表现为边缘模糊。
 
-3. **记录几何的像差**：
-   球面参考波引入的像差可通过Zernike多项式展开：
-   $$W(\rho, \theta) = \sum_{n,m} a_{nm} Z_n^m(\rho, \theta)$$
+2. **参考光的相干性要求**：
+   
+   **时间相干性**：相干长度必须大于最大光程差
+   $$l_c = c\tau_c = \frac{\lambda^2}{\Delta\lambda} > \Delta_{max}$$
+   
+   其中 $\Delta_{max} = |r_{o,max} - r_{o,min}| + |r_{r,max} - r_{r,min}|$。
+   
+   对于He-Ne激光器（$\lambda = 633nm$, $\Delta\lambda \approx 0.002nm$）：
+   $$l_c \approx \frac{(633 \times 10^{-9})^2}{0.002 \times 10^{-9}} \approx 20cm$$
+   
+   **空间相干性**：相干宽度决定干涉条纹可见度
+   $$w_c = \frac{\lambda D}{s}$$
+   
+   其中 $D$ 是到光源的距离，$s$ 是光源尺寸。条纹可见度：
+   $$V = \frac{I_{max} - I_{min}}{I_{max} + I_{min}} = |\gamma_{12}|$$
+   
+   其中 $\gamma_{12}$ 是复相干度。对于扩展光源：
+   $$\gamma_{12} = \frac{\sin(\pi s \sin\theta/\lambda)}{\pi s \sin\theta/\lambda}$$
+
+3. **记录几何的像差分析**：
+   球面参考波引入的波前像差可展开为Zernike多项式：
+   $$W(\rho, \theta) = \sum_{n=0}^{\infty} \sum_{m=-n}^{n} a_{nm} Z_n^m(\rho, \theta)$$
+   
+   主要像差项：
+   - 离焦（$n=2, m=0$）：$a_{20} = \frac{\Delta z}{8(f/\#)^2}$
+   - 球差（$n=4, m=0$）：$a_{40} = \frac{1}{48(f/\#)^4}$
+   - 彗差（$n=3, m=1$）：$a_{31} = \frac{\theta_{off}}{8(f/\#)^3}$
+   
+   其中 $f/\#$ 是F数，$\theta_{off}$ 是离轴角。
+   
+   **Strehl比**评估像质：
+   $$S = \exp\left(-\left(\frac{2\pi\sigma_W}{\lambda}\right)^2\right)$$
+   
+   其中 $\sigma_W$ 是波前误差的RMS值。$S > 0.8$ 认为是衍射极限成像。
 
 **波长选择性与角度选择性**：
-重建时使用不同波长 $\lambda'$ 或不同角度 $\theta'$ 会导致：
+重建时使用不同波长 $\lambda'$ 或不同角度 $\theta'$ 会导致像质变化：
 
-1. **色散**：横向放大率变化
-   $$M = \frac{\lambda'}{\lambda} \cdot \frac{z_i'}{z_i}$$
+1. **波长变化的影响**：
+   
+   **横向放大率**：根据光栅方程
+   $$\sin\theta_d = \sin\theta_r + \frac{\lambda'}{\Lambda}$$
+   
+   其中 $\Lambda$ 是干涉条纹间距。横向放大率：
+   $$M_x = \frac{\lambda'}{\lambda} \cdot \frac{\cos\theta_r}{\cos\theta_d}$$
+   
+   **轴向位置变化**：
+   $$z_i' = z_i \cdot \frac{\lambda}{\lambda'}$$
+   
+   **色差**：不同波长成像在不同深度，产生色散：
+   $$\Delta z_{chromatic} = z_i \left(1 - \frac{\lambda_{min}}{\lambda_{max}}\right)$$
 
-2. **像差**：主要是球差和彗差
-   $$\Delta W = \frac{2\pi}{\lambda'} \left(\sqrt{x^2 + y^2 + z_i'^2} - z_i'\right) - \frac{2\pi}{\lambda} \left(\sqrt{x^2 + y^2 + z_i^2} - z_i\right)$$
+2. **角度变化的影响**：
+   
+   **布拉格失配**：偏离布拉格角 $\Delta\theta$ 导致效率下降
+   $$\eta(\Delta\theta) = \eta_0 \cdot \text{sinc}^2\left(\frac{\pi d \Delta\theta}{\Lambda}\right)$$
+   
+   **像差引入**：主要是球差和彗差
+   $$W_{spherical} = \frac{(\Delta\theta)^2 \rho^4}{32(f/\#)^3}$$
+   $$W_{coma} = \frac{\Delta\theta \cdot \rho^3 \cos\phi}{8(f/\#)^2}$$
+   
+   其中 $(\rho, \phi)$ 是归一化极坐标。
+
+3. **补偿方法**：
+   
+   **预畸变**：记录时引入相反的畸变
+   $$\phi_{comp}(x,y) = -\frac{2\pi}{\lambda}\left(\frac{\lambda'}{\lambda} - 1\right)\sqrt{x^2 + y^2 + z^2}$$
+   
+   **动态补偿**：使用SLM实时校正波前误差
 
 **数字重建方法**：
-除了光学重建，可通过数值计算模拟重建过程：
+除了光学重建，可通过数值计算模拟重建过程，这在数字全息显微镜中尤其重要：
 
 $$U_{recon}(\xi, \eta) = \iint H(x,y) U_r(x,y) h(x,y;\xi,\eta) dx dy$$
 
-其中 $h$ 是从全息平面到重建平面的传播核。使用卷积定理和FFT可加速计算：
+其中 $h$ 是从全息平面到重建平面的传播核。根据Rayleigh-Sommerfeld衍射理论：
+
+$$h(x,y;\xi,\eta) = \frac{1}{i\lambda} \frac{\exp(ikr)}{r} \cos\theta$$
+
+其中 $r = \sqrt{(\xi-x)^2 + (\eta-y)^2 + z^2}$，$\cos\theta = z/r$。
+
+**频域快速算法**：
+利用卷积定理和FFT加速计算：
 
 $$U_{recon} = \mathcal{F}^{-1}\{\mathcal{F}\{H \cdot U_r\} \cdot \mathcal{F}\{h\}\}$$
 
-这种方法允许数字聚焦、像差补偿和增强处理。
+对于Fresnel近似，传播传递函数简化为：
+$$H_z(f_x, f_y) = \exp(ikz)\exp\left[-i\pi\lambda z(f_x^2 + f_y^2)\right]$$
+
+**数字聚焦技术**：
+通过改变传播距离 $z$ 实现后聚焦：
+$$U(x,y,z) = \mathcal{F}^{-1}\{\mathcal{F}\{U(x,y,0)\} \cdot H_z(f_x,f_y)\}$$
+
+搜索最佳聚焦平面的判据：
+- 强度梯度最大化：$\max_z \sum|\nabla I(x,y,z)|^2$
+- 频谱能量集中度：$\max_z \frac{\sum f^2|\tilde{I}(f)|^2}{\sum|\tilde{I}(f)|^2}$
+- Tamura系数：$\max_z \frac{\sigma_I^2}{\mu_I}$
+
+**数字像差补偿**：
+测量或计算系统像差后，引入补偿相位：
+$$U_{corrected} = U_{recon} \cdot \exp[-i\phi_{aberration}]$$
+
+常见补偿项：
+- 倾斜：$\phi_{tilt} = k(x\sin\theta_x + y\sin\theta_y)$
+- 离焦：$\phi_{defocus} = \frac{k(x^2+y^2)}{2R}$
+- 球差：$\phi_{spherical} = \frac{k(x^2+y^2)^2}{8R^3}$
 
 ### 24.1.4 体积全息与布拉格条件
 
-对于厚全息图，需考虑体积内的布拉格衍射。记录时在介质内形成三维折射率光栅：
+**三维光栅的形成**：
+对于厚全息图（厚度 $d >> \Lambda$，其中 $\Lambda$ 是条纹间距），需考虑体积内的布拉格衍射。记录时，干涉图样在整个体积内形成三维强度分布：
 
-$$n(\mathbf{r}) = n_0 + n_1 \cos(\mathbf{K} \cdot \mathbf{r})$$
+$$I(\mathbf{r}) = |U_o(\mathbf{r}) + U_r(\mathbf{r})|^2$$
 
-其中光栅矢量 $\mathbf{K} = \mathbf{k}_o - \mathbf{k}_r$ 决定了光栅的周期和方向。
+对于线性记录材料，折射率调制正比于曝光强度：
+
+$$n(\mathbf{r}) = n_0 + n_1 \cos(\mathbf{K} \cdot \mathbf{r} + \phi_0)$$
+
+其中光栅矢量 $\mathbf{K} = \mathbf{k}_o - \mathbf{k}_r$ 决定了光栅的周期和方向。光栅周期：
+
+$$\Lambda = \frac{2\pi}{|\mathbf{K}|} = \frac{\lambda}{2\sin(\theta/2)}$$
+
+其中 $\theta$ 是物光和参考光的夹角。
+
+**体积光栅的类型**：
+1. **透射型光栅**：$\mathbf{K} \perp$ 表面，用于透射几何
+2. **反射型光栅**：$\mathbf{K} \parallel$ 表面，用于反射几何
+3. **倾斜光栅**：$\mathbf{K}$ 与表面成任意角，混合特性
 
 布拉格条件要求入射光满足动量匹配：
 
@@ -193,25 +321,87 @@ $$2d\sin\theta_B = m\lambda/n_0$$
 
 其中 $d = 2\pi/|\mathbf{K}|$ 是光栅周期。
 
-衍射效率由耦合波理论（Kogelnik理论）给出。对于透射型相位光栅：
+**耦合波理论分析**：
+Kogelnik的耦合波理论提供了体积光栅衍射效率的解析解。定义耦合常数：
 
-$$\eta = \sin^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+$$\kappa = \frac{\pi n_1}{\lambda \cos\theta_B}$$
 
-对于反射型相位光栅：
+和失谐参数（偏离布拉格条件）：
 
-$$\eta = \tanh^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+$$\xi = \frac{\Delta\theta \cdot K d}{2\cos\theta_B}$$
 
-其中 $n_1$ 是折射率调制深度，$d$ 是全息图厚度。
+**透射型相位光栅**：
+衍射效率为：
+$$\eta = \frac{\sin^2(\sqrt{\nu^2 + \xi^2})}{1 + \xi^2/\nu^2}$$
 
-角度选择性（半高全宽）为：
+其中 $\nu = \kappa d = \frac{\pi n_1 d}{\lambda \cos\theta_B}$。布拉格条件下（$\xi = 0$）：
 
-$$\Delta\theta = \frac{\lambda}{d\sin(2\theta_B)}$$
+$$\eta = \sin^2(\nu) = \sin^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
 
-波长选择性为：
+最大效率100%出现在 $\nu = \pi/2$。
 
-$$\Delta\lambda = \frac{\lambda^2}{d|\cos\theta_B|}$$
+**反射型相位光栅**：
+衍射效率为：
+$$\eta = \frac{\sinh^2(\sqrt{s^2 - \xi^2})}{1 + s^2/\xi^2}$$
 
-这种高选择性使体积全息图可用于波长复用和角度复用存储。
+其中 $s = \kappa d$。布拉格条件下：
+
+$$\eta = \tanh^2(s) = \tanh^2\left(\frac{\pi n_1 d}{\lambda \cos\theta_B}\right)$$
+
+大耦合强度下趋向100%。
+
+**Q参数与光栅分类**：
+Klein-Cook参数区分薄光栅和厚光栅：
+
+$$Q = \frac{2\pi\lambda d}{n_0\Lambda^2}$$
+
+- $Q < 1$：Raman-Nath衍射（薄光栅），多级衍射
+- $Q > 10$：Bragg衍射（厚光栅），单级衍射
+- $1 < Q < 10$：过渡区域
+
+**选择性分析**：
+
+**角度选择性**（半高全宽）：
+对于透射光栅：
+$$\Delta\theta = \frac{\lambda\cos\theta_B}{\pi d\sin\theta_B} \approx \frac{\Lambda}{d}$$
+
+对于反射光栅：
+$$\Delta\theta = \frac{\lambda}{2d\sin\theta_B}$$
+
+角度选择性与光栅厚度成反比，厚光栅具有更高的角度选择性。
+
+**波长选择性**：
+布拉格波长偏移的容忍度：
+$$\Delta\lambda = \frac{\lambda^2}{2nd\sin\theta_B}$$
+
+对于垂直入射的反射光栅：
+$$\Delta\lambda = \frac{\lambda^2}{2nd}$$
+
+**温度和应力效应**：
+温度变化引起的波长偏移：
+$$\Delta\lambda_T = \lambda \left(\alpha + \frac{1}{n}\frac{dn}{dT}\right) \Delta T$$
+
+其中 $\alpha$ 是热膨胀系数。应力引起的双折射：
+$$\Delta n = C_{ij} \sigma_{ij}$$
+
+其中 $C_{ij}$ 是光弹系数张量。
+
+**多重全息与复用技术**：
+利用选择性可在同一体积内记录多个全息图：
+
+1. **角度复用**：不同角度记录 $N$ 个全息图
+   $$N_{angle} \approx \frac{\theta_{range}}{\Delta\theta} = \frac{\theta_{range} \cdot d}{\Lambda}$$
+
+2. **波长复用**：不同波长记录
+   $$N_{wavelength} \approx \frac{\Delta\lambda_{source}}{\Delta\lambda} = \frac{\Delta\lambda_{source} \cdot 2nd}{\lambda^2}$$
+
+3. **空间复用**：分区记录
+4. **相位编码复用**：使用正交相位码
+
+总存储容量：
+$$C = N_{angle} \times N_{wavelength} \times N_{spatial} \times \frac{A}{(\Delta x)^2}$$
+
+其中 $A$ 是全息图面积，$\Delta x$ 是空间分辨率。
 
 ## 24.2 计算机生成全息图（CGH）
 
@@ -221,22 +411,60 @@ $$\Delta\lambda = \frac{\lambda^2}{d|\cos\theta_B|}$$
 1. 可以生成物理上不存在的物体的全息图
 2. 精确控制光波的振幅和相位分布
 3. 无需物理干涉系统，避免了振动和相干性要求
+4. 可以引入计算优化和预补偿
 
-对于离散化的3D场景，物光波可表示为点源叠加：
+**从连续到离散的表示**：
+对于连续3D场景，物光波为：
+$$U_o(\mathbf{x}) = \iiint_{V} \rho(\mathbf{r}') G(\mathbf{x}, \mathbf{r}') d\mathbf{r}'$$
 
-$$U_o(\mathbf{x}) = \sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x} - \mathbf{r}_j|)}{|\mathbf{x} - \mathbf{r}_j|}$$
+其中 $\rho(\mathbf{r}')$ 是物体的复振幅分布，$G$ 是格林函数：
+$$G(\mathbf{x}, \mathbf{r}') = \frac{\exp(ik|\mathbf{x} - \mathbf{r}'|)}{4\pi|\mathbf{x} - \mathbf{r}'|}$$
 
-其中 $\mathbf{r}_j$ 是第 $j$ 个点源的位置，$A_j$ 是其复振幅。
+离散化后，使用点采样：
+$$U_o(\mathbf{x}) \approx \sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x} - \mathbf{r}_j|)}{|\mathbf{x} - \mathbf{r}_j|}$$
 
-在实际计算中，需要考虑：
-- **采样定理**：全息平面的采样间隔 $\Delta x$ 必须满足：
-  $$\Delta x < \frac{\lambda z_{min}}{L}$$
-  其中 $L$ 是物体横向尺寸，$z_{min}$ 是最近物点距离。
+其中 $A_j = \rho(\mathbf{r}_j) \Delta V$ 包含了体积元素。
 
-- **数值孔径限制**：可记录的最大空间频率：
-  $$f_{max} = \frac{2NA}{\lambda}$$
-  
-- **量化效应**：数字表示的有限精度导致量化噪声。
+**光波传播的数学框架**：
+CGH计算基于标量衍射理论。根据不同近似程度：
+
+1. **Rayleigh-Sommerfeld衍射**（最精确）：
+   $$U(\mathbf{x}) = \frac{1}{i\lambda} \iint_{\Sigma} U_0(\mathbf{x}') \frac{\exp(ikr)}{r} \cos(\mathbf{n}, \mathbf{r}) d\mathbf{x}'$$
+
+2. **Fresnel衍射**（近轴近似）：
+   $$U(x,y,z) = \frac{\exp(ikz)}{i\lambda z} \iint U_0(x',y') \exp\left[\frac{ik}{2z}[(x-x')^2 + (y-y')^2]\right] dx'dy'$$
+
+3. **Fraunhofer衍射**（远场近似）：
+   $$U(x,y) = \frac{\exp(ikz)\exp\left[\frac{ik(x^2+y^2)}{2z}\right]}{i\lambda z} \mathcal{F}\{U_0\}\left(\frac{x}{\lambda z}, \frac{y}{\lambda z}\right)$$
+
+在实际计算中，需要考虑多个约束条件：
+
+**采样要求**：
+1. **横向采样**（Nyquist准则）：
+   $$\Delta x < \frac{\lambda z_{min}}{2L}$$
+   其中 $L$ 是物体横向尺寸，$z_{min}$ 是最近物点距离。
+
+2. **角谱采样**：为避免混叠
+   $$\Delta u < \frac{1}{2L}, \quad \Delta v < \frac{1}{2L}$$
+   其中 $(u,v) = (\sin\theta_x/\lambda, \sin\theta_y/\lambda)$ 是方向余弦。
+
+**数值孔径与带宽限制**：
+系统的空间带宽受限于：
+$$B_{spatial} = \frac{2NA}{\lambda} = \frac{2\sin\theta_{max}}{\lambda}$$
+
+对应的最小可分辨特征：
+$$\delta_{min} = \frac{\lambda}{2NA}$$
+
+**量化与噪声分析**：
+1. **相位量化**：$B$位量化产生量化噪声
+   $$\sigma_\phi^2 = \frac{(2\pi)^2}{12 \cdot 2^{2B}}$$
+   
+2. **振幅量化**：影响动态范围
+   $$SNR = 20\log_{10}\left(\frac{2^B - 1}{\sigma_n}\right) \text{ dB}$$
+
+3. **计算精度**：浮点运算误差
+   $$\epsilon_{total} = \epsilon_{round} + N \cdot \epsilon_{accum}$$
+   其中 $N$ 是累加次数。
 
 **Rayleigh-Sommerfeld衍射理论基础**：
 CGH计算基于标量衍射理论。第一类Rayleigh-Sommerfeld积分给出：
@@ -262,55 +490,215 @@ $$\Delta x < \frac{\lambda}{2NA_x}, \quad \Delta y < \frac{\lambda}{2NA_y}$$
 由于大多数空间光调制器只能调制振幅或相位，需要编码方法表示复数值：
 
 1. **Kinoform（纯相位编码）**：
-   忽略振幅，只编码相位：$H_{kino} = \exp(i\arg[U_o])$
+   忽略振幅，只编码相位：
+   $$H_{kino} = \exp(i\arg[U_o])$$
+   
+   效率损失：$\eta = |\langle U_o, H_{kino} \rangle|^2 / \|U_o\|^2$
    
 2. **迭代傅里叶变换算法（IFTA）**：
-   通过迭代优化找到最佳相位分布
+   交替投影在全息平面和重建平面约束间：
+   - 全息平面：$\phi_{holo}^{(k+1)} = \arg[U_{holo}^{(k)}]$
+   - 重建平面：$U_{image}^{(k+1)} = A_{target} \exp(i\arg[U_{image}^{(k)}])$
+   
+   收敛速度：$O(1/\sqrt{k})$，其中 $k$ 是迭代次数。
 
 3. **双相位分解**：
-   $$U = A e^{i\phi} = \frac{1}{2}[e^{i\phi_1} + e^{i\phi_2}]$$
-   其中 $\phi_1 = \phi + \arccos(A)$，$\phi_2 = \phi - \arccos(A)$
+   $$A e^{i\phi} = \frac{1}{2}[e^{i\phi_1} + e^{i\phi_2}]$$
+   
+   求解约束：
+   $$\cos(\phi_1 - \phi) = \cos(\phi - \phi_2) = A$$
+   
+   得到：$\phi_1 = \phi + \arccos(A)$，$\phi_2 = \phi - \arccos(A)$
+   
+   限制：要求 $0 \leq A \leq 1$。
+
+4. **误差扩散编码**：
+   将量化误差扩散到邻近像素：
+   $$e_{i,j} = U_{target} - U_{quantized}$$
+   $$U_{i+1,j} \leftarrow U_{i+1,j} + \alpha e_{i,j}$$
+   
+   其中 $\alpha \approx 7/16$ 为Floyd-Steinberg权重。
+
+5. **张量分解方法**：
+   将复振幅矩阵分解为低秩近似：
+   $$\mathbf{U} \approx \sum_{r=1}^R \sigma_r \mathbf{u}_r \mathbf{v}_r^T$$
+   
+   每个分量可以独立编码。
 
 **计算精度与数值稳定性**：
-浮点运算的有限精度影响CGH质量：
+浮点运算的有限精度影响CGH质量，需要特殊处理：
 
 1. **相位卷绕处理**：
-   当 $kr > 2\pi n$ 时，需要正确处理相位卷绕：
-   $$\phi_{wrapped} = \mod(kr, 2\pi)$$
+   大传播距离时相位迅速增长：
+   $$\phi = kr = \frac{2\pi}{\lambda}\sqrt{(x-x')^2 + (y-y')^2 + (z-z')^2}$$
+   
+   使用双精度计算或相位展开：
+   $$\exp(ikr) = \exp(i\phi_{wrapped}) \cdot \exp(i2\pi m)$$
+   其中 $\phi_{wrapped} = \mod(kr, 2\pi)$，$m = \lfloor kr/2\pi \rfloor$。
 
-2. **近场奇异性**：
-   当 $r \to 0$ 时，$1/r$ 项发散。实际处理时使用：
-   $$U_{reg} = \frac{\exp(ikr)}{r + \epsilon}$$
-   其中 $\epsilon \sim \lambda/100$
+2. **近场奇异性处理**：
+   当 $r \to 0$ 时，使用正则化：
+   $$G_{reg}(r) = \begin{cases}
+   \frac{\exp(ikr) - 1}{ikr} + 1/\epsilon & r < \epsilon \\
+   \frac{\exp(ikr)}{r} & r \geq \epsilon
+   \end{cases}$$
+   
+   其中 $\epsilon = \lambda/100$ 避免除零。
 
-3. **大规模FFT的数值误差**：
-   FFT的相对误差约为 $\epsilon_{FFT} \sim \sqrt{N} \cdot \epsilon_{machine}$
-   对于 $N = 4096 \times 4096$，单精度下误差约 $10^{-5}$
+3. **FFT数值误差分析**：
+   
+   **舆入误差**：FFT的误差传播
+   $$\|\text{FFT}(x + \delta x) - \text{FFT}(x)\| \leq \sqrt{N} \|\delta x\|$$
+   
+   **累积误差**：$N$点FFT的总误差
+   $$\epsilon_{total} \approx \sqrt{N\log_2 N} \cdot \epsilon_{machine}$$
+   
+   对于 $N = 4096^2$：
+   - 单精度：$\epsilon \approx 10^{-4}$
+   - 双精度：$\epsilon \approx 10^{-13}$
+
+4. **数值稳定性优化**：
+   
+   **预条件化**：归一化坐标和振幅
+   $$\tilde{x} = x/L, \quad \tilde{U} = U/U_{max}$$
+   
+   **Kahan求和**：减少累加误差
+   ```
+   sum = 0; c = 0
+   for j in 1:N
+       y = a[j] - c
+       t = sum + y
+       c = (t - sum) - y
+       sum = t
+   ```
+   
+   **分块计算**：避免过大数组
 
 ### 24.2.2 点源法（Point Source Method）
 
-最直接的CGH算法是点源叠加法。每个物点被视为球面波源，在全息平面上产生的光场为：
+**基本原理**：
+点源法是最直观的CGH算法，基于惠更斯-菲涅尔原理。每个物点被视为次级球面波源：
 
-$$U_j(\mathbf{x}) = A_j \frac{\exp(ik r_j)}{r_j} \cdot \text{obliquity}(\theta_j)$$
+$$U_j(\mathbf{x}) = A_j \frac{\exp(ik r_j)}{r_j} \cdot K(\theta_j)$$
 
-其中 $r_j = |\mathbf{x} - \mathbf{r}_j|$，倾斜因子 $\text{obliquity}(\theta) = \frac{1 + \cos\theta}{2}$ 考虑了大角度传播的修正。
+其中：
+- $r_j = |\mathbf{x} - \mathbf{r}_j| = \sqrt{(x-x_j)^2 + (y-y_j)^2 + (z-z_j)^2}$
+- $K(\theta)$ 是倾斜因子，有多种选择：
 
-对于全息平面上的每个采样点 $\mathbf{x}_i$：
+**倾斜因子的选择**：
+1. **Kirchhoff倾斜因子**：
+   $$K_{Kirchhoff}(\theta) = \frac{1 + \cos\theta}{2}$$
 
-$$H(\mathbf{x}_i) = \left|\sum_{j=1}^N A_j \frac{\exp(ik|\mathbf{x}_i - \mathbf{r}_j|)}{|\mathbf{x}_i - \mathbf{r}_j|} + U_r(\mathbf{x}_i)\right|^2$$
+2. **Rayleigh-Sommerfeld倾斜因子**：
+   $$K_{RS}(\theta) = \cos\theta = \frac{z}{r}$$
 
-计算复杂度为 $O(MN)$，其中 $M$ 是全息图像素数，$N$ 是场景点数。
+3. **无倾斜因子**（近轴近似）：
+   $$K_{paraxial}(\theta) = 1$$
+
+对于大多数应用，Rayleigh-Sommerfeld因子给出最准确的结果。
+
+**全息图计算**：
+对于全息平面上的每个采样点 $\mathbf{x}_i$，计算总光场：
+
+$$U_{total}(\mathbf{x}_i) = \sum_{j=1}^N A_j \frac{\exp(ik r_{ij})}{r_{ij}} K(\theta_{ij}) + U_r(\mathbf{x}_i)$$
+
+其中 $r_{ij} = |\mathbf{x}_i - \mathbf{r}_j|$。
+
+**干涉图样的记录**：
+1. **强度全息图**：
+   $$H_I(\mathbf{x}_i) = |U_{total}(\mathbf{x}_i)|^2$$
+
+2. **相位全息图**（Kinoform）：
+   $$H_\phi(\mathbf{x}_i) = \arg[U_{total}(\mathbf{x}_i)]$$
+
+3. **复振幅全息图**：
+   $$H_C(\mathbf{x}_i) = U_{total}(\mathbf{x}_i)$$
+
+**计算复杂度分析**：
+- 时间复杂度：$O(MN)$
+  - $M = M_x \times M_y$ 是全息图像素数
+  - $N$ 是场景点数
+- 空间复杂度：$O(M + N)$
+- 每像素计算：
+  - 距离计算：9次乘法，6次加法，1次平方根
+  - 相位计算：1次乘法
+  - 复数运算：2次三角函数
 
 **优化策略**：
-1. **查找表加速**：预计算 $\exp(ikr)/r$ 对于量化的 $r$ 值
-2. **并行计算**：每个全息像素独立计算，适合GPU加速
-3. **自适应采样**：根据物点分布密度调整计算精度
+
+1. **查找表（LUT）加速**：
+   预计算常用函数值：
+   ```
+   对于 r ∈ [r_min, r_max]，步长 Δr
+   LUT[i] = exp(ik*r[i])/r[i]
+   ```
+   
+   内存需求：$N_{LUT} = (r_{max} - r_{min})/\Delta r$
+   精度权衡：$\Delta r < \lambda/10$ 保证相位精度
+
+2. **GPU并行加速**：
+   ```
+   每个线程计算一个全息像素
+   thread(i,j):
+       U = 0
+       for each object point k:
+           U += A[k] * G(x[i,j], r[k])
+       H[i,j] = |U + U_ref|^2
+   ```
+   
+   加速比：$S = N_{cores} \times \eta_{occupancy}$
+   典型值：$S \approx 100-1000$ 对于现代GPU
+
+3. **分层距离计算**：
+   根据距离分组，使用不同精度：
+   - 近场（$r < 10\lambda$）：完整计算
+   - 中场（$10\lambda < r < 1000\lambda$）：Fresnel近似
+   - 远场（$r > 1000\lambda$）：Fraunhofer近似
+
+4. **空间划分优化**：
+   使用八叉树或k-d树：
+   - 只计算影响显著的点
+   - 剪枝条件：$|A_j|/r_j^2 < \epsilon$
+   - 复杂度降低到：$O(M\log N)$
+
+5. **自适应精度控制**：
+   根据局部相位梯度调整：
+   $$N_{local} = \max\left(N_{min}, \frac{|\nabla\phi|}{2\pi} \cdot N_{base}\right)$$
 
 **误差分析**：
-主要误差源包括：
-- 离散采样误差：$\epsilon_{sampling} \propto 1/\sqrt{N}$
-- 有限孔径截断：$\epsilon_{aperture} \propto \lambda z/D$
-- 数值精度：浮点运算引入的舍入误差
+
+1. **离散采样误差**：
+   由于有限采样点表示连续物体：
+   $$\epsilon_{sampling} = \frac{\sigma_U}{\sqrt{N}} \approx \frac{\langle|A|\rangle}{\sqrt{N}}$$
+   
+   其中 $\sigma_U$ 是光场标准差。
+
+2. **有限孔径误差**：
+   全息图有限尺寸导致频谱截断：
+   $$\epsilon_{aperture} = \int_{|f| > f_{max}} |\tilde{U}(f)|^2 df$$
+   
+   对于点源，近似为：
+   $$\epsilon_{aperture} \approx \frac{\lambda z}{\pi D} \cdot \frac{|A|}{r}$$
+   
+   其中 $D$ 是全息图孔径。
+
+3. **量化误差**：
+   数字表示的有限位数：
+   $$\epsilon_{quant} = \frac{\Delta}{2\sqrt{3}}$$
+   
+   其中 $\Delta$ 是量化步长。
+
+4. **总误差估计**：
+   假设各误差源独立：
+   $$\epsilon_{total} = \sqrt{\epsilon_{sampling}^2 + \epsilon_{aperture}^2 + \epsilon_{quant}^2 + \epsilon_{numeric}^2}$$
+
+5. **信噪比分析**：
+   $$SNR = 10\log_{10}\left(\frac{\sum|U_{signal}|^2}{\sum|U_{noise}|^2}\right)$$
+   
+   典型值：
+   - 单精度计算：SNR ≈ 40-50 dB
+   - 双精度计算：SNR ≈ 80-90 dB
+   - 8位量化：SNR ≈ 48 dB
 
 ### 24.2.3 多边形法（Polygon-based Method）
 
