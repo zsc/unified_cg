@@ -29,6 +29,31 @@ $$C(\mathbf{r}) = \sum_{n=1}^{N_{\text{samples}}} T_n \alpha_n \mathbf{c}_n$$
 这个离散化引入了 $O(\delta^2)$ 的误差，根据中点法则：
 $$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}{24}\max_{t \in [a,b]}|f''(t)|$$
 
+**离散化的数学基础**
+
+从连续体积渲染方程出发：
+$$C(\mathbf{r}) = \int_{t_{\text{near}}}^{t_{\text{far}}} T(t)\sigma(\mathbf{r}(t))\mathbf{c}(\mathbf{r}(t),\mathbf{d})dt$$
+
+其中透射率 $T(t) = \exp\left(-\int_{t_{\text{near}}}^t \sigma(\mathbf{r}(s))ds\right)$。
+
+应用分片常数近似，假设在区间 $[t_n, t_{n+1}]$ 内：
+- $\sigma(\mathbf{r}(t)) \approx \sigma_n$（体素中心值）
+- $\mathbf{c}(\mathbf{r}(t),\mathbf{d}) \approx \mathbf{c}_n$
+
+则透射率的递推关系：
+$$T_{n+1} = T_n \cdot \exp(-\sigma_n \delta_n)$$
+
+区间 $[t_n, t_{n+1}]$ 对颜色的贡献：
+$$\Delta C_n = \int_{t_n}^{t_{n+1}} T(t)\sigma(t)\mathbf{c}(t)dt \approx T_n \sigma_n \mathbf{c}_n \int_{t_n}^{t_{n+1}} \exp\left(-\int_{t_n}^t \sigma_n ds\right)dt$$
+
+计算内部积分：
+$$\int_{t_n}^{t_{n+1}} \exp(-\sigma_n(t-t_n))dt = \frac{1}{\sigma_n}[1 - \exp(-\sigma_n \delta_n)]$$
+
+因此：
+$$\Delta C_n = T_n \mathbf{c}_n [1 - \exp(-\sigma_n \delta_n)] = T_n \alpha_n \mathbf{c}_n$$
+
+这正是我们使用的离散公式，其中 $\alpha_n = 1 - \exp(-\sigma_n \delta_n)$ 是精确的局部不透明度。
+
 **采样策略与误差分析**
 
 为了减少离散化误差，可以采用更高阶的数值积分方法：
@@ -43,6 +68,30 @@ $$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}
    - 基于梯度的细化：$\delta_{\text{local}} = \delta_0 / (1 + \|\nabla\sigma\|)$
    - 基于曲率的细化：考虑二阶导数 $\nabla^2\sigma$
 
+**误差传播分析**
+
+考虑数值积分误差如何影响最终渲染结果。设真实积分为 $I$，数值近似为 $\tilde{I}$，则：
+
+对于颜色积分：
+$$\epsilon_C = \left|C - \tilde{C}\right| \leq \int_{t_{\text{near}}}^{t_{\text{far}}} |T(t)||\epsilon_\sigma(t)|dt + \int_{t_{\text{near}}}^{t_{\text{far}}} |\epsilon_T(t)||\sigma(t)\mathbf{c}(t)|dt$$
+
+其中：
+- $\epsilon_\sigma(t)$ 是密度离散化误差
+- $\epsilon_T(t)$ 是透射率累积误差
+
+透射率误差满足递推关系：
+$$\epsilon_{T,n+1} \leq \epsilon_{T,n} + T_n \cdot \epsilon_{\exp}(\sigma_n\delta_n)$$
+
+其中 $\epsilon_{\exp}(x) \approx \frac{x^2}{2}e^x \cdot \epsilon_x$ 是指数函数的误差传播。
+
+**最优采样密度**
+
+给定总采样预算 $N_{\text{total}}$，如何分配采样点以最小化误差？使用变分法，最优采样密度满足：
+
+$$\rho(t) \propto \sqrt{|f''(t)|}$$
+
+其中 $f(t) = T(t)\sigma(t)\mathbf{c}(t)$ 是被积函数。这导致在场景边界（$\sigma$ 变化剧烈）处需要更密集的采样。
+
 **体素遍历算法**
 
 光线与体素网格的相交使用3D DDA（Digital Differential Analyzer）算法：
@@ -55,6 +104,50 @@ $$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}
 4. **更新体素索引**：根据最小 $t$ 对应的维度递增
 
 该算法的复杂度为 $O(N)$，其中 $N$ 是光线穿过的体素数，最坏情况下为 $O(N_{\text{grid}})$。
+
+**Amanatides-Woo算法详解**
+
+更高效的体素遍历使用Amanatides-Woo算法，它预计算步进参数：
+
+给定光线 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$：
+
+1. **初始化参数**：
+   - 步长：$\Delta t_x = |\text{voxelSize}/\mathbf{d}_x|$，类似地计算 $\Delta t_y, \Delta t_z$
+   - 初始边界：$t_{\max,x} = (\text{voxelBound}_x - \mathbf{o}_x)/\mathbf{d}_x$
+   - 步进方向：$\text{step}_x = \text{sign}(\mathbf{d}_x)$
+
+2. **主循环**：
+   ```
+   while (t < t_far) {
+       // 处理当前体素 (ix, iy, iz)
+       processVoxel(ix, iy, iz)
+       
+       // 找到最近的边界
+       if (t_max_x < t_max_y && t_max_x < t_max_z) {
+           t = t_max_x
+           t_max_x += Delta_t_x
+           ix += step_x
+       } else if (t_max_y < t_max_z) {
+           t = t_max_y
+           t_max_y += Delta_t_y
+           iy += step_y
+       } else {
+           t = t_max_z
+           t_max_z += Delta_t_z
+           iz += step_z
+       }
+   }
+   ```
+
+**整数算术优化**
+
+为避免浮点误差累积，可以使用整数算术版本：
+
+$$\text{error}_d = \text{error}_d + |\mathbf{d}_d| \cdot \text{voxelSize}$$
+
+当 $\text{error}_d \geq |\mathbf{d}_{\max}| \cdot \text{voxelSize}$ 时，递增对应维度并减少误差。
+
+这种方法完全避免了浮点数操作，适合硬件实现。
 
 ### 9.1.2 三线性插值
 
@@ -74,6 +167,22 @@ $$f(\mathbf{x}) = \text{lerp}_z\left(\text{lerp}_y\left(\text{lerp}_x(f_{000}, f
 
 这保证了 $C^0$ 连续性但在体素边界处导数不连续，导致法线计算时出现阶跃。
 
+**三线性插值的张量表示**
+
+三线性插值可以视为三阶张量的多线性形式。定义插值张量 $\mathcal{F} \in \mathbb{R}^{2 \times 2 \times 2}$，其元素为八个顶点值：
+
+$$\mathcal{F}_{i'j'k'} = f_{i+i',j+j',k+k'}$$
+
+则插值结果为：
+$$f(\mathbf{u}) = \mathcal{F} \times_1 \mathbf{w}^x \times_2 \mathbf{w}^y \times_3 \mathbf{w}^z$$
+
+其中 $\mathbf{w}^d = [1-u_d, u_d]^T$ 是每个维度的权重向量，$\times_n$ 表示沿第 $n$ 个模式的张量乘积。
+
+展开后：
+$$f(\mathbf{u}) = \sum_{i',j',k' \in \{0,1\}} \mathcal{F}_{i'j'k'} \cdot w^x_{i'} \cdot w^y_{j'} \cdot w^z_{k'}$$
+
+这种表示揭示了三线性插值的张量分解结构，为后续的TensoRF方法提供了理论基础。
+
 **插值权重的几何解释**
 
 三线性插值的权重具有直观的几何意义——每个顶点的贡献与查询点到对角顶点形成的子体积成正比：
@@ -84,6 +193,19 @@ u_d & \text{if bit}_d(ijk) = 1
 \end{cases}$$
 
 其中 $\text{bit}_d(ijk)$ 提取索引的第 $d$ 位。
+
+**重心坐标解释**
+
+另一种理解是通过重心坐标。在立方体中，任意点 $\mathbf{x}$ 可以表示为八个顶点的加权平均：
+
+$$\mathbf{x} = \sum_{i=0}^{7} \lambda_i \mathbf{v}_i$$
+
+其中 $\lambda_i \geq 0$ 且 $\sum_i \lambda_i = 1$。对于立方体，重心坐标恰好等于三线性插值权重：$\lambda_i = w_i$。
+
+这个性质保证了：
+1. **保凸性**：插值结果在顶点值的凸包内
+2. **线性精确性**：对线性函数 $f(\mathbf{x}) = \mathbf{a}^T\mathbf{x} + b$，插值是精确的
+3. **对称性**：对于对称的顶点值，插值结果也对称
 
 **梯度计算**
 
@@ -100,6 +222,38 @@ $$\nabla f(\mathbf{x}) = \begin{pmatrix}
 \end{pmatrix}$$
 
 其中 $w^{yz}$ 表示仅在 $y,z$ 维度的权重积。
+
+**梯度不连续性分析**
+
+考虑体素边界 $x = x_{i+1}$ 处的梯度跳变。从左侧接近（体素 $i$ 内）：
+$$\frac{\partial f}{\partial x}\bigg|_{x_{i+1}^-} = \frac{1}{\Delta x}[(f_{i+1,j,k} - f_{i,j,k})(1-u_y)(1-u_z) + \ldots]$$
+
+从右侧接近（体素 $i+1$ 内）：
+$$\frac{\partial f}{\partial x}\bigg|_{x_{i+1}^+} = \frac{1}{\Delta x}[(f_{i+2,j,k} - f_{i+1,j,k})(1-u_y)(1-u_z) + \ldots]$$
+
+跳变大小：
+$$\Delta\left(\frac{\partial f}{\partial x}\right) = \frac{\partial f}{\partial x}\bigg|_{x_{i+1}^+} - \frac{\partial f}{\partial x}\bigg|_{x_{i+1}^-}$$
+
+这个跳变导致：
+1. **法线计算不稳定**：基于梯度的法线在体素边界不连续
+2. **光照计算伪影**：反射计算依赖于法线，导致可见的网格结构
+3. **优化不稳定性**：导数不连续使得基于梯度的优化方法收敛困难
+
+**平滑梯度计算**
+
+为缓解梯度不连续问题，常用方法包括：
+
+1. **中心差分**：使用相邻体素值
+   $$\frac{\partial f}{\partial x} \approx \frac{f_{i+1,j,k} - f_{i-1,j,k}}{2\Delta x}$$
+
+2. **Sobel算子**：带有平滑核的差分
+   $$G_x = \begin{bmatrix}
+   -1 & 0 & 1 \\
+   -2 & 0 & 2 \\
+   -1 & 0 & 1
+   \end{bmatrix} * f$$
+
+3. **预平滑**：先对场进行高斯平滑，再计算梯度
 
 **高阶插值方案**
 
@@ -123,6 +277,34 @@ $$\nabla f(\mathbf{x}) = \begin{pmatrix}
    0 & |r| > 1
    \end{cases}$$
    其中 $I_0$ 是修正贝塞尔函数，$\beta$ 控制窗口形状
+
+**B样条基函数详解**
+
+三次均匀B样条基函数定义为：
+$$B(t) = \begin{cases}
+\frac{2}{3} - |t|^2 + \frac{|t|^3}{2} & 0 \leq |t| < 1 \\
+\frac{(2-|t|)^3}{6} & 1 \leq |t| < 2 \\
+0 & |t| \geq 2
+\end{cases}$$
+
+它具有以下性质：
+- **紧支撑**：$\text{supp}(B) = [-2,2]$
+- **$C^2$ 连续**：二阶导数连续
+- **划分单位性**：$\sum_{i \in \mathbb{Z}} B(t-i) = 1$
+- **凸性**：保证插值结果不会产生振荡
+
+**插值的频域分析**
+
+从频域角度看，插值是一个低通滤波过程。三线性插值的频率响应：
+
+$$H(\boldsymbol{\omega}) = \prod_{d \in \{x,y,z\}} \text{sinc}^2\left(\frac{\omega_d\Delta_d}{2}\right)$$
+
+其中 $\text{sinc}(x) = \sin(x)/x$。这表明：
+1. **高频衰减**：以 $|\omega|^{-2}$ 速率衰减
+2. **混叠**：当采样率不足时产生摩尔纹
+3. **相位失真**：非线性相位响应导致形状改变
+
+更高阶的插值方法提供更好的频率特性，但计算成本也更高。
 
 ### 9.1.3 稀疏八叉树
 
@@ -156,6 +338,25 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
 
 存储复杂度从密集网格的 $O(N^3)$ 降低到 $O(N_{\text{occupied}})$，其中 $N_{\text{occupied}}$ 是非空体素的数量。实际压缩率取决于场景稀疏性。
 
+**八叉树的数学结构**
+
+八叉树可以视为空间的递归分解。设空间域为 $\Omega = [0,1]^3$，则第 $\ell$ 层的每个节点对应一个子域：
+
+$$\Omega_{\ell,i,j,k} = \left[\frac{i}{2^\ell}, \frac{i+1}{2^\ell}\right] \times \left[\frac{j}{2^\ell}, \frac{j+1}{2^\ell}\right] \times \left[\frac{k}{2^\ell}, \frac{k+1}{2^\ell}\right]$$
+
+其中 $i,j,k \in \{0,1,...,2^\ell-1\}$。
+
+特征函数表示：
+$$\chi_{\ell,i,j,k}(\mathbf{x}) = \begin{cases}
+1 & \mathbf{x} \in \Omega_{\ell,i,j,k} \\
+0 & \text{otherwise}
+\end{cases}$$
+
+场的多分辨率表示：
+$$f(\mathbf{x}) = \sum_{\ell=0}^{L} \sum_{(i,j,k) \in \mathcal{L}_\ell} c_{\ell,i,j,k} \chi_{\ell,i,j,k}(\mathbf{x})$$
+
+其中 $\mathcal{L}_\ell$ 是第 $\ell$ 层的叶节点集合，$c_{\ell,i,j,k}$ 是存储的值。
+
 **高效光线-八叉树相交**
 
 优化的遍历算法利用空间相干性：
@@ -175,6 +376,31 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
 3. **早期终止**：当累积透明度低于阈值时停止遍历：
    $$T < \epsilon \Rightarrow \text{terminate}$$
 
+**区间算术优化**
+
+为避免浮点误差，使用区间算术进行保守的相交测试：
+
+$$[t_{\text{near}}^-, t_{\text{near}}^+] = \max_{i} \left[\frac{\mathbf{c}_i - h_i - \mathbf{o}_i}{\mathbf{d}_i} - \epsilon, \frac{\mathbf{c}_i - h_i - \mathbf{o}_i}{\mathbf{d}_i} + \epsilon\right]$$
+
+这保证不会错过任何相交，代价是可能会访问一些额外的边界节点。
+
+**遍历顺序预计算**
+
+对于给定的光线方向 $\mathbf{d} = (d_x, d_y, d_z)$，预计算所有可能的子节点访问顺序：
+
+```
+int orderLUT[8][8] = {
+    // d_x >= 0, d_y >= 0, d_z >= 0
+    {0, 1, 2, 3, 4, 5, 6, 7},
+    // d_x < 0, d_y >= 0, d_z >= 0
+    {1, 0, 3, 2, 5, 4, 7, 6},
+    // ...
+};
+int lutIndex = (d_x < 0) + 2*(d_y < 0) + 4*(d_z < 0);
+```
+
+这种查找表方法避免了遍历时的排序计算。
+
 **自适应细分准则**
 
 决定何时细分节点的准则包括：
@@ -187,6 +413,32 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
 
 3. **视点相关细分**：基于投影大小动态调整
    $$\frac{\text{nodeSize}}{\|\mathbf{x} - \mathbf{o}_{\text{camera}}\|} > \tau_{\text{pixel}} \Rightarrow \text{subdivide}$$
+
+**信息论细分准则**
+
+使用信息增益来决定是否细分。设节点 $n$ 包含样本集 $S_n$，则信息熵：
+
+$$H(S_n) = -\sum_{i} p_i \log p_i$$
+
+其中 $p_i$ 是类别 $i$ 的概率（例如，空/非空）。
+
+细分后的信息增益：
+$$IG = H(S_n) - \sum_{c=0}^{7} \frac{|S_{n,c}|}{|S_n|} H(S_{n,c})$$
+
+当 $IG > \tau_{IG}$ 时进行细分。
+
+**误差引导的细分**
+
+基于重建误差的自适应细分：
+
+$$E_n = \int_{\Omega_n} |f(\mathbf{x}) - \bar{f}_n|^2 d\mathbf{x}$$
+
+其中 $\bar{f}_n$ 是节点 $n$ 内的常数近似。
+
+使用泰勒展开估计误差：
+$$E_n \approx \frac{h_n^2}{12} \int_{\Omega_n} \|\nabla f(\mathbf{x})\|^2 d\mathbf{x}$$
+
+其中 $h_n$ 是节点大小。这导致基于梯度的细分准则。
 
 **内存优化技术**
 
@@ -205,6 +457,41 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
    - 精细级别用于近处细节
    - 级别间的平滑过渡
 
+**Morton编码的位交织实现**
+
+Morton编码的核心是位交织操作。对于32位整数：
+
+```
+uint32_t expandBits(uint32_t v) {
+    v = (v * 0x00010001u) & 0xFF0000FFu;
+    v = (v * 0x00000101u) & 0x0F00F00Fu;
+    v = (v * 0x00000011u) & 0xC30C30C3u;
+    v = (v * 0x00000005u) & 0x49249249u;
+    return v;
+}
+
+uint32_t morton3D(uint32_t x, uint32_t y, uint32_t z) {
+    return expandBits(x) | (expandBits(y) << 1) | (expandBits(z) << 2);
+}
+```
+
+这种编码保持了空间局部性：相邻的Morton码对应空间中相近的位置。
+
+**紧凑指针结构**
+
+为进一步减少内存，使用紧凑的指针表示：
+
+```
+struct CompactOctreeNode {
+    uint32_t childrenOffset; // 相对于节点池的偏移
+    uint8_t validMask;       // 位掩码指示哪些子节点存在
+    uint8_t leafMask;        // 位掩码指示哪些子节点是叶子
+    // 数据紧随其后
+};
+```
+
+这将每个节点的开销从64字节降低到约16字节。
+
 **并行构建算法**
 
 利用GPU并行性加速八叉树构建：
@@ -219,6 +506,35 @@ $$\text{childIndex} = (x > x_c) + 2(y > y_c) + 4(z > z_c)$$
    - 并行识别节点边界
    - 自底向上合并构建树
    - 复杂度：$O(N \log N)$ 工作量，$O(\log N)$ 深度
+
+**基于合并的并行构建**
+
+给定排序后的点集，使用分治策略：
+
+1. **划分阶段**：找到分割点将点集分为8个子集
+   ```
+   parallel for each level l:
+       for each node at level l:
+           splitPoints = FindOctantBoundaries(points)
+           AssignPointsToChildren(points, splitPoints)
+   ```
+
+2. **合并阶段**：自底向上合并节点信息
+   ```
+   parallel for each level l from leaf to root:
+       for each node at level l:
+           node.bounds = Union(children.bounds)
+           node.density = Average(children.density)
+   ```
+
+**GPU优化策略**
+
+1. **宽度优先遍历**：适合GPU的SIMD执行模型
+2. **紧凑存储布局**：最大化合并内存访问
+3. **工作负载平衡**：使用工作窃取模式处理不均匀的树结构
+4. **流压缩**：即时压缩稀疏节点，减少内存带宽
+
+这些优化使得可以在毫秒级时间内构建包含数百万节点的八叉树。
 
 ## 9.2 Plenoxels：球谐函数体素
 
