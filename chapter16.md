@@ -1,988 +1,1089 @@
-# Chapter 16: Coherence Theory
+# 第16章：相干理论
 
-This chapter introduces the fundamental concepts of optical coherence, bridging the gap between deterministic wave optics and statistical descriptions of light fields. We develop the mathematical framework for describing partial coherence, establishing key theorems that govern how coherence properties transform through optical systems and propagate through space. These concepts are essential for understanding advanced rendering effects involving interference and diffraction with realistic light sources.
+本章介绍了光学相干性的基本概念，弥合了确定性波动光学与光场统计描述之间的鸿沟。我们建立了描述部分相干性的数学框架，确立了控制相干性如何在光学系统中转换和在空间中传播的关键定理。这些概念对于理解涉及真实光源的干涉和衍射的高级渲染效果至关重要。
 
-## 16.1 Temporal Coherence and Spectra
+## 16.1 时间相干性与光谱
 
-Temporal coherence describes the correlation of a light wave with itself at different time delays. For a scalar optical field E(t), we define the temporal coherence function:
+时间相干性描述了光波自身在不同时间延迟下的相关性。对于标量光场 $E(t)$，我们定义时间相干函数：
 
-**Γ(τ) = ⟨E*(t)E(t+τ)⟩**
+$$
+\Gamma(\tau) = \langle E^*(t)E(t+\tau) \rangle
+$$
 
-where ⟨·⟩ denotes time averaging and * indicates complex conjugation.
+其中 $\langle \cdot \rangle$ 表示时间平均，而 $*$ 表示复共轭。
 
-For a stationary random process, this can be written more explicitly as:
+对于平稳随机过程，这可以更明确地写为：
 
-**Γ(τ) = lim_{T→∞} (1/T) ∫_{-T/2}^{T/2} E*(t)E(t+τ) dt**
+$$
+\Gamma(\tau) = \lim_{T\to\infty} \frac{1}{T} \int_{-T/2}^{T/2} E^*(t)E(t+\tau) dt
+$$
 
-The physical interpretation is straightforward: Γ(τ) measures how similar the field is to a time-delayed version of itself. For τ = 0, we have Γ(0) = ⟨|E(t)|²⟩, which is the time-averaged intensity.
+物理解释很简单：$\Gamma(\tau)$ 衡量了光场与其自身时间延迟版本之间的相似程度。对于 $\tau = 0$，我们有 $\Gamma(0) = \langle |E(t)|^2 \rangle$，这是时间平均强度。
 
-### Statistical Foundation
+### 统计基础
 
-The field E(t) is treated as a complex-valued random process. For ergodic processes, the time average equals the ensemble average:
+光场 $E(t)$ 被视为一个复值随机过程。对于遍历过程，时间平均等于系综平均：
 
-**Γ(τ) = E[E*(t)E(t+τ)]**
+$$
+\Gamma(\tau) = E[E^*(t)E(t+\tau)]
+$$
 
-where E[·] denotes expectation value. The autocorrelation function satisfies:
+其中 $E[\cdot]$ 表示期望值。自相关函数满足：
 
-**Γ(-τ) = Γ*(τ)** (Hermitian symmetry)
+$$
+\Gamma(-\tau) = \Gamma^*(\tau)
+$$
 
-This follows from stationarity: ⟨E*(t)E(t-τ)⟩ = ⟨E*(t+τ)E(t)⟩ = ⟨E(t)E*(t+τ)⟩*.
+（厄米对称性）
 
-### Connection to Interferometry
+这源于平稳性：$\langle E^*(t)E(t-\tau) \rangle = \langle E^*(t+\tau)E(t) \rangle = \langle E(t)E^*(t+\tau) \rangle^*$。
 
-In a Michelson interferometer with path difference Δ = cτ, the intensity at the output is:
+### 与干涉测量的联系
 
-**I_out = I₁ + I₂ + 2Re[√(I₁I₂)γ(τ)exp(iω₀τ)]**
+在路径差为 $\Delta = c\tau$ 的迈克尔逊干涉仪中，输出处的强度为：
 
-where I₁, I₂ are intensities from the two arms and γ(τ) = Γ(τ)/Γ(0) is the normalized coherence function. The fringe visibility directly measures |γ(τ)|:
+$$
+I_{out} = I_1 + I_2 + 2\text{Re}[\sqrt{I_1I_2}\gamma(\tau)\exp(i\omega_0\tau)]
+$$
 
-**V(τ) = 2√(I₁I₂)|γ(τ)|/(I₁ + I₂)**
+其中 $I_1, I_2$ 是来自两个臂的强度，$\gamma(\tau) = \Gamma(\tau)/\Gamma(0)$ 是归一化相干函数。条纹可见度直接衡量 $| \gamma(\tau) |$：
 
-For balanced arms (I₁ = I₂), we have V(τ) = |γ(τ)|, providing a direct experimental method to measure temporal coherence.
+$$
+V(\tau) = \frac{2\sqrt{I_1I_2}|\gamma(\tau)|}{I_1 + I_2}
+$$
 
-### 16.1.1 Coherence Time and Length
+对于平衡臂 ($I_1 = I_2$)，我们有 $V(\tau) = |\gamma(\tau)|$，这提供了一种直接测量时间相干性的实验方法。
 
-The normalized degree of temporal coherence is:
+### 16.1.1 相干时间与相干长度
 
-**γ(τ) = Γ(τ)/Γ(0)**
+归一化时间相干度为：
 
-This complex-valued function satisfies several important properties:
-- **γ(0) = 1** (perfect self-correlation at zero delay)
-- **|γ(τ)| ≤ 1** (Schwarz inequality)
-- **γ(-τ) = γ*(τ)** (Hermitian symmetry)
-- **γ(τ) → 0** as **τ → ∞** for finite bandwidth sources
+$$
+\gamma(\tau) = \frac{\Gamma(\tau)}{\Gamma(0)}
+$$
 
-The coherence time τ_c can be defined in several equivalent ways:
+这个复值函数满足几个重要性质：
+- $\gamma(0) = 1$ (零延迟时完美自相关)
+- $|\gamma(\tau)| \le 1$ (施瓦茨不等式)
+- $\gamma(-\tau) = \gamma^*(\tau)$ (厄米对称性)
+- 对于有限带宽光源，当 $\tau \to \infty$ 时，$\gamma(\tau) \to 0$
 
-1. **1/e definition**: Time at which |γ(τ)| = 1/e
-2. **FWHM definition**: Full width at half maximum of |γ(τ)|²
-3. **Integral definition**: **τ_c = ∫₀^∞ |γ(τ)|² dτ**
+相干时间 $\tau_c$ 可以通过几种等效方式定义：
 
-The integral definition is most fundamental as it represents the effective duration over which the field maintains correlation. The coherence length is then:
+1.  **$1/e$ 定义**：$|\gamma(\tau)| = 1/e$ 时的时间
+2.  **FWHM 定义**：$|\gamma(\tau)|^2$ 的半高全宽
+3.  **积分定义**：$\tau_c = \int_0^\infty |\gamma(\tau)|^2 d\tau$
 
-**l_c = c·τ_c**
+积分定义是最基本的，因为它表示光场保持相关性的有效持续时间。相干长度则为：
 
-where c is the speed of light in the medium (c = c₀/n for refractive index n).
+$$
+l_c = c \cdot \tau_c
+$$
 
-### 16.1.2 Spectral Width Relationship
+其中 $c$ 是介质中的光速（对于折射率 $n$， $c = c_0/n$）。
 
-By the Wiener-Khinchin theorem (detailed in Section 16.3), the temporal coherence function is the Fourier transform of the power spectral density S(ω):
+### 16.1.2 光谱宽度关系
 
-**Γ(τ) = ∫_{-∞}^∞ S(ω)e^{iωτ} dω**
+根据维纳-辛钦定理（详见第16.3节），时间相干函数是功率谱密度 $S(\omega)$ 的傅里叶变换：
 
-**S(ω) = (1/2π) ∫_{-∞}^∞ Γ(τ)e^{-iωτ} dτ**
+$$
+\Gamma(\tau) = \int_{-\infty}^\infty S(\omega)e^{i\omega\tau} d\omega
+$$
 
-This Fourier transform relationship implies a fundamental uncertainty principle:
+$$
+S(\omega) = \frac{1}{2\pi} \int_{-\infty}^\infty \Gamma(\tau)e^{-i\omega\tau} d\tau
+$$
 
-**Δω·Δτ ≥ K**
+这种傅里叶变换关系意味着一个基本的不确定性原理：
 
-where K is a constant of order unity depending on how the widths are defined.
+$$
+\Delta\omega \cdot \Delta\tau \ge K
+$$
 
-#### Derivation of the Uncertainty Principle
+其中 $K$ 是一个量级为一的常数，取决于宽度的定义方式。
 
-Starting from the Schwarz inequality for Fourier transforms:
+#### 不确定性原理的推导
 
-**∫|f(t)|² dt · ∫|F(ω)|² dω ≥ (1/4π)|∫f(t) dt|²**
+从傅里叶变换的施瓦茨不等式开始：
 
-Applying this to f(t) = tΓ(t) and using integration by parts:
+$$
+\int|f(t)|^2 dt \cdot \int|F(\omega)|^2 d\omega \ge \frac{1}{4\pi}\left|\int f(t) dt\right|^2
+$$
 
-**⟨τ²⟩⟨ω²⟩ ≥ 1/4**
+将其应用于 $f(t) = t\Gamma(t)$ 并使用分部积分：
 
-where ⟨τ²⟩ = ∫τ²|γ(τ)|² dτ/∫|γ(τ)|² dτ and ⟨ω²⟩ = ∫(ω-ω₀)²S(ω) dω/∫S(ω) dω.
+$$
+\langle\tau^2\rangle\langle\omega^2\rangle \ge \frac{1}{4}
+$$
 
-This gives the minimum uncertainty product:
+其中 $\langle\tau^2\rangle = \frac{\int\tau^2|\gamma(\tau)|^2 d\tau}{\int|\gamma(\tau)|^2 d\tau}$ 且 $\langle\omega^2\rangle = \frac{\int(\omega-\omega_0)^2S(\omega) d\omega}{\int S(\omega) d\omega}$。
 
-**Δτ_rms · Δω_rms ≥ 1/2**
+这给出了最小不确定性乘积：
+
+$$
+\Delta\tau_{rms} \cdot \Delta\omega_{rms} \ge \frac{1}{2}
+$$
+
+对于其他定义：
+- FWHM：$\Delta\tau_{FWHM} \cdot \Delta\omega_{FWHM} \ge 4\ln(2)/\pi \approx 0.88$
+- $1/e$ 宽度：$\Delta\tau_{1/e} \cdot \Delta\omega_{1/e} \ge 1$
+
+对于特定的光谱形状：
+
+**1. 高斯光谱：**
+$$
+S(\omega) = S_0 \exp\left[-\frac{(\omega-\omega_0)^2}{2\sigma^2}\right]
+$$
 
-For other definitions:
-- FWHM: Δτ_FWHM · Δω_FWHM ≥ 4ln(2)/π ≈ 0.88
-- 1/e width: Δτ_{1/e} · Δω_{1/e} ≥ 1
+其中 $\sigma = 2\pi\Delta\nu/(2\sqrt{2\ln2})$ 对于 FWHM $\Delta\nu$，得到：
 
-For specific spectral shapes:
+$$
+\gamma(\tau) = \exp(i\omega_0\tau) \exp(-\sigma^2\tau^2/2)
+$$
+
+$$
+\tau_c = \int_0^\infty \exp(-\sigma^2\tau^2) d\tau = \frac{\sqrt{\pi}}{2\sigma} \approx 0.44/\Delta\nu
+$$
 
-**1. Gaussian Spectrum:**
-**S(ω) = S₀ exp[-(ω-ω₀)²/(2σ²)]**
+**2. 洛伦兹光谱：**
+$$
+S(\omega) = \frac{S_0\Gamma_0}{\pi[(\omega-\omega_0)^2 + \Gamma_0^2]}
+$$
 
-where σ = 2πΔν/(2√(2ln2)) for FWHM Δν, yielding:
+这给出：
+$$
+\gamma(\tau) = \exp(i\omega_0\tau) \exp(-\Gamma_0|\tau|)
+$$
 
-**γ(τ) = exp(iω₀τ) exp(-σ²τ²/2)**
+$$
+\tau_c = \frac{1}{2\Gamma_0} = \frac{1}{2\pi\Delta\nu}
+$$
+
+**3. 矩形光谱：**
+$$
+S(\omega) = S_0 \quad \text{for } |\omega-\omega_0| < \pi\Delta\nu, \quad 0 \quad \text{otherwise}
+$$
+
+$$
+\gamma(\tau) = \exp(i\omega_0\tau) \text{sinc}(\pi\Delta\nu\tau)
+$$
+
+$$
+\tau_c \approx 1/\Delta\nu
+$$
+
+高斯光谱给出最小的时间-带宽积，而矩形光谱在给定带宽下产生最长的相干时间。
+
+### 16.1.3 相干时间示例
+
+不同的光源表现出截然不同的相干特性：
+
+**1. 稳频氦氖激光器（单模）：**
+- $\Delta\nu \sim 1 \text{ kHz} - 1 \text{ MHz}$
+- $\tau_c \sim 10^{-3} - 1 \text{ s}$
+- $l_c \sim 300 \text{ km} - 300,000 \text{ km}$
+- 应用：干涉测量、全息术
+- 光谱轮廓：由于腔体动力学，接近洛伦兹线形
+
+**2. 半导体激光二极管：**
+- $\Delta\nu \sim 1-10 \text{ MHz}$ (单模)
+- $\tau_c \sim 10^{-7} - 10^{-8} \text{ s}$
+- $l_c \sim 30 - 300 \text{ m}$
+- 应用：光纤通信、CD/DVD 读取器
+- 温度依赖性：$\Delta\nu \propto T^{3/2}$ (载流子散射)
+
+**3. 发光二极管 (LED)：**
+- $\Delta\nu \sim 10 \text{ THz}$ ($\Delta\lambda \sim 30 \text{ nm}$ 对于可见光)
+- $\tau_c \sim 10^{-14} \text{ s}$
+- $l_c \sim 3 \text{ μm}$
+- 应用：显示技术、照明
+- 光谱形状：带边发射近似高斯形
+
+**4. 过滤后的阳光（1 nm 滤光片）：**
+- $\Delta\nu \sim 1 \text{ THz}$
+- $\tau_c \sim 10^{-12} \text{ s}$
+- $l_c \sim 0.3 \text{ mm}$
+- 自然照明参考
+- 黑体光谱：$S(\omega) \propto \omega^3/(\exp(\hbar\omega/k_BT) - 1)$
+
+**5. 白光（未过滤）：**
+- $\Delta\nu \sim 300 \text{ THz}$ (400-700 nm 范围)
+- $\tau_c \sim 10^{-15} \text{ s}$
+- $l_c \sim 0.3 \text{ μm}$
+- 对于大多数应用来说基本不相干
+- 相干函数：$\gamma(\tau) \approx \text{rect}(\tau/\tau_c)\exp(i\omega_c\tau)$
+
+**6. 钠 D 线（低压灯）：**
+- $\Delta\nu \sim 500 \text{ MHz}$ (多普勒展宽)
+- $\tau_c \sim 10^{-9} \text{ s}$
+- $l_c \sim 0.3 \text{ m}$
+- 经典原子光谱线
+- 精细结构：D₁ (589.6 nm) 和 D₂ (589.0 nm) 双线
+
+**7. 同步辐射：**
+- $\Delta\nu/\nu \sim 10^{-3}$ (典型波荡器)
+- $\tau_c \sim 10^{-12} \text{ s}$ 在 $\lambda = 1 \text{ nm}$
+- $l_c \sim 0.3 \text{ mm}$
+- 高方向性、部分相干光束
 
-**τ_c = ∫₀^∞ exp(-σ²τ²) dτ = √π/(2σ) ≈ 0.44/Δν**
+**8. 自由电子激光器 (FEL)：**
+- $\Delta\nu/\nu \sim 10^{-4} - 10^{-3}$
+- $\tau_c \sim 10^{-11} - 10^{-12} \text{ s}$ (X 射线范围)
+- $l_c \sim 3-30 \text{ mm}$
+- SASE 过程产生部分时间相干性
 
-**2. Lorentzian Spectrum:**
-**S(ω) = S₀Γ₀/π/[(ω-ω₀)² + Γ₀²]**
+### 16.1.4 相干时间的测量
 
-This gives:
-**γ(τ) = exp(iω₀τ) exp(-Γ₀|τ|)**
+相干时间可以通过几种方法测量：
 
-**τ_c = 1/(2Γ₀) = 1/(2πΔν)**
+**1. 迈克尔逊干涉测量：**
+测量条纹可见度 $V$ 作为路径差 $\Delta$ 的函数：
+$$
+V(\Delta) = |\gamma(\Delta/c)|
+$$
 
-**3. Rectangular Spectrum:**
-**S(ω) = S₀ for |ω-ω₀| < πΔν, 0 otherwise**
+相干长度 $l_c$ 是 $V$ 下降到 $1/e$ 或 $1/2$ 的位置。
 
-**γ(τ) = exp(iω₀τ) sinc(πΔντ)**
+对于准单色光：
+$$
+I(\Delta) = I_0[1 + V(\Delta)\cos(k_0\Delta + \phi)]
+$$
 
-**τ_c ≈ 1/Δν**
+可见度包络 $V(\Delta)$ 直接描绘了 $|\gamma(\tau)|$。关键考虑因素：
+- 机械稳定性：$\Delta$ 稳定到 $\lambda/20$
+- 等臂平衡：补偿色散
+- 探测器响应：必须能分辨条纹
 
-The Gaussian gives the minimum time-bandwidth product, while the rectangular spectrum produces the longest coherence time for a given bandwidth.
+**2. 光谱分析：**
+使用光谱仪直接测量功率谱 $S(\omega)$，然后计算：
+$$
+\tau_c = 2\pi/\Delta\omega_{eff}
+$$
 
-### 16.1.3 Examples of Coherence Times
+其中 $\Delta\omega_{eff}$ 是有效光谱宽度。
 
-Different light sources exhibit vastly different coherence properties:
+有效宽度定义：
+- RMS 宽度：$\Delta\omega_{rms} = \sqrt{\langle\omega^2\rangle - \langle\omega\rangle^2}$
+- FWHM：半高全宽
+- 等效宽度：$\Delta\omega_{eq} = \int S(\omega)d\omega/S_{max}$
 
-**1. Stabilized He-Ne Laser (single mode):**
-- Δν ~ 1 kHz - 1 MHz
-- τ_c ~ 10⁻³ - 1 s
-- l_c ~ 300 km - 300,000 km
-- Applications: Interferometry, holography
-- Spectral profile: Nearly Lorentzian due to cavity dynamics
+分辨率要求：
+- 光谱仪分辨率 $\delta\omega \ll \Delta\omega$
+- 自由光谱范围 > 全光谱宽度
 
-**2. Semiconductor Laser Diode:**
-- Δν ~ 1-10 MHz (single mode)
-- τ_c ~ 10⁻⁷ - 10⁻⁸ s
-- l_c ~ 30 - 300 m
-- Applications: Fiber optic communications, CD/DVD readers
-- Temperature dependence: Δν ∝ T³/² (carrier scattering)
+**3. 强度相关：**
+对于热光，测量强度相关函数：
+$$
+g^{(2)}(\tau) = \frac{\langle I(t)I(t+\tau)\rangle}{\langle I(t)\rangle^2}
+$$
 
-**3. Light Emitting Diode (LED):**
-- Δν ~ 10 THz (Δλ ~ 30 nm for visible)
-- τ_c ~ 10⁻¹⁴ s
-- l_c ~ 3 μm
-- Applications: Display technology, illumination
-- Spectrum shape: Approximately Gaussian from band-edge emission
+与场相关性相关：
+$$
+g^{(2)}(\tau) = 1 + |\gamma(\tau)|^2
+$$
 
-**4. Filtered Sunlight (1 nm filter):**
-- Δν ~ 1 THz
-- τ_c ~ 10⁻¹² s  
-- l_c ~ 0.3 mm
-- Natural illumination reference
-- Blackbody spectrum: S(ω) ∝ ω³/(exp(ℏω/k_BT) - 1)
+这就是汉伯里-布朗-特维斯效应。实现：
+- 快速探测器：响应时间 $\ll \tau_c$
+- 相关器：数字或模拟
+- 光子计数：用于弱信号
 
-**5. White Light (unfiltered):**
-- Δν ~ 300 THz (400-700 nm range)
-- τ_c ~ 10⁻¹⁵ s
-- l_c ~ 0.3 μm
-- Essentially incoherent for most applications
-- Coherence function: γ(τ) ≈ rect(τ/τ_c)exp(iω_cτ)
+**4. 傅里叶变换光谱学：**
+在大的 $\Delta$ 范围内扫描迈克尔逊干涉仪：
+$$
+I(\Delta) = \int S(\omega)[1 + \cos(\omega\Delta/c)]d\omega
+$$
 
-**6. Sodium D-line (low pressure lamp):**
-- Δν ~ 500 MHz (Doppler broadened)
-- τ_c ~ 10⁻⁹ s
-- l_c ~ 0.3 m
-- Classic atomic spectral line
-- Fine structure: D₁ (589.6 nm) and D₂ (589.0 nm) doublet
+傅里叶变换给出 $S(\omega)$：
+$$
+S(\omega) \propto \mathcal{F}\{I(\Delta) - I_\infty\}
+$$
 
-**7. Synchrotron Radiation:**
-- Δν/ν ~ 10⁻³ (typical undulator)
-- τ_c ~ 10⁻¹² s at λ = 1 nm
-- l_c ~ 0.3 mm
-- Highly directional, partially coherent beam
+优点：
+- 多路复用优势 (Fellgett)
+- 高集光能力 (Jacquinot)
+- 精确波长校准
 
-**8. Free Electron Laser (FEL):**
-- Δν/ν ~ 10⁻⁴ - 10⁻³
-- τ_c ~ 10⁻¹¹ - 10⁻¹² s (X-ray regime)
-- l_c ~ 3-30 mm
-- SASE process produces partial temporal coherence
+## 16.2 空间相干性与杨氏实验
 
-### 16.1.4 Measurement of Coherence Time
+空间相干性描述了光场在同一时间不同空间点之间的相关性。杨氏双缝实验提供了理解空间相干性的经典框架。
 
-Coherence time can be measured through several methods:
+空间相干性的基本问题是：给定空间中的两个点 $P_1$ 和 $P_2$，这些点的光场相关性如何？这种相关性决定了当来自这两个点的光结合时是否能观察到干涉条纹。
 
-**1. Michelson Interferometry:**
-Measure fringe visibility V as function of path difference Δ:
-**V(Δ) = |γ(Δ/c)|**
+### 历史背景与现代应用
 
-The coherence length l_c is where V drops to 1/e or 1/2.
+杨氏1801年的实验不仅证明了光的波动性，而且确立了相干性决定干涉可见度的原理。现代应用包括：
 
-For quasi-monochromatic light:
-**I(Δ) = I₀[1 + V(Δ)cos(k₀Δ + φ)]**
+- **恒星干涉测量**：使用基线相关性测量恒星直径
+- **光学相干断层扫描**：使用相干门控进行深度成像
+- **光刻**：图案转移中的部分相干效应
+- **量子光学**：EPR 相关性和贝尔不等式检验
 
-The visibility envelope V(Δ) directly traces |γ(τ)|. Key considerations:
-- Mechanical stability: Δ stable to λ/20
-- Equal arm balance: Compensate dispersion
-- Detector response: Must resolve fringes
+### 16.2.1 互强度与可见度
 
-**2. Spectral Analysis:**
-Measure power spectrum S(ω) directly using spectrometer, then calculate:
-**τ_c = 2π/Δω_eff**
+考虑由光源照射的两个点 $P_1$ 和 $P_2$。互强度为：
 
-where Δω_eff is effective spectral width.
+$$
+J_{12} = \langle E^*(P_1,t)E(P_2,t) \rangle
+$$
 
-Effective width definitions:
-- RMS width: Δω_rms = √(⟨ω²⟩ - ⟨ω⟩²)
-- FWHM: Full width at half maximum
-- Equivalent width: Δω_eq = ∫S(ω)dω/S_max
+这个复数量包含相关性的幅度和相位信息。
 
-Resolution requirements:
-- Spectrometer resolution δω << Δω
-- Free spectral range > full spectrum width
+#### 数学结构
 
-**3. Intensity Correlation:**
-For thermal light, measure intensity correlation function:
-**g⁽²⁾(τ) = ⟨I(t)I(t+τ)⟩/⟨I(t)⟩²**
+互强度形成一个厄米矩阵：
 
-Related to field correlation by:
-**g⁽²⁾(τ) = 1 + |γ(τ)|²**
+$$
+J = \begin{bmatrix} J_{11} & J_{12} \\ J_{21} & J_{22} \end{bmatrix}
+$$
 
-This is the Hanbury Brown-Twiss effect. Implementation:
-- Fast detectors: Response time << τ_c
-- Correlator: Digital or analog
-- Photon counting: For weak signals
+具有以下性质：
+- $J_{11}, J_{22} \ge 0$ (强度)
+- $J_{21} = J_{12}^*$ (厄米性)
+- $\det(J) \ge 0$ (半正定)
+- $|J_{12}|^2 \le J_{11}J_{22}$ (施瓦茨不等式)
 
-**4. Fourier Transform Spectroscopy:**
-Scan Michelson interferometer over large Δ range:
-**I(Δ) = ∫S(ω)[1 + cos(ωΔ/c)]dω**
+#### 杨氏双缝分析
 
-Fourier transform gives S(ω):
-**S(ω) ∝ ℱ{I(Δ) - I_∞}**
+在杨氏实验中，缝位于 $r_1$ 和 $r_2$ 处，观察点 $P$ 处的光场为：
 
-Advantages:
-- Multiplex advantage (Fellgett)
-- High light gathering (Jacquinot)
-- Accurate wavelength calibration
+$$
+E(P,t) = K_1E(r_1,t-t_1) + K_2E(r_2,t-t_2)
+$$
 
-## 16.2 Spatial Coherence and Young's Experiment
+其中 $K_i$ 是传播因子，$t_i = |P-r_i|/c$ 是传播时间。
 
-Spatial coherence describes the correlation between light fields at different spatial points at the same time. Young's double-slit experiment provides the canonical framework for understanding spatial coherence.
+强度变为：
 
-The fundamental question of spatial coherence is: given two points P₁ and P₂ in space, how correlated are the optical fields at these points? This correlation determines whether interference fringes can be observed when light from these two points is combined.
+$$
+I(P) = |K_1|^2I_1 + |K_2|^2I_2 + 2\text{Re}[K_1^*K_2J_{12} \exp(ik\Delta)]
+$$
 
-### Historical Context and Modern Applications
+其中 $\Delta = |P-r_2| - |P-r_1|$ 是路径差。
 
-Young's 1801 experiment not only demonstrated the wave nature of light but established the principle that coherence determines interference visibility. Modern applications include:
+对于等传播因子的近轴情况：
 
-- **Stellar interferometry**: Measuring star diameters using baseline correlation
-- **Optical coherence tomography**: Depth imaging using coherence gating
-- **Lithography**: Partial coherence effects in pattern transfer
-- **Quantum optics**: EPR correlations and Bell inequality tests
+$$
+I(P) = I_1 + I_2 + 2\sqrt{I_1I_2}|J_{12}|\cos(k\Delta + \phi_{12})
+$$
 
-### 16.2.1 Mutual Intensity and Visibility
+其中 $\phi_{12} = \text{arg}(J_{12})$ 是互强度的相位。
 
-Consider two points P₁ and P₂ illuminated by a source. The mutual intensity is:
+#### 条纹可见度
 
-**J₁₂ = ⟨E*(P₁,t)E(P₂,t)⟩**
+强度在以下范围变化：
+- $I_{max} = I_1 + I_2 + 2\sqrt{I_1I_2}|\gamma_{12}|$
+- $I_{min} = I_1 + I_2 - 2\sqrt{I_1I_2}|\gamma_{12}|$
 
-This complex quantity contains both amplitude and phase information about the correlation.
+可见度定义为：
 
-#### Mathematical Structure
+$$
+V = \frac{I_{max} - I_{min}}{I_{max} + I_{min}} = \frac{2\sqrt{I_1I_2}|\gamma_{12}|}{I_1 + I_2}
+$$
 
-The mutual intensity forms a Hermitian matrix:
+特殊情况：
+1.  **等强度** ($I_1 = I_2 = I_0$)：$V = |\gamma_{12}|$
+2.  **完全相干光**：$|\gamma_{12}| = 1$, $V = \frac{2\sqrt{I_1I_2}}{I_1 + I_2} \le 1$
+3.  **非相干光**：$\gamma_{12} = 0$, $V = 0$ (无条纹)
 
-**J = [J₁₁  J₁₂]**
-**    [J₂₁  J₂₂]**
+### 16.2.2 复相干度
 
-with properties:
-- J₁₁, J₂₂ ≥ 0 (intensities)
-- J₂₁ = J₁₂* (Hermitian)
-- det(J) ≥ 0 (positive semi-definite)
-- |J₁₂|² ≤ J₁₁J₂₂ (Schwarz inequality)
+复相干度定义为：
 
-#### Young's Double Slit Analysis
+$$
+\gamma_{12} = \frac{J_{12}}{\sqrt{J_{11}J_{22}}} = \frac{J_{12}}{\sqrt{I_1I_2}}
+$$
 
-In Young's experiment with slits at positions r₁ and r₂, the field at observation point P is:
+#### 数学性质
 
-**E(P,t) = K₁E(r₁,t-t₁) + K₂E(r₂,t-t₂)**
+1.  **施瓦茨不等式**：$|\gamma_{12}| \le 1$
+    证明：根据柯西-施瓦茨不等式，$|\langle E_1^*E_2\rangle|^2 \le \langle|E_1|^2\rangle\langle|E_2|^2\rangle$
 
-where Kᵢ are propagation factors and tᵢ = |P-rᵢ|/c are propagation times.
+2.  **厄米对称性**：$\gamma_{12} = \gamma_{21}^*$
+    因为 $J_{12} = \langle E_1^*E_2\rangle = \langle E_2^*E_1\rangle^* = J_{21}^*$
 
-The intensity becomes:
+3.  **自相干性**：$\gamma_{11} = \gamma_{22} = 1$
+    每个点都与自身完美相干
 
-**I(P) = |K₁|²I₁ + |K₂|²I₂ + 2Re[K₁*K₂J₁₂ exp(ikΔ)]**
+4.  **相位信息**：$\gamma_{12} = |\gamma_{12}|\exp(i\phi_{12})$
+    相位 $\phi_{12}$ 影响条纹位置，不影响可见度
 
-where Δ = |P-r₂| - |P-r₁| is the path difference.
+#### 物理解释
 
-For the paraxial case with equal propagation factors:
+- **$|\gamma_{12}| = 1$**：完全相干 - 完美相关
+- **$0 < |\gamma_{12}| < 1$**：部分相干 - 条纹可见度降低
+- **$|\gamma_{12}| = 0$**：非相干 - 无相关性，无条纹
 
-**I(P) = I₁ + I₂ + 2√(I₁I₂)|J₁₂|cos(kΔ + φ₁₂)**
+#### 与经典相关性的联系
 
-where φ₁₂ = arg(J₁₂) is the phase of mutual intensity.
+相干度类似于统计学中的相关系数：
 
-#### Fringe Visibility
+$$
+\gamma_{12} = \frac{\text{Cov}(E_1,E_2)}{\sigma_1\sigma_2}
+$$
 
-The intensity varies between:
-- **I_max = I₁ + I₂ + 2√(I₁I₂)|γ₁₂|**
-- **I_min = I₁ + I₂ - 2√(I₁I₂)|γ₁₂|**
+其中 Cov 是协方差，$\sigma_i$ 是标准差。
 
-The visibility is defined as:
+### 16.2.3 扩展光源
 
-**V = (I_max - I_min)/(I_max + I_min) = 2√(I₁I₂)|γ₁₂|/(I₁ + I₂)**
+对于扩展光源，光源上的每个点独立贡献（对于非相干光源），总互强度是贡献的总和。
 
-Special cases:
-1. **Equal intensities** (I₁ = I₂ = I₀): **V = |γ₁₂|**
-2. **Fully coherent light**: |γ₁₂| = 1, **V = 2√(I₁I₂)/(I₁ + I₂) ≤ 1**
-3. **Incoherent light**: γ₁₂ = 0, **V = 0** (no fringes)
+#### 一般公式
 
-### 16.2.2 Complex Degree of Coherence
+对于具有强度分布 $I_s(r_s)$ 的扩展非相干光源，观察点 $r_1, r_2$ 处的互强度为：
 
-The complex degree of coherence is defined as:
+$$
+J_{12} = \iiint I_s(r_s) K^*(r_1,r_s)K(r_2,r_s) d^3r_s
+$$
 
-**γ₁₂ = J₁₂/√(J₁₁J₂₂) = J₁₂/√(I₁I₂)**
+其中 $K(r,r_s)$ 是从光源点 $r_s$ 到观察点 $r$ 的传播核。
 
-#### Mathematical Properties
+在菲涅尔近似中：
+$$
+K(r,r_s) = \left(\frac{\exp(ikR)}{R}\right) \times \exp\left[ik\frac{(r-r_s)^2}{2R}\right]
+$$
 
-1. **Schwarz Inequality**: |γ₁₂| ≤ 1
-   Proof: By Cauchy-Schwarz, |⟨E₁*E₂⟩|² ≤ ⟨|E₁|²⟩⟨|E₂|²⟩
+其中 $R = |r_z - r_{s,z}|$ 是轴向距离。
 
-2. **Hermitian Symmetry**: γ₁₂ = γ₂₁*
-   Since J₁₂ = ⟨E₁*E₂⟩ = ⟨E₂*E₁⟩* = J₂₁*
+#### 圆形光源分析
 
-3. **Self-coherence**: γ₁₁ = γ₂₂ = 1
-   Every point is perfectly coherent with itself
+考虑一个直径为 $D$ 的均匀照明圆形非相干光源，距离观察平面 $z$。对于相距 $d$ 的两个观察点 $P_1$ 和 $P_2$：
 
-4. **Phase Information**: γ₁₂ = |γ₁₂|exp(iφ₁₂)
-   The phase φ₁₂ affects fringe position, not visibility
+$$
+J_{12} = \iint_{source} I_s(\xi,\eta) \exp\left[ik\frac{(r_2-r_1)\cdot r_s}{z}\right] d\xi d\eta
+$$
 
-#### Physical Interpretation
+在近轴近似下，令 $r_2-r_1 = (d,0,0)$：
 
-- **|γ₁₂| = 1**: Fully coherent - perfect correlation
-- **0 < |γ₁₂| < 1**: Partially coherent - reduced fringe visibility  
-- **|γ₁₂| = 0**: Incoherent - no correlation, no fringes
+$$
+\gamma_{12} = \frac{2}{\pi a^2} \iint_{|\rho|<a} \exp\left(ik\frac{d\xi}{z}\right) d\xi d\eta \quad \text{where } a = D/2
+$$
 
-#### Connection to Classical Correlation
+转换为极坐标并积分：
 
-The degree of coherence is analogous to the correlation coefficient in statistics:
+$$
+|\gamma_{12}| = \left|\frac{2J_1(\pi Dd/\lambda z)}{\pi Dd/\lambda z}\right|
+$$
 
-**γ₁₂ = Cov(E₁,E₂)/(σ₁σ₂)**
+其中 $J_1$ 是第一类一阶贝塞尔函数。
 
-where Cov is covariance and σᵢ are standard deviations.
+#### 详细推导
 
-### 16.2.3 Extended Sources
+从光源平面中的极坐标 $(\rho,\theta)$ 开始：
 
-For extended sources, each point on the source contributes independently (for incoherent sources), and the total mutual intensity is the sum of contributions.
+$$
+\gamma_{12} = \frac{1}{\pi a^2} \int_0^{2\pi} \int_0^a \exp\left(ik\frac{d\rho\cos(\theta)}{z}\right) \rho d\rho d\theta
+$$
 
-#### General Formulation
+角度积分给出：
+$$
+\int_0^{2\pi} \exp\left(ik\frac{d\rho\cos(\theta)}{z}\right) d\theta = 2\pi J_0\left(\frac{kd\rho}{z}\right)
+$$
 
-For an extended incoherent source with intensity distribution I_s(r_s), the mutual intensity at observation points r₁, r₂ is:
+其中 $J_0$ 是零阶贝塞尔函数。径向积分变为：
 
-**J₁₂ = ∫∫∫ I_s(r_s) K*(r₁,r_s)K(r₂,r_s) d³r_s**
+$$
+\gamma_{12} = \frac{2}{a^2} \int_0^a J_0\left(\frac{kd\rho}{z}\right) \rho d\rho
+$$
 
-where K(r,r_s) is the propagation kernel from source point r_s to observation point r.
+使用恒等式 $\int_0^x tJ_0(t)dt = xJ_1(x)$：
 
-In the Fresnel approximation:
-**K(r,r_s) = (exp(ikR)/R) × exp[ik(r-r_s)²/2R]**
+$$
+\gamma_{12} = \frac{2J_1(kda/z)}{kda/z} = \frac{2J_1(\pi Dd/\lambda z)}{\pi Dd/\lambda z}
+$$
 
-where R = |r_z - r_{s,z}| is the axial distance.
+这就是著名的相干艾里斑。
 
-#### Circular Source Analysis
+好的，以下是逐字翻译为中文并转换数学公式为LaTeX的版本：
 
-Consider a uniformly illuminated circular incoherent source of diameter D at distance z from the observation plane. For two observation points P₁ and P₂ separated by distance d:
+#### 相干半径
 
-**J₁₂ = ∬_source I_s(ξ,η) exp[ik(r₂-r₁)·r_s/z] dξ dη**
+横向相干半径 $\rho_c$ 定义为 $|γ_{12}|$ 首次达到零的位置：
 
-In the paraxial approximation with r₂-r₁ = (d,0,0):
+**$\pi D d_{coh}/\lambda z = 3.832$** (J₁ 的第一个零点)
 
-**γ₁₂ = (2/πa²) ∬_{|ρ|<a} exp(ikdξ/z) dξ dη / 1**
+**$d_{coh} = \rho_c \approx 1.22\lambda z/D = 0.61\lambda z/a$**
 
-Converting to polar coordinates and integrating:
+这与衍射中的艾里斑半径相同！
 
-**|γ₁₂| = |2J₁(πDd/λz)/(πDd/λz)|**
+#### 其他光源几何形状
 
-where J₁ is the first-order Bessel function of the first kind.
+**1. 矩形光源 ($L_x \times L_y$):**
+**$\gamma_{12} = \text{sinc}(\pi L_x \Delta x/\lambda z) \times \text{sinc}(\pi L_y \Delta y/\lambda z)$**
 
-#### Detailed Derivation
+相干长度：$\rho_x = \lambda z/L_x$, $\rho_y = \lambda z/L_y$
 
-Starting with polar coordinates (ρ,θ) in the source plane:
+**2. 双星 (两个点光源，间隔 $\theta$):**
+**$\gamma_{12} = [\exp(i\pi\theta d/\lambda) + \exp(-i\pi\theta d/\lambda)]/2 = \cos(\pi\theta d/\lambda)$**
 
-**γ₁₂ = (1/πa²) ∫₀^{2π} ∫₀^a exp(ikdρcos(θ)/z) ρ dρ dθ**
+第一个零点在 $d = \lambda/(2\theta)$ - 迈克尔逊恒星干涉仪的基础
 
-The angular integral gives:
-**∫₀^{2π} exp(ikdρcos(θ)/z) dθ = 2πJ₀(kdρ/z)**
+**3. 高斯光源 (1/e 半径 $w_s$):**
+**$\gamma_{12} = \exp(-\pi^2 w_s^2 d^2/\lambda^2 z^2)$**
 
-where J₀ is the zeroth-order Bessel function. The radial integral becomes:
+相干半径 (1/e): $\rho_c = \lambda z/(\pi w_s)$
 
-**γ₁₂ = (2/a²) ∫₀^a J₀(kdρ/z) ρ dρ**
+#### 角直径与相干性
 
-Using the identity ∫₀^x tJ₀(t)dt = xJ₁(x):
+对于张角为 $\theta_s = D/z$ 的光源：
 
-**γ₁₂ = 2J₁(kda/z)/(kda/z) = 2J₁(πDd/λz)/(πDd/λz)**
+**$\rho_c \approx \lambda/\theta_s$**
 
-This is the celebrated Airy pattern for coherence.
+这个基本关系表明：
+- 较小的角光源 → 较大的相干区域
+- 恒星 (微角秒) 产生米级相干性
+- 太阳 ($\theta_s \approx 0.5^\circ$) 在 500 nm 处产生 $\rho_c \approx 0.07$ mm 的相干性
 
-#### Coherence Radius
+## 16.3 互相关函数与维纳-辛钦定理
 
-The transverse coherence radius ρ_c is defined where |γ₁₂| first reaches zero:
+互相关函数提供了部分相干场完整的二阶统计描述。本节将建立连接时域相干性与频域光谱特性的数学框架。
 
-**πDd_coh/λz = 3.832** (first zero of J₁)
+### 16.3.1 一般定义
 
-**d_coh = ρ_c ≈ 1.22λz/D = 0.61λz/a**
+对于标量场 $U(\mathbf{r},t)$，互相关函数为：
 
-This is identical to the Airy disk radius in diffraction!
+**$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \langle U^*(\mathbf{r}_1,t)U(\mathbf{r}_2,t+\tau) \rangle$**
 
-#### Other Source Geometries
+这个四点函数 (两个空间，一个时间，一个系综) 捕获了所有二阶相干特性。
 
-**1. Rectangular Source (L_x × L_y):**
-**γ₁₂ = sinc(πL_xΔx/λz) × sinc(πL_yΔy/λz)**
+#### 互相关函数的性质
 
-Coherence lengths: ρ_x = λz/L_x, ρ_y = λz/L_y
+1.  **厄米对称性**: $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \Gamma^*(\mathbf{r}_2,\mathbf{r}_1,-\tau)$
 
-**2. Double Star (two point sources, separation θ):**
-**γ₁₂ = [exp(iπθd/λ) + exp(-iπθd/λ)]/2 = cos(πθd/λ)**
+2.  **正半定性**: 对于任意函数 $f_1(\mathbf{r})$, $f_2(\mathbf{r})$:
+    $\iint \iint f_1^*(\mathbf{r}_1)\Gamma(\mathbf{r}_1,\mathbf{r}_2,0)f_2(\mathbf{r}_2) d\mathbf{r}_1 d\mathbf{r}_2 \ge 0$
 
-First zero at d = λ/(2θ) - basis of Michelson stellar interferometry
+3.  **边界值**:
+    - $\Gamma(\mathbf{r},\mathbf{r},0) = I(\mathbf{r})$ (强度)
+    - $|\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)| \le \sqrt{[\Gamma(\mathbf{r}_1,\mathbf{r}_1,0)\Gamma(\mathbf{r}_2,\mathbf{r}_2,0)]}$
 
-**3. Gaussian Source (1/e radius w_s):**
-**γ₁₂ = exp(-π²w_s²d²/λ²z²)**
+4.  **平稳性**: 对于平稳场：
+    $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)$ 仅依赖于 $\tau$，而不依赖于绝对时间
 
-Coherence radius (1/e): ρ_c = λz/(πw_s)
+等时互相关函数 (互强度) 为：
 
-#### Angular Diameter and Coherence
+**$J(\mathbf{r}_1,\mathbf{r}_2) = \Gamma(\mathbf{r}_1,\mathbf{r}_2,0) = \langle U^*(\mathbf{r}_1,t)U(\mathbf{r}_2,t) \rangle$**
 
-For a source subtending angle θ_s = D/z:
+归一化互相关函数：
 
-**ρ_c ≈ λ/θ_s**
+**$\gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)/\sqrt{[\Gamma(\mathbf{r}_1,\mathbf{r}_1,0)\Gamma(\mathbf{r}_2,\mathbf{r}_2,0)]}$**
 
-This fundamental relationship shows:
-- Smaller angular sources → larger coherence areas
-- Stars (microarcseconds) produce meter-scale coherence
-- The Sun (θ_s ≈ 0.5°) gives ρ_c ≈ 0.07 mm at 500 nm
+### 16.3.2 交叉谱密度
 
-## 16.3 Mutual Coherence Function and Wiener-Khinchin Theorem
+交叉谱密度是互相关函数关于时间延迟的傅里叶变换：
 
-The mutual coherence function provides a complete second-order statistical description of partially coherent fields. This section develops the mathematical framework connecting coherence in time domain to spectral properties in frequency domain.
+**$W(\mathbf{r}_1,\mathbf{r}_2,\omega) = \int_{-\infty}^\infty \Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)e^{-i\omega\tau} d\tau$**
 
-### 16.3.1 General Definition
+**$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = (1/2\pi) \int_{-\infty}^\infty W(\mathbf{r}_1,\mathbf{r}_2,\omega)e^{i\omega\tau} d\omega$**
 
-For a scalar field U(r,t), the mutual coherence function is:
+#### 物理意义
 
-**Γ(r₁,r₂,τ) = ⟨U*(r₁,t)U(r₂,t+τ)⟩**
+$W(\mathbf{r}_1,\mathbf{r}_2,\omega)$ 表示在频率 $\omega$ 处，点 $\mathbf{r}_1$ 和 $\mathbf{r}_2$ 之间谱分量的相关性。它可以写成：
 
-This four-point function (two spatial, one temporal, one ensemble) captures all second-order coherence properties.
+**$W(\mathbf{r}_1,\mathbf{r}_2,\omega) = \langle \hat{U}^*(\mathbf{r}_1,\omega)\hat{U}(\mathbf{r}_2,\omega) \rangle$**
 
-#### Properties of Mutual Coherence Function
+其中 $\hat{U}(\mathbf{r},\omega)$ 是 $U(\mathbf{r},t)$ 的傅里叶变换。
 
-1. **Hermitian Symmetry**: Γ(r₁,r₂,τ) = Γ*(r₂,r₁,-τ)
+#### 交叉谱密度的性质
 
-2. **Positive Semi-definiteness**: For any functions f₁(r), f₂(r):
-   ∬∬ f₁*(r₁)Γ(r₁,r₂,0)f₂(r₂) dr₁dr₂ ≥ 0
+1.  **厄米性**: $W(\mathbf{r}_1,\mathbf{r}_2,\omega) = W^*(\mathbf{r}_2,\mathbf{r}_1,\omega)$
 
-3. **Boundary Values**:
-   - Γ(r,r,0) = I(r) (intensity)
-   - |Γ(r₁,r₂,τ)| ≤ √[Γ(r₁,r₁,0)Γ(r₂,r₂,0)]
+2.  **对角线非负**: $W(\mathbf{r},\mathbf{r},\omega) \ge 0$ (功率谱)
 
-4. **Stationarity**: For stationary fields:
-   Γ(r₁,r₂,τ) depends only on τ, not absolute time
+3.  **谱相干度**:
+    **$\mu(\mathbf{r}_1,\mathbf{r}_2,\omega) = W(\mathbf{r}_1,\mathbf{r}_2,\omega)/\sqrt{[W(\mathbf{r}_1,\mathbf{r}_1,\omega)W(\mathbf{r}_2,\mathbf{r}_2,\omega)]}$**
 
-The equal-time mutual coherence function (mutual intensity) is:
+    且 $|\mu(\mathbf{r}_1,\mathbf{r}_2,\omega)| \le 1$
 
-**J(r₁,r₂) = Γ(r₁,r₂,0) = ⟨U*(r₁,t)U(r₂,t)⟩**
+4.  **总强度**:
+    **$I(\mathbf{r}) = (1/2\pi) \int_{-\infty}^\infty W(\mathbf{r},\mathbf{r},\omega) d\omega$**
 
-The normalized mutual coherence function:
+### 16.3.3 维纳-辛钦定理
 
-**γ(r₁,r₂,τ) = Γ(r₁,r₂,τ)/√[Γ(r₁,r₁,0)Γ(r₂,r₂,0)]**
+维纳-辛钦定理建立了自相关与功率谱之间的基本联系。
 
-### 16.3.2 Cross-Spectral Density
+#### 定理陈述
 
-The cross-spectral density is the Fourier transform of mutual coherence with respect to time delay:
+对于位置 $\mathbf{r}$ 处的平稳场：
 
-**W(r₁,r₂,ω) = ∫_{-∞}^∞ Γ(r₁,r₂,τ)e^{-iωτ} dτ**
+**$\Gamma(\mathbf{r},\mathbf{r},\tau) = \langle U^*(\mathbf{r},t)U(\mathbf{r},t+\tau) \rangle = \int_{-\infty}^\infty S(\mathbf{r},\omega)e^{i\omega\tau} d\omega$**
 
-**Γ(r₁,r₂,τ) = (1/2π) ∫_{-∞}^∞ W(r₁,r₂,ω)e^{iωτ} dω**
+**$S(\mathbf{r},\omega) = (1/2\pi) \int_{-\infty}^\infty \Gamma(\mathbf{r},\mathbf{r},\tau)e^{-i\omega\tau} d\tau$**
 
-#### Physical Meaning
+其中 $S(\mathbf{r},\omega) = W(\mathbf{r},\mathbf{r},\omega)/(2\pi)$ 是功率谱密度。
 
-W(r₁,r₂,ω) represents the correlation between spectral components at frequency ω at points r₁ and r₂. It can be written as:
+#### 含义
 
-**W(r₁,r₂,ω) = ⟨Û*(r₁,ω)Û(r₂,ω)⟩**
+1.  **能量守恒**:
+    **$I(\mathbf{r}) = \langle|U(\mathbf{r},t)|^2\rangle = \Gamma(\mathbf{r},\mathbf{r},0) = \int_{-\infty}^\infty S(\mathbf{r},\omega) d\omega$**
 
-where Û(r,ω) is the Fourier transform of U(r,t).
+2.  **相干-带宽积**:
+    该定理意味着 $\Delta\omega \cdot \tau_c \sim 2\pi$，一种不确定性原理的形式
 
-#### Properties of Cross-Spectral Density
+3.  **白光极限**:
+    对于 $S(\omega) = S_0$ (常数)，$\Gamma(\tau) = 2\pi S_0 \delta(\tau)$ - 完美非相干
 
-1. **Hermitian**: W(r₁,r₂,ω) = W*(r₂,r₁,ω)
+#### 广义维纳-辛钦定理
 
-2. **Non-negative on diagonal**: W(r,r,ω) ≥ 0 (power spectrum)
+对于非平稳场，我们使用维格纳分布：
 
-3. **Spectral degree of coherence**:
-   **μ(r₁,r₂,ω) = W(r₁,r₂,ω)/√[W(r₁,r₁,ω)W(r₂,r₂,ω)]**
-   
-   with |μ(r₁,r₂,ω)| ≤ 1
+**$W_U(t,\omega) = \int U^*(t-\tau/2)U(t+\tau/2)e^{-i\omega\tau} d\tau$**
 
-4. **Total intensity**: 
-   **I(r) = (1/2π) ∫_{-∞}^∞ W(r,r,ω) dω**
+系综平均给出：
+**$\langle W_U(t,\omega) \rangle = \int \Gamma(t-\tau/2,t+\tau/2,\tau)e^{-i\omega\tau} d\tau$**
 
-### 16.3.3 Wiener-Khinchin Theorem
+### 16.3.4 准单色近似
 
-The Wiener-Khinchin theorem establishes the fundamental connection between autocorrelation and power spectrum.
+许多实际光源的光谱宽度相对于中心频率较窄：$\Delta\omega/\omega_0 \ll 1$。
 
-#### Statement of the Theorem
+#### 数学公式
 
-For a stationary field at position r:
+对于中心频率为 $\omega_0$ 的窄带光：
 
-**Γ(r,r,τ) = ⟨U*(r,t)U(r,t+τ)⟩ = ∫_{-∞}^∞ S(r,ω)e^{iωτ} dω**
+**$U(\mathbf{r},t) = A(\mathbf{r},t)e^{-i\omega_0 t}$**
 
-**S(r,ω) = (1/2π) ∫_{-∞}^∞ Γ(r,r,τ)e^{-iωτ} dτ**
+其中 $A(\mathbf{r},t)$ 是一个缓慢变化的复振幅。
 
-where S(r,ω) = W(r,r,ω)/(2π) is the power spectral density.
+互相关函数变为：
 
-#### Implications
+**$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \langle A^*(\mathbf{r}_1,t)A(\mathbf{r}_2,t+\tau) \rangle e^{i\omega_0\tau}$**
 
-1. **Energy Conservation**:
-   **I(r) = ⟨|U(r,t)|²⟩ = Γ(r,r,0) = ∫_{-∞}^∞ S(r,ω) dω**
+**$= J(\mathbf{r}_1,\mathbf{r}_2)e^{i\omega_0\tau}g(\tau)$**
 
-2. **Coherence-Bandwidth Product**:
-   The theorem implies Δω·τ_c ~ 2π, a form of uncertainty principle
+其中：
+- $J(\mathbf{r}_1,\mathbf{r}_2) = \langle A^*(\mathbf{r}_1,t)A(\mathbf{r}_2,t) \rangle$ 是互强度
+- $g(\tau)$ 是一个缓慢变化的包络，且 $g(0) = 1$
 
-3. **White Light Limit**:
-   For S(ω) = S₀ (constant), Γ(τ) = 2πS₀δ(τ) - perfect incoherence
+#### 有效条件
 
-#### Generalized Wiener-Khinchin
+1.  **光谱条件**: $\Delta\omega/\omega_0 \ll 1$
+2.  **时间条件**: $A(t)$ 的变化时间尺度 $\gg 1/\omega_0$
+3.  **传播条件**: $\Delta k \cdot L \ll 2\pi$ ($L$ 是传播距离)
 
-For non-stationary fields, we use the Wigner distribution:
+#### 交叉谱密度
 
-**W_U(t,ω) = ∫ U*(t-τ/2)U(t+τ/2)e^{-iωτ} dτ**
+在准单色近似下：
 
-The ensemble average gives:
-**⟨W_U(t,ω)⟩ = ∫ Γ(t-τ/2,t+τ/2,τ)e^{-iωτ} dτ**
+**$W(\mathbf{r}_1,\mathbf{r}_2,\omega) \approx J(\mathbf{r}_1,\mathbf{r}_2)G(\omega-\omega_0)$**
 
-### 16.3.4 Quasi-Monochromatic Approximation
+其中 $G(\omega)$ 是 $g(\tau)$ 的傅里叶变换，中心在 $\omega = 0$。
 
-Many practical sources have narrow spectral width compared to center frequency: Δω/ω₀ << 1.
+#### 应用
 
-#### Mathematical Formulation
+1.  **干涉**: 相位差 $k\Delta \approx k_0\Delta$ 使用中心波数
+2.  **衍射**: 单频计算即可
+3.  **相干传播**: 简化为单色情况
+4.  **光谱学**: 原子跃迁的自然线宽
 
-For narrow-band light centered at ω₀:
+## 16.4 范西特-泽尼克定理
 
-**U(r,t) = A(r,t)e^{-iω₀t}**
+范西特-泽尼克定理是相干理论中最重要的结果之一，它阐明了空间相干性如何从非相干光源通过传播而产生。
 
-where A(r,t) is a slowly varying complex amplitude.
+### 16.4.1 定理陈述
 
-The mutual coherence function becomes:
+对于源平面中强度分布为 $I_s(\xi,\eta)$ 的平面非相干光源，在距离 $z$ 处的观测平面中的复相干度为：
 
-**Γ(r₁,r₂,τ) = ⟨A*(r₁,t)A(r₂,t+τ)⟩e^{iω₀τ}**
+**$\gamma_{12} = \frac{\iint I_s(\xi,\eta) \exp[ik(\mathbf{r}_1-\mathbf{r}_2)\cdot(\xi,\eta)/z] d\xi d\eta}{\iint I_s(\xi,\eta) d\xi d\eta}$**
 
-**= J(r₁,r₂)e^{iω₀τ}g(τ)**
+在傍轴近似下，这变为：
 
-where:
-- J(r₁,r₂) = ⟨A*(r₁,t)A(r₂,t)⟩ is the mutual intensity
-- g(τ) is a slowly varying envelope with g(0) = 1
+**$\gamma_{12} = \frac{\mathcal{F}\{I_s(\xi,\eta)\}|_{(u,v)=(x_1-x_2)/\lambda z, (y_1-y_2)/\lambda z}}{\iint I_s(\xi,\eta) d\xi d\eta}$**
 
-#### Validity Conditions
+其中 $\mathcal{F}$ 表示二维傅里叶变换。
 
-1. **Spectral condition**: Δω/ω₀ << 1
-2. **Temporal condition**: Changes in A(t) occur on timescale >> 1/ω₀
-3. **Propagation condition**: Δk·L << 2π (L is propagation distance)
+#### 严格推导
 
-#### Cross-Spectral Density
+从非相干光源的互强度开始：
 
-Under quasi-monochromatic approximation:
+**$J(\mathbf{r}_1,\mathbf{r}_2) = \iint I_s(\mathbf{r}_s) G^*(\mathbf{r}_1,\mathbf{r}_s)G(\mathbf{r}_2,\mathbf{r}_s) d^2\mathbf{r}_s$**
 
-**W(r₁,r₂,ω) ≈ J(r₁,r₂)G(ω-ω₀)**
+其中 $G$ 是格林函数。在自由空间中：
 
-where G(ω) is the Fourier transform of g(τ), centered at ω = 0.
+**$G(\mathbf{r},\mathbf{r}_s) = \exp(ik|\mathbf{r}-\mathbf{r}_s|)/4\pi|\mathbf{r}-\mathbf{r}_s|$**
 
-#### Applications
+对于 $z \gg |\mathbf{r}_\perp|$, $|\mathbf{r}_s|$ 的傍轴传播：
 
-1. **Interference**: Phase differences kΔ ≈ k₀Δ use center wavenumber
-2. **Diffraction**: Single frequency calculation suffices
-3. **Coherence propagation**: Simplifies to monochromatic case
-4. **Spectroscopy**: Natural linewidths of atomic transitions
+**$|\mathbf{r}-\mathbf{r}_s| \approx z + (\mathbf{r}_\perp - \mathbf{r}_s)^2/2z$**
 
-## 16.4 van Cittert-Zernike Theorem
+代入并简化：
 
-The van Cittert-Zernike theorem is one of the most important results in coherence theory, establishing how spatial coherence emerges from incoherent sources through propagation.
+**$J(\mathbf{r}_1,\mathbf{r}_2) = (k/2\pi z)^2 \exp[ik(|\mathbf{r}_1|^2 - |\mathbf{r}_2|^2)/2z] \times \iint I_s(\mathbf{r}_s) \exp[ik(\mathbf{r}_2-\mathbf{r}_1)\cdot\mathbf{r}_s/z] d^2\mathbf{r}_s$**
 
-### 16.4.1 Statement of the Theorem
+归一化相干度变为：
 
-For a planar incoherent source with intensity distribution I_s(ξ,η) in the source plane, the complex degree of coherence in an observation plane at distance z is:
+**$\gamma_{12} = \exp[ik(|\mathbf{r}_1|^2 - |\mathbf{r}_2|^2)/2z] \times \mathcal{F}\{I_s\}(k(\mathbf{r}_2-\mathbf{r}_1)/2\pi z) / I_{total}$**
 
-**γ₁₂ = ∫∫ I_s(ξ,η) exp[ik(r₁-r₂)·(ξ,η)/z] dξdη / ∫∫ I_s(ξ,η) dξdη**
+对于与轴距离相等的点，二次相位项抵消，得到经典结果。
 
-In the paraxial approximation, this becomes:
+### 16.4.2 物理诠释
 
-**γ₁₂ = ℱ{I_s(ξ,η)}|_{(u,v)=(x₁-x₂)/λz, (y₁-y₂)/λz} / ∫∫ I_s(ξ,η) dξdη**
+该定理揭示：
+1.  相干度是光源强度分布的归一化傅里叶变换
+2.  较大的光源产生较小的相干区域
+3.  相干函数继承了光源的对称性
 
-where ℱ denotes the 2D Fourier transform.
+### 16.4.3 示例与应用
 
-#### Rigorous Derivation
+**圆形光源:**
+对于半径为 $a$ 的均匀圆形光源：
 
-Starting from the mutual intensity for an incoherent source:
+**$\gamma_{12} = \frac{2J_1(2\pi a|\mathbf{r}_1-\mathbf{r}_2|/\lambda z)}{(2\pi a|\mathbf{r}_1-\mathbf{r}_2|/\lambda z)}$**
 
-**J(r₁,r₂) = ∫∫ I_s(r_s) G*(r₁,r_s)G(r₂,r_s) d²r_s**
+相干半径 (第一个零点) 为：
+**$\rho_c = 0.61\lambda z/a$**
 
-where G is the Green's function. In free space:
+**矩形光源:**
+对于尺寸为 $L_x \times L_y$ 的矩形光源：
 
-**G(r,r_s) = exp(ik|r-r_s|)/4π|r-r_s|**
+**$\gamma_{12} = \text{sinc}(\pi L_x(x_1-x_2)/\lambda z) \times \text{sinc}(\pi L_y(y_1-y_2)/\lambda z)$**
 
-For paraxial propagation with z >> |r_⊥|, |r_s|:
+**双星:**
+对于间隔为 $\theta$ 的两个点光源：
 
-**|r-r_s| ≈ z + (r_⊥ - r_s)²/2z**
+**$\gamma_{12} = \cos(\pi\theta|\mathbf{r}_1-\mathbf{r}_2|/\lambda)$**
 
-Substituting and simplifying:
+这是恒星干涉测量的基础。
 
-**J(r₁,r₂) = (k/2πz)² exp[ik(|r₁|² - |r₂|²)/2z] × ∫∫ I_s(r_s) exp[ik(r₂-r₁)·r_s/z] d²r_s**
+### 16.4.4 广义范西特-泽尼克定理
 
-The normalized degree of coherence becomes:
+对于非平面几何和任意传播距离，广义形式使用格林函数：
 
-**γ₁₂ = exp[ik(|r₁|² - |r₂|²)/2z] × ℱ{I_s}(k(r₂-r₁)/2πz) / I_total**
+**$J(\mathbf{r}_1,\mathbf{r}_2) = \iint I_s(\mathbf{r}_s)G^*(\mathbf{r}_1,\mathbf{r}_s)G(\mathbf{r}_2,\mathbf{r}_s) d^2\mathbf{r}_s$**
 
-For points at equal distance from the axis, the quadratic phase cancels, giving the classic result.
+其中 $G$ 是适用于该几何的格林函数。
 
-### 16.4.2 Physical Interpretation
+## 16.5 部分相干光的传播
 
-The theorem reveals that:
-1. The degree of coherence is the normalized Fourier transform of the source intensity distribution
-2. Larger sources produce smaller coherence areas
-3. The coherence function inherits the symmetry of the source
+理解相干特性在传播过程中如何变化对于光学系统的精确建模至关重要。
 
-### 16.4.3 Examples and Applications
+### 16.5.1 互相关函数的传播定律
 
-**Circular Source:**
-For a uniform circular source of radius a:
+互相关函数满足一对波动方程：
 
-**γ₁₂ = 2J₁(2πa|r₁-r₂|/λz)/(2πa|r₁-r₂|/λz)**
+**$\nabla_1^2 J(\mathbf{r}_1,\mathbf{r}_2) + k^2 J(\mathbf{r}_1,\mathbf{r}_2) = 0$**
+**$\nabla_2^2 J(\mathbf{r}_1,\mathbf{r}_2) + k^2 J(\mathbf{r}_1,\mathbf{r}_2) = 0$**
 
-The coherence radius (first zero) is:
-**ρ_c = 0.61λz/a**
+其中 $\nabla_i^2$ 作用于坐标 $\mathbf{r}_i$。这些被称为沃尔夫方程。
 
-**Rectangular Source:**
-For a rectangular source of dimensions L_x × L_y:
+### 16.5.2 自由空间中的传播
 
-**γ₁₂ = sinc(πL_x(x₁-x₂)/λz) × sinc(πL_y(y₁-y₂)/λz)**
+对于从平面 $z=0$ 到平面 $z$ 的传播，使用菲涅尔近似：
 
-**Double Star:**
-For two point sources separated by angle θ:
+**$J(x_1,y_1,x_2,y_2;z) = (k/2\pi z)^2 \iiint\int J_0(\xi_1,\eta_1,\xi_2,\eta_2) \times \exp[ik/2z((x_1-\xi_1)^2 + (y_1-\eta_1)^2 - (x_2-\xi_2)^2 - (y_2-\eta_2)^2)] d\xi_1 d\eta_1 d\xi_2 d\eta_2$**
 
-**γ₁₂ = cos(πθ|r₁-r₂|/λ)**
+### 16.5.3 相干模式表示
 
-This is the basis of stellar interferometry.
+任何部分相干场都可以分解为相干模式：
 
-### 16.4.4 Generalized van Cittert-Zernike Theorem
+**$J(\mathbf{r}_1,\mathbf{r}_2) = \sum_n \lambda_n \phi_n^*(\mathbf{r}_1)\phi_n(\mathbf{r}_2)$**
 
-For non-planar geometries and arbitrary propagation distances, the generalized form uses the Green's function:
+其中 $\lambda_n$ 是特征值，$\phi_n$ 是满足以下条件的正交特征函数：
 
-**J(r₁,r₂) = ∫∫ I_s(r_s)G*(r₁,r_s)G(r₂,r_s) d²r_s**
+**$\int J(\mathbf{r}_1,\mathbf{r}_2)\phi_n(\mathbf{r}_2) d^2\mathbf{r}_2 = \lambda_n\phi_n(\mathbf{r}_1)$**
 
-where G is the appropriate Green's function for the geometry.
+这被称为相干模式表示，类似于主成分分析。
 
-## 16.5 Propagation of Partially Coherent Light
+### 16.5.4 薛尔模型光源
 
-Understanding how coherence properties change during propagation is crucial for accurate modeling of optical systems.
+一类重要的光源满足：
 
-### 16.5.1 Propagation Law for Mutual Coherence
+**$J(\mathbf{r}_1,\mathbf{r}_2) = \sqrt{[I(\mathbf{r}_1)I(\mathbf{r}_2)]} \mu(\mathbf{r}_1-\mathbf{r}_2)$**
 
-The mutual coherence function satisfies a pair of wave equations:
+其中 $\mu$ 是仅依赖于 $\mathbf{r}_1-\mathbf{r}_2$ 的相干函数。这些薛尔模型光源在传播过程中保持这种形式：
 
-**∇₁²J(r₁,r₂) + k²J(r₁,r₂) = 0**
-**∇₂²J(r₁,r₂) + k²J(r₁,r₂) = 0**
+**$J_z(\mathbf{r}_1,\mathbf{r}_2) = \sqrt{[I_z(\mathbf{r}_1)I_z(\mathbf{r}_2)]} \mu_z(\mathbf{r}_1-\mathbf{r}_2)$**
 
-where ∇ᵢ² operates on coordinate rᵢ. These are known as the Wolf equations.
+### 16.5.5 与体渲染的联系
 
-### 16.5.2 Propagation Through Free Space
+在部分相干照明的体渲染背景下，每个点的辐射度变为：
 
-For propagation from plane z=0 to plane z, using the Fresnel approximation:
+**$L(\mathbf{x},\omega) = \iint W(\mathbf{x},\mathbf{x}',\omega)\sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\to\omega) d\omega' d^3\mathbf{x}'$**
 
-**J(x₁,y₁,x₂,y₂;z) = (k/2πz)² ∫∫∫∫ J₀(ξ₁,η₁,ξ₂,η₂) × exp[ik/2z((x₁-ξ₁)² + (y₁-η₁)² - (x₂-ξ₂)² - (y₂-η₂)²)] dξ₁dη₁dξ₂dη₂**
+其中 $W(\mathbf{x},\mathbf{x}',\omega)$ 是照明的交叉谱密度。这概括了标准体渲染方程，以包含相干效应，这对于以下方面的精确建模至关重要：
+- 激光扫描显微镜
+- 光学相干断层扫描
+- 全息显示
+- 干涉成像
 
-### 16.5.3 Coherence Mode Representation
+## 章总结
 
-Any partially coherent field can be decomposed into coherent modes:
+本章建立了光学相干性的数学框架，将光场的统计特性与可观测的干涉现象联系起来。关键概念包括：
 
-**J(r₁,r₂) = Σₙ λₙ φₙ*(r₁)φₙ(r₂)**
+1.  **时间相干性**: 通过傅里叶变换关系与光谱带宽相关。相干时间 $\tau_c \approx 1/\Delta\nu$ 决定了可以发生干涉的最大光程差。
 
-where λₙ are eigenvalues and φₙ are orthonormal eigenfunctions satisfying:
+2.  **空间相干性**: 由复相干度 $\gamma_{12}$ 量化，可通过干涉实验中的条纹可见度直接观测。
 
-**∫ J(r₁,r₂)φₙ(r₂) d²r₂ = λₙφₙ(r₁)**
+3.  **互相关函数**: $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)$ 提供了部分相干场的完整二阶统计描述，交叉谱密度 $W$ 是其频域对应物。
 
-This is the coherent mode representation, analogous to principal component analysis.
+4.  **范西特-泽尼克定理**: 确立了远场空间相干性是光源强度分布的傅里叶变换，对于理解扩展光源的相干性至关重要。
 
-### 16.5.4 Schell-Model Sources
+5.  **传播定律**: 沃尔夫方程控制着相干特性在传播过程中的演变，在包含统计效应的同时保持了波动性质。
 
-A important class of sources satisfies:
+体渲染方程概括为：
+**$L(\mathbf{x},\omega) = \iint W(\mathbf{x},\mathbf{x}',\omega)\sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\to\omega) d\omega' d^3\mathbf{x}'$**
 
-**J(r₁,r₂) = √[I(r₁)I(r₂)] μ(r₁-r₂)**
+通过交叉谱密度纳入了相干效应。
 
-where μ is the coherence function depending only on r₁-r₂. These Schell-model sources maintain this form during propagation:
+## 练习
 
-**J_z(r₁,r₂) = √[I_z(r₁)I_z(r₂)] μ_z(r₁-r₂)**
+### 练习 16.1: 相干时间计算
+氦氖激光器的谱线宽度为 1 GHz。计算：
+a) 相干时间 $\tau_c$
+b) 相干长度 $l_c$
+c) 干涉条纹可见度 > 0.5 的最大光程差
 
-### 16.5.5 Connection to Volume Rendering
-
-In the context of volume rendering with partially coherent illumination, the radiance at each point becomes:
-
-**L(x,ω) = ∫∫ W(x,x',ω)σ_s(x')p(x',ω'→ω) dω' d³x'**
-
-where W(x,x',ω) is the cross-spectral density of the illumination. This generalizes the standard volume rendering equation to include coherence effects, essential for accurate modeling of:
-- Laser scanning microscopy
-- Optical coherence tomography
-- Holographic displays
-- Interferometric imaging
-
-## Chapter Summary
-
-This chapter established the mathematical framework for optical coherence, connecting statistical properties of light fields to observable interference phenomena. Key concepts include:
-
-1. **Temporal Coherence**: Related to spectral bandwidth through Fourier transform relationships. Coherence time τ_c ≈ 1/Δν determines the path length difference over which interference can occur.
-
-2. **Spatial Coherence**: Quantified by the complex degree of coherence γ₁₂, directly observable through fringe visibility in interference experiments.
-
-3. **Mutual Coherence Function**: Γ(r₁,r₂,τ) provides complete second-order statistical description of partially coherent fields, with cross-spectral density W as its frequency domain counterpart.
-
-4. **van Cittert-Zernike Theorem**: Establishes that spatial coherence in the far field is the Fourier transform of the source intensity distribution, fundamental for understanding coherence from extended sources.
-
-5. **Propagation Laws**: Wolf equations govern how coherence properties evolve during propagation, maintaining the wave nature while incorporating statistical effects.
-
-The volume rendering equation generalizes to:
-**L(x,ω) = ∫∫ W(x,x',ω)σ_s(x')p(x',ω'→ω) dω' d³x'**
-
-incorporating coherence effects through the cross-spectral density.
-
-## Exercises
-
-### Exercise 16.1: Coherence Time Calculation
-A helium-neon laser has a spectral linewidth of 1 GHz. Calculate:
-a) The coherence time τ_c
-b) The coherence length l_c
-c) The maximum path difference for which interference fringes have visibility > 0.5
-
-*Hint: Use the relationship τ_c ≈ 0.44/Δν for Gaussian spectra.*
+*提示: 对于高斯光谱，使用关系 $\tau_c \approx 0.44/\Delta\nu$。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-a) τ_c = 0.44/Δν = 0.44/(10⁹ Hz) = 4.4 × 10⁻¹⁰ s = 0.44 ns
+a) $\tau_c = 0.44/\Delta\nu = 0.44/(10^9 \text{ Hz}) = 4.4 \times 10^{-10} \text{ s} = 0.44 \text{ ns}$
 
-b) l_c = c·τ_c = (3 × 10⁸ m/s)(4.4 × 10⁻¹⁰ s) = 0.132 m = 13.2 cm
+b) $l_c = c \cdot \tau_c = (3 \times 10^8 \text{ m/s})(4.4 \times 10^{-10} \text{ s}) = 0.132 \text{ m} = 13.2 \text{ cm}$
 
-c) For Gaussian spectrum, visibility V = exp(-π²τ²Δν²/2ln2)
-   Setting V = 0.5: τ = √(2ln2·ln2)/πΔν ≈ 0.37/Δν
-   Maximum path difference = c·τ = 0.37c/Δν = 11.1 cm
+c) 对于高斯光谱，可见度 $V = \exp(-\pi^2\tau^2\Delta\nu^2/2\ln2)$
+   设 $V = 0.5$: $\tau = \sqrt{2\ln2 \cdot \ln2}/\pi\Delta\nu \approx 0.37/\Delta\nu$
+   最大光程差 $= c \cdot \tau = 0.37c/\Delta\nu = 11.1 \text{ cm}$
 </details>
 
-### Exercise 16.2: Young's Double Slit with Extended Source
-A sodium lamp (λ = 589 nm) with circular aperture of diameter 2 mm illuminates Young's double slits separated by 0.5 mm at a distance of 1 m. Calculate:
-a) The degree of coherence at the slits
-b) The fringe visibility
-c) The slit separation for which visibility drops to zero
+### 练习 16.2: 扩展光源的杨氏双缝实验
+钠灯 ($\lambda = 589 \text{ nm}$) 具有直径为 2 mm 的圆形孔径，在 1 m 距离处照射间距为 0.5 mm 的杨氏双缝。计算：
+a) 缝处的相干度
+b) 条纹可见度
+c) 可见度降至零的狭缝间距
 
-*Hint: Apply the van Cittert-Zernike theorem for a circular source.*
+*提示: 对圆形光源应用范西特-泽尼克定理。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-a) Using van Cittert-Zernike for circular source:
-   γ₁₂ = 2J₁(πDd/λz)/(πDd/λz)
-   where D = 2 mm, d = 0.5 mm, z = 1 m, λ = 589 nm
-   
-   πDd/λz = π(2×10⁻³)(0.5×10⁻³)/(589×10⁻⁹)(1) = 5.33
-   γ₁₂ = 2J₁(5.33)/5.33 ≈ 2(-0.327)/5.33 = -0.123
+a) 使用圆形光源的范西特-泽尼克定理：
+   $\gamma_{12} = \frac{2J_1(\pi Dd/\lambda z)}{(\pi Dd/\lambda z)}$
+   其中 $D = 2 \text{ mm}$, $d = 0.5 \text{ mm}$, $z = 1 \text{ m}$, $\lambda = 589 \text{ nm}$
 
-b) For equal intensity slits: V = |γ₁₂| = 0.123
+   $\pi Dd/\lambda z = \pi(2\times10^{-3})(0.5\times10^{-3})/(589\times10^{-9})(1) = 5.33$
+   $\gamma_{12} = 2J_1(5.33)/5.33 \approx 2(-0.327)/5.33 = -0.123$
 
-c) First zero when πDd/λz = 3.83 (first zero of J₁)
-   d = 3.83λz/πD = 3.83(589×10⁻⁹)(1)/π(2×10⁻³) = 0.36 mm
+b) 对于等强度狭缝：$V = |\gamma_{12}| = 0.123$
+
+c) 当 $\pi Dd/\lambda z = 3.83$ (J₁ 的第一个零点) 时，第一个零点出现
+   $d = 3.83\lambda z/\pi D = 3.83(589\times10^{-9})(1)/\pi(2\times10^{-3}) = 0.36 \text{ mm}$
 </details>
 
-### Exercise 16.3: Wiener-Khinchin Application
-A light source has a Lorentzian spectrum: S(ω) = S₀Γ²/[(ω-ω₀)² + Γ²]
-Derive:
-a) The temporal coherence function Γ(τ)
-b) The coherence time
-c) Compare with a Gaussian spectrum of same FWHM
+### 练习 16.3: 维纳-辛钦应用
+光源具有洛伦兹谱：$S(\omega) = S_0\Gamma^2/[(\omega-\omega_0)^2 + \Gamma^2]$
+推导：
+a) 时间相干函数 $\Gamma(\tau)$
+b) 相干时间
+c) 与相同半高全宽的高斯光谱进行比较
 
-*Hint: Use contour integration for the Fourier transform.*
+*提示: 使用傅里叶变换的围道积分。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-a) Γ(τ) = ∫ S(ω)e^{iωτ} dω = S₀Γ² ∫ e^{iωτ}/[(ω-ω₀)² + Γ²] dω
-   
-   Using residue theorem with pole at ω = ω₀ + iΓ (for τ > 0):
-   Γ(τ) = 2πiS₀Γ²·e^{i(ω₀+iΓ)τ}/(2iΓ) = πS₀Γe^{iω₀τ}e^{-Γτ}
-   
-   Normalizing: γ(τ) = e^{iω₀τ}e^{-Γ|τ|}
+a) $\Gamma(\tau) = \int S(\omega)e^{i\omega\tau} d\omega = S_0\Gamma^2 \int \frac{e^{i\omega\tau}}{[(\omega-\omega_0)^2 + \Gamma^2]} d\omega$
 
-b) τ_c = ∫₀^∞ |γ(τ)|² dτ = ∫₀^∞ e^{-2Γτ} dτ = 1/(2Γ)
-   
-   For FWHM = 2Γ: τ_c = 1/FWHM
+   对于 $\tau > 0$，使用留数定理，极点在 $\omega = \omega_0 + i\Gamma$:
+   $\Gamma(\tau) = 2\pi i S_0\Gamma^2 \cdot \frac{e^{i(\omega_0+i\Gamma)\tau}}{2i\Gamma} = \pi S_0\Gamma e^{i\omega_0\tau}e^{-\Gamma\tau}$
 
-c) Gaussian: τ_c = 0.44/Δν
-   Lorentzian: τ_c = 1/(2πΔν) ≈ 0.16/Δν
-   The Lorentzian has shorter coherence time due to extended wings.
+   归一化：$\gamma(\tau) = e^{i\omega_0\tau}e^{-\Gamma|\tau|}$
+
+b) $\tau_c = \int_0^\infty |\gamma(\tau)|^2 d\tau = \int_0^\infty e^{-2\Gamma\tau} d\tau = 1/(2\Gamma)$
+
+   对于 FWHM $= 2\Gamma$: $\tau_c = 1/\text{FWHM}$
+
+c) 高斯：$\tau_c = 0.44/\Delta\nu$
+   洛伦兹：$\tau_c = 1/(2\pi\Delta\nu) \approx 0.16/\Delta\nu$
+   洛伦兹由于其延伸的翼部，具有更短的相干时间。
+</details>
+好的，我将逐字翻译您提供的文本为中文，并将所有数学公式转换为 LaTeX 格式。
+
 </details>
 
-### Exercise 16.4: Coherence Mode Decomposition
-For a Schell-model source with Gaussian intensity I(x) = I₀exp(-x²/w₀²) and Gaussian coherence μ(Δx) = exp(-Δx²/2σ_c²), find the first three coherent modes.
+### 练习 16.4：相干模式分解
+对于具有高斯强度 $I(x) = I_0\exp(-x^2/w_0^2)$ 和高斯相干性 $\mu(\Delta x) = \exp(-\Delta x^2/2\sigma_c^2)$ 的 Schell 模型光源，找出前三个相干模式。
 
-*Hint: Use Hermite-Gaussian functions as basis.*
+*提示：使用厄米-高斯函数作为基底。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-The eigenvalue equation: ∫ J(x,x')φₙ(x') dx' = λₙφₙ(x)
+特征值方程：$\int J(x,x')\varphi_n(x') dx' = \lambda_n\varphi_n(x)$
 
-For this Gaussian Schell-model, eigenfunctions are Hermite-Gaussians:
-φₙ(x) = (2^n n!√π σ)^{-1/2} Hₙ(x/σ) exp(-x²/2σ²)
+对于此高斯 Schell 模型，特征函数是厄米-高斯函数：
+$\varphi_n(x) = (2^n n!\sqrt{\pi} \sigma)^{-1/2} H_n(x/\sigma) \exp(-x^2/2\sigma^2)$
 
-where σ⁴ = w₀²σ_c²/2
+其中 $\sigma^4 = w_0^2\sigma_c^2/2$
 
-Eigenvalues: λₙ = λ₀(σ_c²/(σ_c² + w₀²))^n
-where λ₀ = I₀√(2πσ_c²w₀²/(σ_c² + w₀²))
+特征值：$\lambda_n = \lambda_0(\sigma_c^2/(\sigma_c^2 + w_0^2))^n$
+其中 $\lambda_0 = I_0\sqrt{2\pi\sigma_c^2w_0^2/(\sigma_c^2 + w_0^2)}$
 
-First three modes:
-- n=0: φ₀(x) = (πσ²)^{-1/4} exp(-x²/2σ²), λ₀
-- n=1: φ₁(x) = (πσ²)^{-1/4} √(2)x/σ exp(-x²/2σ²), λ₁
-- n=2: φ₂(x) = (πσ²)^{-1/4} (2x²/σ² - 1)/√2 exp(-x²/2σ²), λ₂
+前三个模式：
+- $n=0$: $\varphi_0(x) = (\pi\sigma^2)^{-1/4} \exp(-x^2/2\sigma^2)$, $\lambda_0$
+- $n=1$: $\varphi_1(x) = (\pi\sigma^2)^{-1/4} \sqrt{2}x/\sigma \exp(-x^2/2\sigma^2)$, $\lambda_1$
+- $n=2$: $\varphi_2(x) = (\pi\sigma^2)^{-1/4} (2x^2/\sigma^2 - 1)/\sqrt{2} \exp(-x^2/2\sigma^2)$, $\lambda_2$
 </details>
 
-### Exercise 16.5: Propagation of Coherence (Challenge)
-A partially coherent beam has initial mutual intensity J₀(x₁,x₂) = exp(-|x₁-x₂|²/2σ₀²)exp(-(x₁²+x₂²)/4w₀²). Find J(x₁,x₂,z) after propagating distance z.
+### 练习 16.5：相干性传播（挑战）
+一个部分相干光束的初始互强度为 $J_0(x_1,x_2) = \exp(-|x_1-x_2|^2/2\sigma_0^2)\exp(-(x_1^2+x_2^2)/4w_0^2)$。求传播距离 $z$ 后的 $J(x_1,x_2,z)$。
 
-*Hint: Use the Fresnel propagation integral for mutual intensity.*
+*提示：使用互强度的菲涅尔传播积分。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Using Fresnel propagation:
-J(x₁,x₂,z) = (k/2πz)² ∫∫ J₀(ξ₁,ξ₂) exp[ik(x₁-ξ₁)²/2z] exp[-ik(x₂-ξ₂)²/2z] dξ₁dξ₂
+使用菲涅尔传播：
+$J(x_1,x_2,z) = (k/2\pi z)^2 \iint J_0(\xi_1,\xi_2) \exp[ik(x_1-\xi_1)^2/2z] \exp[-ik(x_2-\xi_2)^2/2z] d\xi_1d\xi_2$
 
-Substituting the Gaussian form and completing the square:
-J(x₁,x₂,z) = A(z) exp(-|x₁-x₂|²/2σ²(z)) exp(-(x₁²+x₂²)/4w²(z))
+代入高斯形式并配方：
+$J(x_1,x_2,z) = A(z) \exp(-|x_1-x_2|^2/2\sigma^2(z)) \exp(-(x_1^2+x_2^2)/4w^2(z))$
 
-where:
-- w²(z) = w₀²(1 + z²/z_R²), z_R = πw₀²/λ
-- σ²(z) = σ₀² + λ²z²/(4π²σ₀²)
-- A(z) includes normalization factors
+其中：
+- $w^2(z) = w_0^2(1 + z^2/z_R^2)$, $z_R = \pi w_0^2/\lambda$
+- $\sigma^2(z) = \sigma_0^2 + \lambda^2z^2/(4\pi^2\sigma_0^2)$
+- $A(z)$ 包含归一化因子
 
-The beam maintains Gaussian-Schell form with evolving parameters.
+光束保持高斯-Schell 形式，参数随传播演变。
 </details>
 
-### Exercise 16.6: Van Cittert-Zernike for Stellar Interferometry (Challenge)
-Two telescopes separated by baseline B observe a binary star with angular separation θ and intensity ratio R. Derive the visibility curve V(B) and show how to extract θ and R.
+### 练习 16.6：恒星干涉测量中的 Van Cittert-Zernike 定理（挑战）
+两台望远镜基线分离 $B$，观测一颗角分离为 $\theta$、强度比为 $R$ 的双星。推导可见度曲线 $V(B)$ 并展示如何提取 $\theta$ 和 $R$。
 
-*Hint: Model as two incoherent point sources.*
+*提示：建模为两个非相干点源。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-For two stars at angles ±θ/2 with intensities I₁, I₂:
-γ₁₂ = [I₁exp(ikθB/2) + I₂exp(-ikθB/2)]/(I₁ + I₂)
+对于位于 $\pm\theta/2$ 角度、强度为 $I_1, I_2$ 的两颗恒星：
+$\gamma_{12} = [I_1\exp(ik\theta B/2) + I_2\exp(-ik\theta B/2)]/(I_1 + I_2)$
 
-Let R = I₂/I₁, then:
-γ₁₂ = [exp(ikθB/2) + R·exp(-ikθB/2)]/(1 + R)
-    = [(1+R)cos(kθB/2) + i(1-R)sin(kθB/2)]/(1 + R)
+令 $R = I_2/I_1$，则：
+$\gamma_{12} = [\exp(ik\theta B/2) + R\cdot\exp(-ik\theta B/2)]/(1 + R)$
+$\quad = [(1+R)\cos(k\theta B/2) + i(1-R)\sin(k\theta B/2)]/(1 + R)$
 
-Visibility: V(B) = |γ₁₂| = √[cos²(πθB/λ) + ((1-R)/(1+R))²sin²(πθB/λ)]
+可见度：$V(B) = |\gamma_{12}| = \sqrt{\cos^2(\pi\theta B/\lambda) + ((1-R)/(1+R))^2\sin^2(\pi\theta B/\lambda)}$
 
-Analysis:
-- At B = 0: V = 1 (full coherence)
-- First minimum at πθB/λ = π/2 gives θ = λ/2B_min
-- Visibility at minimum: V_min = |1-R|/(1+R) gives R
-- For equal stars (R=1): V = |cos(πθB/λ)|
+分析：
+- 在 $B = 0$ 时：$V = 1$（完全相干）
+- 第一个最小值在 $\pi\theta B/\lambda = \pi/2$ 处，给出 $\theta = \lambda/2B_{min}$
+- 最小值处的可见度：$V_{min} = |1-R|/(1+R)$ 给出 $R$
+- 对于等强度恒星 ($R=1$)：$V = |\cos(\pi\theta B/\lambda)|$
 </details>
 
-### Exercise 16.7: Coherence in Volume Rendering
-Derive the modified volume rendering equation for a laser-scanned microscope where the illumination has Gaussian spatial coherence with radius ρ_c.
+### 练习 16.7：体渲染中的相干性
+推导激光扫描显微镜的修正体渲染方程，其中照明具有半径为 $\rho_c$ 的高斯空间相干性。
 
-*Hint: Start with the coherent volume rendering equation and average over the coherence function.*
+*提示：从相干体渲染方程开始，并对相干函数进行平均。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-Start with coherent illumination at point x':
-L_coh(x,ω) = ∫ E(x')σ_s(x')p(x',ω'→ω)G(x',x) d³x'
+从点 $x'$ 处的相干照明开始：
+$L_{coh}(x,\omega) = \int E(x')\sigma_s(x')p(x',\omega'\to\omega)G(x',x) d^3x'$
 
-For partially coherent illumination with mutual intensity J(x₁,x₂):
-L(x,ω) = ∫∫ J(x₁,x₂)σ_s(x₁)σ_s*(x₂)p(x₁,ω'→ω)p*(x₂,ω'→ω)G(x₁,x)G*(x₂,x) d³x₁d³x₂
+对于具有互强度 $J(x_1,x_2)$ 的部分相干照明：
+$L(x,\omega) = \iint J(x_1,x_2)\sigma_s(x_1)\sigma_s^*(x_2)p(x_1,\omega'\to\omega)p^*(x_2,\omega'\to\omega)G(x_1,x)G^*(x_2,x) d^3x_1d^3x_2$
 
-For Gaussian coherence: J(x₁,x₂) = I(x₁)exp(-|x₁-x₂|²/2ρ_c²)
+对于高斯相干性：$J(x_1,x_2) = I(x_1)\exp(-|x_1-x_2|^2/2\rho_c^2)$
 
-In the limit ρ_c → 0 (incoherent):
-L(x,ω) = ∫ I(x')|σ_s(x')|²|p(x',ω'→ω)|²|G(x',x)|² d³x'
+在 $\rho_c \to 0$（非相干）的极限下：
+$L(x,\omega) = \int I(x')|\sigma_s(x')|^2|p(x',\omega'\to\omega)|^2|G(x',x)|^2 d^3x'$
 
-For finite ρ_c, coherent volume effects occur within radius ρ_c, leading to speckle patterns with characteristic size ~λz/ρ_c at distance z.
+对于有限的 $\rho_c$，相干体积效应发生在半径 $\rho_c$ 内，导致在距离 $z$ 处产生特征尺寸约为 $\sim\lambda z/\rho_c$ 的散斑图案。
 </details>
 
-### Exercise 16.8: Cross-Spectral Purity (Open-ended)
-Investigate conditions under which a partially coherent field can be spectrally decomposed such that each frequency component is fully coherent. What physical sources satisfy this condition?
+### 练习 16.8：交叉谱纯度（开放式）
+研究部分相干场可以进行谱分解的条件，使得每个频率分量都是完全相干的。哪些物理光源满足此条件？
 
-*Hint: Consider when W(r₁,r₂,ω) factorizes as U*(r₁,ω)U(r₂,ω).*
+*提示：考虑当 $W(r_1,r_2,\omega)$ 可以分解为 $U^*(r_1,\omega)U(r_2,\omega)$ 时。*
 
 <details>
-<summary>Solution</summary>
+<summary>解答</summary>
 
-A field is cross-spectrally pure if:
-W(r₁,r₂,ω) = U*(r₁,ω)U(r₂,ω)S(ω)
+如果一个场满足以下条件，则它是交叉谱纯的：
+$W(r_1,r_2,\omega) = U^*(r_1,\omega)U(r_2,\omega)S(\omega)$
 
-This requires the spectral degree of coherence:
-μ(r₁,r₂,ω) = W(r₁,r₂,ω)/√[W(r₁,r₁,ω)W(r₂,r₂,ω)] = 1
+这要求谱相干度：
+$\mu(r_1,r_2,\omega) = W(r_1,r_2,\omega)/\sqrt{W(r_1,r_1,\omega)W(r_2,r_2,\omega)} = 1$
 
-for all ω where S(ω) ≠ 0.
+对于所有 $S(\omega) \neq 0$ 的 $\omega$。
 
-Physical examples:
-1. **Filtered thermal light**: Passing white light through narrow-band filter
-2. **Mode-locked lasers**: Each longitudinal mode is coherent
-3. **Stationary Schell-model sources**: Under specific propagation conditions
+物理示例：
+1.  **滤波后的热光**：白光通过窄带滤波器
+2.  **锁模激光器**：每个纵模都是相干的
+3.  **稳态 Schell 模型光源**：在特定传播条件下
 
-Counter-examples:
-- Moving sources (Doppler broadening breaks spectral purity)
-- Nonlinear processes (frequency mixing)
-- Time-varying media
+反例：
+- 移动光源（多普勒展宽破坏谱纯度）
+- 非线性过程（频率混合）
+- 时变介质
 
-Implications for rendering: Cross-spectrally pure sources allow frequency-by-frequency calculation of coherence effects, greatly simplifying computations.
+对渲染的影响：交叉谱纯光源允许逐频率计算相干效应，大大简化了计算。
 </details>
 
-## Common Pitfalls and Errors
+## 常见陷阱和错误
 
-1. **Confusing Coherence Time and Coherence Length**
-   - Error: Using τ_c where l_c is needed
-   - Fix: Remember l_c = c·τ_c, coherence length has units of distance
+1.  **混淆相干时间和相干长度**
+    - 错误：在需要 $l_c$ 的地方使用 $\tau_c$
+    - 修正：记住 $l_c = c\cdot\tau_c$，相干长度的单位是距离
 
-2. **Misapplying van Cittert-Zernike Theorem**
-   - Error: Using it for coherent or partially coherent sources
-   - Fix: Theorem only applies to incoherent sources; check source properties first
+2.  **误用 van Cittert-Zernike 定理**
+    - 错误：将其用于相干或部分相干光源
+    - 修正：该定理仅适用于非相干光源；首先检查光源特性
 
-3. **Incorrect Normalization of Degree of Coherence**
-   - Error: Forgetting to normalize by √(I₁I₂)
-   - Fix: Always compute γ₁₂ = J₁₂/√(J₁₁J₂₂)
+3.  **相干度归一化不正确**
+    - 错误：忘记除以 $\sqrt{I_1I_2}$ 进行归一化
+    - 修正：始终计算 $\gamma_{12} = J_{12}/\sqrt{J_{11}J_{22}}$
 
-4. **Sign Errors in Complex Coherence**
-   - Error: Ignoring phase of γ₁₂ in interference calculations
-   - Fix: Keep track of complex nature; phase affects fringe position
+4.  **复相干性中的符号错误**
+    - 错误：在干涉计算中忽略 $\gamma_{12}$ 的相位
+    - 修正：注意其复数性质；相位影响条纹位置
 
-5. **Assuming Coherence is Preserved**
-   - Error: Treating coherence as invariant during propagation
-   - Fix: Use Wolf equations or appropriate propagation laws
+5.  **假设相干性得以保留**
+    - 错误：将相干性视为传播过程中不变的量
+    - 修正：使用 Wolf 方程或适当的传播定律
 
-6. **Mixing Temporal and Spatial Coherence**
-   - Error: Using temporal coherence formulas for spatial problems
-   - Fix: Identify whether dealing with time delays (temporal) or spatial separations
+6.  **混淆时间相干性和空间相干性**
+    - 错误：将时间相干性公式用于空间问题
+    - 修正：确定是处理时间延迟（时间相干性）还是空间分离（空间相干性）
 
-7. **Quasi-Monochromatic Approximation Misuse**
-   - Error: Applying to broadband sources
-   - Fix: Check Δν/ν₀ << 1 before using approximation
+7.  **准单色近似的误用**
+    - 错误：应用于宽带光源
+    - 修正：在使用近似之前检查 $\Delta\nu/\nu_0 \ll 1$
 
-8. **Forgetting Statistical Averaging**
-   - Error: Using instantaneous fields instead of ensemble averages
-   - Fix: All coherence functions involve time or ensemble averaging ⟨·⟩
+8.  **忘记统计平均**
+    - 错误：使用瞬时场而不是系综平均
+    - 修正：所有相干函数都涉及时间或系综平均 $\langle\cdot\rangle$
 
-## Best Practices Checklist
+## 最佳实践清单
 
-### Design Review
-- [ ] Identified whether dealing with temporal, spatial, or both types of coherence
-- [ ] Verified source coherence properties (coherent/partially coherent/incoherent)
-- [ ] Selected appropriate coherence measure (Γ, J, W, γ)
-- [ ] Checked validity of approximations (paraxial, quasi-monochromatic)
+### 设计评审
+- [ ] 确定是处理时间相干性、空间相干性还是两者兼有
+- [ ] 验证光源相干特性（相干/部分相干/非相干）
+- [ ] 选择适当的相干性度量（$\Gamma$, $J$, $W$, $\gamma$）
+- [ ] 检查近似的有效性（傍轴、准单色）
 
-### Mathematical Verification
-- [ ] Coherence functions properly normalized
-- [ ] Complex conjugates placed correctly
-- [ ] Fourier transform pairs consistent (time ↔ frequency, space ↔ spatial frequency)
-- [ ] Units dimensionally correct throughout
+### 数学验证
+- [ ] 相干函数正确归一化
+- [ ] 复共轭位置正确
+- [ ] 傅里叶变换对一致（时间 $\leftrightarrow$ 频率，空间 $\leftrightarrow$ 空间频率）
+- [ ] 整个过程中的单位量纲正确
 
-### Physical Constraints
-- [ ] |γ₁₂| ≤ 1 everywhere
-- [ ] Coherence functions Hermitian: Γ(r₁,r₂,τ) = Γ*(r₂,r₁,-τ)
-- [ ] Power spectral density non-negative: S(ω) ≥ 0
-- [ ] Energy conservation in propagation
+### 物理约束
+- [ ] $| \gamma_{12} | \le 1$ 处处成立
+- [ ] 相干函数是厄米共轭的：$\Gamma(r_1,r_2,\tau) = \Gamma^*(r_2,r_1,-\tau)$
+- [ ] 功率谱密度非负：$S(\omega) \ge 0$
+- [ ] 传播中的能量守恒
 
-### Computational Considerations
-- [ ] Sampling sufficient for coherence scale (Nyquist for ρ_c)
-- [ ] Numerical integration stable for oscillatory integrands
-- [ ] Mode truncation error estimated for coherent mode expansion
-- [ ] Statistical convergence verified for Monte Carlo approaches
+### 计算考量
+- [ ] 相干尺度采样充足（$\rho_c$ 的奈奎斯特采样）
+- [ ] 振荡积分的数值积分稳定
+- [ ] 相干模式展开的模式截断误差估计
+- [ ] 蒙特卡洛方法的统计收敛性验证
 
-### Experimental Validation
-- [ ] Coherence length matches spectral width measurements
-- [ ] Visibility measurements consistent with theoretical γ₁₂
-- [ ] Propagation effects match Wolf equation predictions
-- [ ] Van Cittert-Zernike validated for extended sources
+### 实验验证
+- [ ] 相干长度与光谱宽度测量结果一致
+- [ ] 可见度测量结果与理论 $\gamma_{12}$ 一致
+- [ ] 传播效应与 Wolf 方程预测一致
+- [ ] Van Cittert-Zernike 定理对扩展光源的验证
+
