@@ -10,6 +10,12 @@ $$I(\boldsymbol{\theta}) = \int_{\Omega} f(\boldsymbol{x}, \boldsymbol{\theta}) 
 
 其中 $\boldsymbol{\theta} \in \mathbb{R}^n$ 是场景参数，$\Omega$ 是积分域（如光线空间、路径空间），$f$ 是被积函数。可微渲染的核心问题是计算梯度 $\nabla_{\theta} I = \frac{\partial I}{\partial \boldsymbol{\theta}}$。
 
+从测度论的角度，渲染积分可以更严格地表述为：
+
+$$I(\boldsymbol{\theta}) = \int_{\mathcal{M}} L(\boldsymbol{x}, \boldsymbol{\omega}; \boldsymbol{\theta}) \, d\mu(\boldsymbol{x}, \boldsymbol{\omega})$$
+
+其中 $\mathcal{M}$ 是相空间流形，$\mu$ 是其上的测度。当参数 $\boldsymbol{\theta}$ 变化时，不仅被积函数 $L$ 变化，测度 $\mu$ 和积分域 $\mathcal{M}$ 本身也可能变化，这导致了可微性的根本挑战。
+
 从更一般的角度，渲染可以视为一个映射：
 
 $$\mathcal{R}: \Theta \times \mathcal{S} \rightarrow \mathcal{I}$$
@@ -17,6 +23,14 @@ $$\mathcal{R}: \Theta \times \mathcal{S} \rightarrow \mathcal{I}$$
 其中 $\Theta$ 是参数空间，$\mathcal{S}$ 是场景描述空间，$\mathcal{I}$ 是图像空间。可微渲染要求这个映射关于 $\theta$ 是可微的，即存在 Fréchet 导数：
 
 $$\lim_{\|\delta\theta\| \to 0} \frac{\|\mathcal{R}(\theta + \delta\theta) - \mathcal{R}(\theta) - D\mathcal{R}(\theta)[\delta\theta]\|}{\|\delta\theta\|} = 0$$
+
+**分层积分表述**
+
+在实际渲染中，积分通常具有分层结构。例如，考虑直接光照和间接光照的分解：
+
+$$I = I_{\text{direct}} + I_{\text{indirect}} = \int_{\mathcal{V}} \int_{\Omega} L_e V(\boldsymbol{x}, \boldsymbol{y}) G(\boldsymbol{x}, \boldsymbol{y}) \, d\omega_y d\boldsymbol{x} + \int_{\mathcal{P}_k} f_k(\bar{\boldsymbol{x}}) \, d\mu_k$$
+
+其中 $\mathcal{V}$ 是可见表面，$\mathcal{P}_k$ 是长度为 $k$ 的路径空间。这种分层结构允许我们对不同类型的光传输应用不同的微分策略。
 
 ### 12.1.1 可微性的挑战
 
@@ -32,11 +46,25 @@ $$\frac{\partial}{\partial \theta} \int_{\Omega(\theta)} f(x, \theta) \, dx = \i
 
 其中 $v_n = \frac{\partial \boldsymbol{x}_{\text{boundary}}}{\partial \theta} \cdot \boldsymbol{n}$ 是边界的法向速度。第二项（边界项）在渲染中对应物体轮廓、阴影边界等几何不连续处的贡献。
 
+**分布理论的严格处理**
+
 更精确地，使用分布理论，可见性函数 $V$ 的导数包含 Dirac delta：
 
 $$\frac{\partial V}{\partial \theta} = \sum_{i \in \text{silhouettes}} \delta(\boldsymbol{x} - \boldsymbol{x}_i(\theta)) \cdot v_{\perp,i}$$
 
 这解释了为什么朴素的点采样方法会遗漏边缘梯度——采样到零测集的概率为零。
+
+从 Sobolev 空间的角度，可见性函数 $V \in L^{\infty}(\Omega)$ 但 $V \notin W^{1,p}(\Omega)$ 对任意 $p \geq 1$，即 $V$ 不属于任何 Sobolev 空间。这导致标准的微分算子不适用，必须在弱意义或分布意义下理解导数。
+
+**高维积分的维度诅咒**
+
+对于长度为 $k$ 的光路，相空间维度为 $d = 3k$（忽略方向的约束）。梯度的 Hessian 矩阵规模为 $\mathcal{O}(d^2)$，导致：
+
+1. **存储复杂度**：$\mathcal{O}(n^2 d^2)$，其中 $n$ 是参数数量
+2. **计算复杂度**：每次 Hessian-向量乘积需要 $\mathcal{O}(nd)$ 操作
+3. **数值条件数**：随维度指数增长，$\kappa(H) \sim e^{\alpha d}$
+
+这促使我们寻找低秩近似或稀疏表示方法。
 
 ### 12.1.2 数学框架
 
@@ -54,6 +82,11 @@ $$\nabla_\theta I_j = \int_{\mathcal{P}} \nabla_\theta f_j(\bar{x}) d\mu(\bar{x}
 
 第二项来自测度的参数依赖性（重参数化梯度）。
 
+路径测度的具体形式为：
+$$d\mu(\bar{x}) = dA(\boldsymbol{x}_0) \prod_{i=1}^{k-1} G(\boldsymbol{x}_i, \boldsymbol{x}_{i+1}) dA(\boldsymbol{x}_i)$$
+
+其中 $G(\boldsymbol{x}, \boldsymbol{y}) = \frac{V(\boldsymbol{x}, \boldsymbol{y})|\cos\theta_x||\cos\theta_y|}{|\boldsymbol{x} - \boldsymbol{y}|^2}$ 是几何项。当几何参数变化时，$G$ 和 $V$ 都会变化，导致复杂的梯度表达式。
+
 **2. 伴随方法**
 
 对于复杂系统，伴随方法提供高效的梯度计算。定义拉格朗日量：
@@ -65,6 +98,14 @@ $$\mathcal{L} = I(u, \theta) + \langle \lambda, G(u, \theta) \rangle$$
 $$\frac{dI}{d\theta} = -\left\langle \lambda, \frac{\partial G}{\partial \theta} \right\rangle$$
 
 其中 $\lambda$ 满足伴随方程：$(\partial G/\partial u)^T \lambda = -\partial I/\partial u$。
+
+在渲染中，$u = L(\boldsymbol{x}, \boldsymbol{\omega})$ 是辐射度场，约束 $G$ 是渲染方程：
+$$G(L, \theta) = L - L_e - \mathcal{T}[L] = 0$$
+
+其中 $\mathcal{T}$ 是传输算子。伴随方程变为：
+$$(\mathcal{I} - \mathcal{T}^*)[\lambda] = -\frac{\partial I}{\partial L}$$
+
+这里 $\mathcal{T}^*$ 是 $\mathcal{T}$ 的伴随算子，在物理上对应重要性传输。
 
 **3. 变分原理**
 
@@ -78,6 +119,12 @@ $$\delta I = \int \frac{\delta \mathcal{F}}{\delta L} \delta L \, d\Omega$$
 
 这提供了另一种计算梯度的视角。
 
+具体地，对于路径追踪，泛函可以取为：
+$$\mathcal{F}[L] = \frac{1}{2}\|L - L_e - \mathcal{T}[L]\|^2_{L^2(\mathcal{M})}$$
+
+这导致梯度流方程：
+$$\frac{\partial L}{\partial t} = -\frac{\delta \mathcal{F}}{\delta L} = (\mathcal{I} - \mathcal{T})^*(\mathcal{I} - \mathcal{T})[L] - (\mathcal{I} - \mathcal{T})^*[L_e]$$
+
 ### 12.1.3 可微渲染的应用
 
 可微渲染在以下领域有重要应用：
@@ -87,6 +134,30 @@ $$\delta I = \int \frac{\delta \mathcal{F}}{\delta L} \delta L \, d\Omega$$
 - **内容创作**：通过优化生成满足约束的3D内容，如 $\min_\theta \mathcal{L}_{\text{style}}(I(\theta)) + \lambda \mathcal{R}(\theta)$
 - **机器人视觉**：主动感知和场景操作，需要实时梯度计算
 - **计算成像**：联合优化光学系统和计算管线
+
+**逆问题的正则化**
+
+逆渲染本质上是病态的（ill-posed），因为：
+1. **非唯一性**：多个场景配置可能产生相同图像
+2. **不稳定性**：小的观测噪声可能导致解的巨大变化
+3. **不存在性**：某些图像可能无法由物理有效的场景产生
+
+为此，我们需要正则化。常用方法包括：
+
+- **Tikhonov 正则化**：$\mathcal{L}_{\text{reg}} = \|I_{\text{obs}} - I(\theta)\|^2 + \lambda\|\theta - \theta_0\|^2$
+- **稀疏性约束**：$\mathcal{L}_{\text{sparse}} = \|I_{\text{obs}} - I(\theta)\|^2 + \lambda\|\theta\|_1$
+- **流形约束**：限制 $\theta \in \mathcal{M}_{\text{valid}}$，其中 $\mathcal{M}_{\text{valid}}$ 是物理有效参数的流形
+
+**优化景观的特性**
+
+可微渲染的损失函数通常具有复杂的优化景观：
+
+1. **多模态性**：存在多个局部最小值，对应不同的场景解释
+2. **非凸性**：由于可见性变化和材质-光照歧义
+3. **梯度稀疏性**：大部分参数对特定像素的梯度为零
+4. **尺度敏感性**：不同参数类型（几何、材质、光照）的梯度尺度相差巨大
+
+这些特性要求专门的优化策略，如自适应学习率、预条件器和多尺度方法。
 
 ## 12.2 可微光线追踪
 
@@ -112,6 +183,20 @@ $$\frac{\partial G}{\partial \boldsymbol{\theta}} + \frac{\partial G}{\partial t
 
 $$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\boldsymbol{d} \cdot \nabla_x F} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\partial F/\partial t}$$
 
+**几何解释与退化情况**
+
+从几何角度，分母 $\boldsymbol{d} \cdot \nabla_x F$ 表示光线方向与表面法线的点积（缩放后）。当此值接近零时：
+
+1. **掠射情况**：光线几乎平行于表面，$|\boldsymbol{d} \cdot \nabla_x F| \ll 1$
+2. **曲率奇异**：在高曲率区域，法线变化剧烈
+3. **参数奇异**：某些参数化在特定点退化（如球坐标的极点）
+
+为处理退化，我们引入正则化：
+
+$$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\boldsymbol{d} \cdot \nabla_x F + \epsilon \|\nabla_x F\|}$$
+
+其中 $\epsilon \sim 10^{-6}$ 提供数值稳定性，同时保持物理意义。
+
 **交点位置的全导数**
 
 交点 $\boldsymbol{x}^* = \boldsymbol{o} + t^*\boldsymbol{d}$ 的导数使用链式法则：
@@ -122,6 +207,17 @@ $$\frac{\partial \boldsymbol{x}^*}{\partial \boldsymbol{\theta}} = \frac{\partia
 - 若 $\boldsymbol{\theta}$ 仅影响表面：$\frac{\partial \boldsymbol{o}}{\partial \boldsymbol{\theta}} = \frac{\partial \boldsymbol{d}}{\partial \boldsymbol{\theta}} = 0$
 - 若 $\boldsymbol{\theta}$ 包含相机参数：需要考虑光线的变化
 
+**高阶导数与曲率效应**
+
+二阶导数揭示了曲率对交点的影响：
+
+$$\frac{\partial^2 t^*}{\partial \boldsymbol{\theta}^2} = -\frac{1}{\boldsymbol{d} \cdot \nabla F}\left[\frac{\partial^2 F}{\partial \boldsymbol{\theta}^2} - \frac{\partial t^*}{\partial \boldsymbol{\theta}} \otimes \frac{\partial}{\partial \boldsymbol{\theta}}(\boldsymbol{d} \cdot \nabla F)\right]$$
+
+这在优化中用于：
+1. **Newton 方法**：需要 Hessian 信息
+2. **曲率感知步长**：在高曲率区域减小步长
+3. **置信区域方法**：二阶近似的有效范围
+
 **数值稳定性考虑**
 
 当 $\boldsymbol{d} \cdot \nabla F \approx 0$（掠射角度）时，导数计算不稳定。实际实现中使用：
@@ -129,6 +225,11 @@ $$\frac{\partial \boldsymbol{x}^*}{\partial \boldsymbol{\theta}} = \frac{\partia
 $$\frac{\partial t^*}{\partial \boldsymbol{\theta}} = -\frac{\partial F/\partial \boldsymbol{\theta}}{\max(\boldsymbol{d} \cdot \nabla F, \epsilon)}$$
 
 其中 $\epsilon \sim 10^{-6}$ 避免除零。
+
+更精细的处理使用自适应正则化：
+$$\epsilon_{\text{adaptive}} = \epsilon_0 \cdot \max(1, \|\nabla^2 F\| \cdot \Delta t)$$
+
+其中 $\Delta t$ 是光线步长，$\|\nabla^2 F\|$ 估计局部曲率。
 
 ### 12.2.2 表面法线的微分
 
@@ -145,6 +246,18 @@ $$\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} = \frac{\partial}
 $$\frac{\partial \boldsymbol{n}}{\partial \boldsymbol{\theta}} = \frac{1}{|\nabla F|}\left(\boldsymbol{I} - \boldsymbol{n} \otimes \boldsymbol{n}\right)\frac{\partial \nabla F}{\partial \boldsymbol{\theta}}$$
 
 其中 $(\boldsymbol{I} - \boldsymbol{n} \otimes \boldsymbol{n})$ 是到切平面的投影算子。
+
+**几何意义与 Weingarten 映射**
+
+法线导数与微分几何中的 Weingarten 映射（形状算子）密切相关。对于参数曲面 $\boldsymbol{x}(u,v)$，Weingarten 映射定义为：
+
+$$\mathcal{W} = -d\boldsymbol{n} = \begin{bmatrix} \frac{\partial \boldsymbol{n}}{\partial u} & \frac{\partial \boldsymbol{n}}{\partial v} \end{bmatrix}$$
+
+主曲率 $\kappa_1, \kappa_2$ 是 $\mathcal{W}$ 的特征值。当参数 $\boldsymbol{\theta}$ 改变时，曲率的变化为：
+
+$$\frac{\partial \kappa_i}{\partial \boldsymbol{\theta}} = \boldsymbol{e}_i^T \frac{\partial \mathcal{W}}{\partial \boldsymbol{\theta}} \boldsymbol{e}_i$$
+
+其中 $\boldsymbol{e}_i$ 是主方向。这解释了为什么高曲率区域的法线对参数变化更敏感。
 
 **Hessian 矩阵的计算**
 
