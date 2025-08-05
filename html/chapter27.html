@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第27章：量子光学基础</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class="active"><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="27">第27章：量子光学基础</h1>
+<h2 id="_1">章节大纲</h2>
+<ol>
+<li><strong>开篇与学习目标</strong></li>
+<li><strong>光的量子化</strong>
+   - 从经典电磁场到量子化场
+   - 光子的产生与湮灭算符
+   - Fock态与光子数态
+   - 真空态与零点能</li>
+<li><strong>相干态与压缩态</strong>
+   - 相干态的定义与性质
+   - 位移算符与相干态生成
+   - 压缩态与压缩算符
+   - 最小不确定性态</li>
+<li><strong>光子统计</strong>
+   - 光子计数分布
+   - 泊松分布、超泊松与亚泊松光
+   - Mandel Q参数
+   - 光子聚束与反聚束</li>
+<li><strong>二阶相干函数g^(2)</strong>
+   - 强度关联函数
+   - Hanbury Brown-Twiss实验
+   - g^(2)的物理意义
+   - 经典与量子光的g^(2)界限</li>
+<li><strong>量子噪声与散粒噪声</strong>
+   - 散粒噪声的量子起源
+   - 标准量子极限
+   - 压缩态降噪
+   - 噪声谱密度</li>
+<li><strong>本章小结</strong></li>
+<li><strong>练习题</strong></li>
+<li><strong>常见陷阱与错误</strong></li>
+<li><strong>最佳实践检查清单</strong></li>
+</ol>
+<hr />
+<h2 id="_2">开篇段落</h2>
+<p>本章介绍量子光学的基础概念，为理解现代光学现象和量子成像技术奠定基础。我们将从光场的量子化开始，探讨相干态、压缩态等量子光态的数学描述，深入研究光子统计特性和量子关联，最后讨论量子噪声的物理起源及其在精密测量中的影响。这些概念不仅对理解量子光学实验至关重要，也为下一章的量子成像与计算提供必要的理论工具。</p>
+<h3 id="_3">学习目标</h3>
+<p>完成本章后，您将能够：</p>
+<ol>
+<li>推导光场的量子化过程，理解光子的粒子性描述</li>
+<li>计算相干态和压缩态的量子特性，包括不确定性关系</li>
+<li>分析不同光源的光子统计分布，区分经典光与非经典光</li>
+<li>使用二阶相干函数g^(2)表征光场的量子特性</li>
+<li>评估量子噪声对测量精度的影响，理解标准量子极限</li>
+</ol>
+<hr />
+<h2 id="271">27.1 光的量子化</h2>
+<h3 id="2711">27.1.1 从经典到量子</h3>
+<h4 id="_4">经典电磁场的能量</h4>
+<p>经典电磁场的能量密度包含电场和磁场贡献：
+$$u_{em} = \frac{1}{2}\left[\epsilon_0 E^2(r,t) + \frac{1}{\mu_0}B^2(r,t)\right]$$
+总能量通过空间积分得到：
+$$H_{classical} = \int d^3r \, u_{em} = \frac{1}{2}\int d^3r \left[\epsilon_0 E^2(r,t) + \frac{1}{\mu_0}B^2(r,t)\right]$$
+这个能量是连续的，可以取任意值。然而，Planck的黑体辐射理论暗示电磁场能量应该是量子化的。</p>
+<h4 id="_5">模式展开</h4>
+<p>在有限体积$V$的谐振腔中，满足边界条件的电磁场可以展开为正交模式的叠加。对于立方腔（边长$L$），完美导体边界条件要求：
+$$\mathbf{E}_{\parallel}|_{boundary} = 0, \quad \mathbf{B}_{\perp}|_{boundary} = 0$$
+这导致离散的本征模式，由波矢$\mathbf{k} = \frac{2\pi}{L}(n_x, n_y, n_z)$标记，其中$n_i$为正整数。每个$\mathbf{k}$对应频率$\omega_k = c|\mathbf{k}|$。</p>
+<h4 id="_6">矢势的选择</h4>
+<p>在Coulomb规范下（$\nabla \cdot \mathbf{A} = 0$），标势$\Phi = 0$，电磁场完全由矢势描述。矢势展开式：
+$$\mathbf{A}(r,t) = \sum_{k,s} \sqrt{\frac{\hbar}{2\epsilon_0\omega_k V}} \epsilon_{k,s} \left[a_{k,s}(t)e^{i\mathbf{k} \cdot \mathbf{r}} + a_{k,s}^*(t)e^{-i\mathbf{k} \cdot \mathbf{r}}\right]$$
+其中：</p>
+<ul>
+<li>$s=1,2$标记两个正交偏振方向</li>
+<li>$\epsilon_{k,s}$是单位偏振矢量，满足$\epsilon_{k,s} \cdot \mathbf{k} = 0$（横波条件）</li>
+<li>$\epsilon_{k,1} \cdot \epsilon_{k,2} = 0$（正交性）</li>
+<li>$\epsilon_{k,1} \times \epsilon_{k,2} = \mathbf{k}/|\mathbf{k}|$（右手系）</li>
+</ul>
+<p>归一化因子$\sqrt{\frac{\hbar}{2\epsilon_0\omega_k V}}$的选择将在量子化后变得清晰。</p>
+<h4 id="_7">电场和磁场</h4>
+<p>电场和磁场由矢势导出：
+$$\mathbf{E} = -\frac{\partial \mathbf{A}}{\partial t}, \quad \mathbf{B} = \nabla \times \mathbf{A}$$
+代入矢势展开式，并假设时间依赖为$a_{k,s}(t) = a_{k,s}e^{-i\omega_k t}$：
+$$\mathbf{E}(r,t) = i\sum_{k,s} \sqrt{\frac{\hbar\omega_k}{2\epsilon_0 V}} \epsilon_{k,s} \left[a_{k,s}e^{i(\mathbf{k} \cdot \mathbf{r} - \omega_k t)} - a_{k,s}^*e^{-i(\mathbf{k} \cdot \mathbf{r} - \omega_k t)}\right]$$</p>
+<p>$$\mathbf{B}(r,t) = i\sum_{k,s} \sqrt{\frac{\hbar}{2\epsilon_0\omega_k V}} (\mathbf{k} \times \epsilon_{k,s}) \left[a_{k,s}e^{i(\mathbf{k} \cdot \mathbf{r} - \omega_k t)} - a_{k,s}^*e^{-i(\mathbf{k} \cdot \mathbf{r} - \omega_k t)}\right]$$</p>
+<h4 id="_8">经典哈密顿量的模式表示</h4>
+<p>将场的模式展开代入经典哈密顿量，利用模式的正交性：
+$$\int_V d^3r \, e^{i(\mathbf{k} - \mathbf{k}') \cdot \mathbf{r}} = V\delta_{\mathbf{k},\mathbf{k}'}$$</p>
+<p>$$\epsilon_{k,s} \cdot \epsilon_{k,s'} = \delta_{s,s'}, \quad (\mathbf{k} \times \epsilon_{k,s}) \cdot (\mathbf{k} \times \epsilon_{k,s'}) = k^2\delta_{s,s'}$$
+经过计算得到：
+$$H_{classical} = \sum_{k,s} \hbar\omega_k |a_{k,s}|^2$$
+这正是无穷多个谐振子的能量之和，每个模式$(k,s)$对应一个频率为$\omega_k$的谐振子。</p>
+<h3 id="2712">27.1.2 量子化过程</h3>
+<h4 id="_9">正则变量的识别</h4>
+<p>正则量子化要求识别共轭变量对。从经典谐振子类比，对于每个模式$(k,s)$，我们定义：</p>
+<ul>
+<li>广义坐标：$q_{k,s} = \frac{1}{\sqrt{2}}(a_{k,s} + a_{k,s}^*)$</li>
+<li>广义动量：$p_{k,s} = \frac{i}{\sqrt{2\omega_k}}(a_{k,s}^* - a_{k,s})$</li>
+</ul>
+<p>这些变量是实数，满足经典泊松括号：
+$${q_{k,s}, p_{k',s'}} = \delta_{k,k'}\delta_{s,s'}$$
+可以验证经典哈密顿量表示为：
+$$H_{classical} = \sum_{k,s} \frac{1}{2}[\omega_k^2 q_{k,s}^2 + p_{k,s}^2]$$
+这确认了每个模式确实是一个谐振子。</p>
+<h4 id="_10">正则量子化</h4>
+<p>量子化时，将泊松括号替换为对易子：
+$$[\hat{q}_{k,s}, \hat{p}_{k',s'}] = i\hbar\delta_{k,k'}\delta_{s,s'}$$
+所有其他对易子为零：
+$$[\hat{q}_{k,s}, \hat{q}_{k',s'}] = [\hat{p}_{k,s}, \hat{p}_{k',s'}] = 0$$</p>
+<h4 id="_11">产生湮灭算符</h4>
+<p>引入算符：
+$$\hat{a}_{k,s} = \sqrt{\frac{\omega_k}{2\hbar}}\hat{q}_{k,s} + \frac{i}{\sqrt{2\hbar\omega_k}}\hat{p}_{k,s}$$
+$$\hat{a}_{k,s}^\dagger = \sqrt{\frac{\omega_k}{2\hbar}}\hat{q}_{k,s} - \frac{i}{\sqrt{2\hbar\omega_k}}\hat{p}_{k,s}$$
+反过来：
+$$\hat{q}_{k,s} = \sqrt{\frac{\hbar}{2\omega_k}}(\hat{a}_{k,s} + \hat{a}_{k,s}^\dagger)$$
+$$\hat{p}_{k,s} = i\sqrt{\frac{\hbar\omega_k}{2}}(\hat{a}_{k,s}^\dagger - \hat{a}_{k,s})$$</p>
+<h4 id="_12">对易关系</h4>
+<p>利用$[\hat{q}, \hat{p}] = i\hbar$，可以导出：
+$$[\hat{a}_{k,s}, \hat{a}_{k',s'}^\dagger] = \delta_{k,k'}\delta_{s,s'}$$
+$$[\hat{a}_{k,s}, \hat{a}_{k',s'}] = [\hat{a}_{k,s}^\dagger, \hat{a}_{k',s'}^\dagger] = 0$$
+这些是玻色子的标准对易关系。</p>
+<h4 id="_13">量子哈密顿量</h4>
+<p>将正则变量的算符表示代入哈密顿量：
+$$\hat{H} = \sum_{k,s} \frac{1}{2}[\omega_k^2 \hat{q}_{k,s}^2 + \hat{p}_{k,s}^2]$$
+使用产生湮灭算符表示：
+$$\hat{q}_{k,s}^2 = \frac{\hbar}{2\omega_k}(\hat{a}_{k,s} + \hat{a}_{k,s}^\dagger)^2$$
+$$\hat{p}_{k,s}^2 = -\frac{\hbar\omega_k}{2}(\hat{a}_{k,s} - \hat{a}_{k,s}^\dagger)^2$$
+展开并利用对易关系$[\hat{a}, \hat{a}^\dagger] = 1$：
+$$\hat{H}_{k,s} = \frac{\hbar\omega_k}{4}[(\hat{a}_{k,s} + \hat{a}_{k,s}^\dagger)^2 - (\hat{a}_{k,s} - \hat{a}_{k,s}^\dagger)^2]$$
+$$= \frac{\hbar\omega_k}{2}[\hat{a}_{k,s}\hat{a}_{k,s}^\dagger + \hat{a}_{k,s}^\dagger\hat{a}_{k,s}]$$
+$$= \hbar\omega_k\left(\hat{a}_{k,s}^\dagger\hat{a}_{k,s} + \frac{1}{2}\right)$$
+总哈密顿量：
+$$\hat{H} = \sum_{k,s} \hbar\omega_k\left(\hat{a}_{k,s}^\dagger\hat{a}_{k,s} + \frac{1}{2}\right)$$</p>
+<h4 id="_14">光子数算符</h4>
+<p>定义光子数算符：
+$$\hat{n}_{k,s} = \hat{a}_{k,s}^\dagger\hat{a}_{k,s}$$
+哈密顿量简化为：
+$$\hat{H} = \sum_{k,s} \hbar\omega_k\left(\hat{n}_{k,s} + \frac{1}{2}\right)$$
+每个模式的能量量子化为$\hbar\omega_k$的整数倍，加上零点能$\hbar\omega_k/2$。</p>
+<h3 id="2713-fock">27.1.3 Fock态</h3>
+<h4 id="_15">真空态</h4>
+<p>定义真空态$|0\rangle$为所有模式的基态：
+$$\hat{a}_{k,s}|0\rangle = 0, \quad \forall k,s$$
+真空态是所有模式都处于最低能量状态的态。它满足：
+$$\hat{n}_{k,s}|0\rangle = 0, \quad \forall k,s$$
+但真空能量不为零：
+$$E_{vacuum} = \langle 0|\hat{H}|0\rangle = \sum_{k,s} \frac{\hbar\omega_k}{2}$$</p>
+<h4 id="fock">单模Fock态</h4>
+<p>对于单个模式$(k,s)$，Fock态（光子数态）通过反复作用产生算符构造：
+$$|n\rangle_{k,s} = \frac{(\hat{a}_{k,s}^\dagger)^n}{\sqrt{n!}}|0\rangle$$
+归一化因子$1/\sqrt{n!}$确保$\langle n|n\rangle = 1$。可以通过数学归纳法证明：
+$$\hat{a}_{k,s}^\dagger|n\rangle_{k,s} = \sqrt{n+1}|n+1\rangle_{k,s}$$
+$$\hat{a}_{k,s}|n\rangle_{k,s} = \sqrt{n}|n-1\rangle_{k,s}$$
+这些关系可记忆为：</p>
+<ul>
+<li>$\hat{a}^\dagger$产生一个光子，系数$\sqrt{n+1}$反映了玻色增强</li>
+<li>$\hat{a}$湮灭一个光子，系数$\sqrt{n}$确保$\hat{a}|0\rangle = 0$</li>
+</ul>
+<h4 id="fock_1">多模Fock态</h4>
+<p>一般的多模Fock态：
+$$|{n_{k,s}}\rangle = \prod_{k,s} \frac{(\hat{a}_{k,s}^\dagger)^{n_{k,s}}}{\sqrt{n_{k,s}!}}|0\rangle$$
+简记为$|n_1, n_2, ...\rangle$，其中每个$n_i$表示模式$i$中的光子数。</p>
+<h4 id="_16">算符作用规则</h4>
+<p>光子数算符的本征方程：
+$$\hat{n}_{k,s}|n_{k,s}\rangle = n_{k,s}|n_{k,s}\rangle$$
+利用$\hat{n} = \hat{a}^\dagger\hat{a}$和对易关系，可以导出：
+$$\hat{n}\hat{a}^\dagger|n\rangle = \hat{a}^\dagger(\hat{n}+1)|n\rangle = (n+1)\hat{a}^\dagger|n\rangle$$
+这确认了$\hat{a}^\dagger|n\rangle \propto |n+1\rangle$。</p>
+<h4 id="_17">能量本征值</h4>
+<p>Fock态是哈密顿量的本征态：
+$$\hat{H}|{n_{k,s}}\rangle = E_{{n_{k,s}}}|{n_{k,s}}\rangle$$
+其中能量本征值：
+$$E_{{n_{k,s}}} = \sum_{k,s} \hbar\omega_k\left(n_{k,s} + \frac{1}{2}\right)$$
+能级间隔：</p>
+<ul>
+<li>单光子激发：$\Delta E = \hbar\omega_k$</li>
+<li>多光子激发：$\Delta E = \sum_{k,s} m_{k,s}\hbar\omega_k$</li>
+</ul>
+<h4 id="fock_2">Fock态的正交完备性</h4>
+<p>正交性：
+$$\langle{n_{k,s}}|{n'_{k,s}}\rangle = \prod_{k,s} \delta_{n_{k,s},n'_{k,s}}$$
+完备性：
+$$\sum_{{n_{k,s}}} |{n_{k,s}}\rangle\langle{n_{k,s}}| = \mathbb{I}$$
+任意态可展开：
+$$|\psi\rangle = \sum_{{n_{k,s}}} c_{{n_{k,s}}}|{n_{k,s}}\rangle$$
+其中$c_{{n_{k,s}}} = \langle{n_{k,s}}|\psi\rangle$是概率幅。</p>
+<h3 id="2714">27.1.4 真空涨落</h3>
+<h4 id="_18">零点能问题</h4>
+<p>真空态虽然没有光子，但具有非零能量：
+$$E_0 = \langle 0|\hat{H}|0\rangle = \sum_{k,s} \frac{\hbar\omega_k}{2}$$
+这个和发散，因为模式数无穷。处理方法：</p>
+<ol>
+<li><strong>正规序</strong>：重定义哈密顿量$:\hat{H}: = \sum_{k,s} \hbar\omega_k\hat{a}_{k,s}^\dagger\hat{a}_{k,s}$</li>
+<li><strong>物理截断</strong>：认识到实际系统有最高频率$\omega_{max}$</li>
+<li><strong>重整化</strong>：只有能量差有物理意义</li>
+</ol>
+<h4 id="_19">场的真空期望值</h4>
+<p>电场算符的真空期望值为零：
+$$\langle 0|\hat{\mathbf{E}}(r,t)|0\rangle = 0$$
+这是因为$\hat{\mathbf{E}} \propto (\hat{a} - \hat{a}^\dagger)$，而$\langle 0|\hat{a}|0\rangle = \langle 0|\hat{a}^\dagger|0\rangle = 0$。</p>
+<p>但均方涨落非零。对于单模：
+$$\langle 0|\hat{E}_{k,s}^2|0\rangle = \frac{\hbar\omega_k}{2\epsilon_0 V}$$
+总的真空涨落：
+$$\langle 0|\hat{\mathbf{E}}^2(r,t)|0\rangle = \sum_{k,s} \frac{\hbar\omega_k}{2\epsilon_0 V}|\epsilon_{k,s}|^2$$</p>
+<h4 id="_20">真空涨落的物理图像</h4>
+<p>真空涨落可理解为：</p>
+<ul>
+<li><strong>时间-能量不确定性</strong>：$\Delta E \Delta t \geq \hbar/2$允许短时间内能量涨落</li>
+<li><strong>虚粒子</strong>：光子可以短暂出现又消失，只要满足不确定性关系</li>
+<li><strong>量子零点运动</strong>：类似谐振子的零点振动</li>
+</ul>
+<h4 id="_21">可观测的真空效应</h4>
+<ol>
+<li><strong>Casimir效应</strong></li>
+</ol>
+<p>两平行导体板（间距$d$）改变了允许的模式：
+$$k_z = \frac{n\pi}{d}, \quad n = 1,2,3,...$$
+真空能依赖于$d$：
+$$E_{Casimir}(d) = -\frac{\pi^2\hbar c}{720d^3}A$$
+产生吸引力：
+$$F = -\frac{\partial E}{\partial d} = -\frac{\pi^2\hbar c}{240d^4}A$$</p>
+<ol start="2">
+<li><strong>Lamb位移</strong></li>
+</ol>
+<p>原子能级因与真空场耦合而移动。对于氢原子2S₁/₂和2P₁/₂能级：
+$$\Delta E_{Lamb} \approx 1057 \text{ MHz}$$
+主要贡献来自电子位置算符与真空电场的二阶微扰。</p>
+<ol start="3">
+<li><strong>自发辐射</strong></li>
+</ol>
+<p>激发态原子的衰减率（Einstein A系数）：
+$$A_{if} = \frac{\omega_{if}^3}{3\pi\epsilon_0\hbar c^3}|\langle f|\hat{\mathbf{d}}|i\rangle|^2$$
+其中$\hat{\mathbf{d}}$是电偶极矩算符。这可以理解为真空涨落诱导的跃迁。</p>
+<h4 id="_22">真空涨落的实验验证</h4>
+<ol>
+<li><strong>Casimir力的测量</strong>：使用原子力显微镜可以精确测量</li>
+<li><strong>动态Casimir效应</strong>：快速移动的镜子可以从真空中产生真实光子</li>
+<li><strong>量子电动力学的精密测试</strong>：Lamb位移的精确测量验证了QED理论</li>
+</ol>
+<h3 id="2715">27.1.5 场的正交分量</h3>
+<h4 id="_23">正交振幅算符</h4>
+<p>定义单模场的正交振幅算符：
+$$\hat{X} = \frac{1}{\sqrt{2}}(\hat{a} + \hat{a}^\dagger), \quad \hat{P} = \frac{i}{\sqrt{2}}(\hat{a}^\dagger - \hat{a})$$
+这些算符的物理意义：</p>
+<ul>
+<li>$\hat{X}$：场的"位置"分量，对应于$\cos$相位</li>
+<li>$\hat{P}$：场的"动量"分量，对应于$\sin$相位</li>
+</ul>
+<p>反演关系：
+$$\hat{a} = \frac{1}{\sqrt{2}}(\hat{X} - i\hat{P}), \quad \hat{a}^\dagger = \frac{1}{\sqrt{2}}(\hat{X} + i\hat{P})$$</p>
+<h4 id="_24">对易关系和不确定性</h4>
+<p>这些算符满足：
+$$[\hat{X}, \hat{P}] = i$$
+导出过程：
+$$[\hat{X}, \hat{P}] = \frac{i}{2}[(\hat{a} + \hat{a}^\dagger), (\hat{a}^\dagger - \hat{a})]$$
+$$= \frac{i}{2}([\hat{a}, \hat{a}^\dagger] - [\hat{a}^\dagger, \hat{a}]) = \frac{i}{2} \cdot 2 = i$$
+对应的不确定性关系：
+$$\Delta X \Delta P \geq \frac{1}{2}$$</p>
+<h4 id="_25">真空态的正交分量</h4>
+<p>在真空态中：
+$$\langle 0|\hat{X}|0\rangle = \langle 0|\hat{P}|0\rangle = 0$$
+方差：
+$$\langle 0|\hat{X}^2|0\rangle = \frac{1}{2}\langle 0|(\hat{a} + \hat{a}^\dagger)^2|0\rangle = \frac{1}{2}\langle 0|\hat{a}\hat{a}^\dagger + \hat{a}^\dagger\hat{a}|0\rangle = \frac{1}{2}$$
+类似地：
+$$\langle 0|\hat{P}^2|0\rangle = \frac{1}{2}$$
+因此：$\Delta X = \Delta P = \frac{1}{\sqrt{2}}$，乘积$\Delta X \Delta P = \frac{1}{2}$达到最小不确定性。</p>
+<h4 id="_26">相位空间表示</h4>
+<p>在$(X,P)$相位空间中：</p>
+<ul>
+<li>真空态：以原点为中心的圆形高斯分布</li>
+<li>不确定性圆：半径$\sim 1/\sqrt{2}$</li>
+<li>面积：$\pi \Delta X \Delta P = \pi/2$（最小相空间面积）</li>
+</ul>
+<h4 id="_27">与经典场的联系</h4>
+<p>经典相干场可写为：
+$$E(t) = E_0\cos(\omega t + \phi) = E_0[\cos\phi\cos(\omega t) - \sin\phi\sin(\omega t)]$$
+定义：</p>
+<ul>
+<li>$X_{cl} = E_0\cos\phi$（同相分量）</li>
+<li>$P_{cl} = E_0\sin\phi$（正交分量）</li>
+</ul>
+<p>量子对应：
+$$\hat{E}(t) \propto \hat{X}\cos(\omega t) - \hat{P}\sin(\omega t)$$</p>
+<h4 id="_28">旋转的正交分量</h4>
+<p>更一般地，可定义任意相位的正交分量：
+$$\hat{X}_\theta = \frac{1}{\sqrt{2}}(\hat{a}e^{-i\theta} + \hat{a}^\dagger e^{i\theta})$$
+$$\hat{P}_\theta = \frac{i}{\sqrt{2}}(\hat{a}^\dagger e^{i\theta} - \hat{a}e^{-i\theta})$$
+这相当于在相位空间中旋转角度$\theta$：
+$$\begin{pmatrix} \hat{X}_\theta \ \hat{P}_\theta \end{pmatrix} = \begin{pmatrix} \cos\theta &amp; \sin\theta \ -\sin\theta &amp; \cos\theta \end{pmatrix} \begin{pmatrix} \hat{X} \ \hat{P} \end{pmatrix}$$
+对易关系保持不变：$[\hat{X}_\theta, \hat{P}_\theta] = i$。</p>
+<hr />
+<h2 id="272">27.2 相干态与压缩态</h2>
+<h3 id="2721">27.2.1 相干态定义</h3>
+<p>相干态代表了量子光学中最接近经典光的量子态。它们是湮灭算符的本征态：
+$$\hat{a}|\alpha\rangle = \alpha|\alpha\rangle$$
+其中$\alpha = |\alpha|e^{i\phi}$是复数本征值，$|\alpha|$对应经典振幅，$\phi$对应相位。</p>
+<h4 id="_29">历史背景</h4>
+<p>相干态的概念：</p>
+<ul>
+<li>1926年：Schrödinger首次研究谐振子的"最小不确定性波包"</li>
+<li>1963年：Glauber引入光场的相干态，奠定量子光学基础</li>
+<li>1964年：Sudarshan证明了任意密度算符可用相干态表示（P表示）</li>
+</ul>
+<h4 id="fock_3">Fock基展开</h4>
+<p>在光子数基下，相干态表示为：
+$$|\alpha\rangle = e^{-|\alpha|^2/2}\sum_{n=0}^{\infty}\frac{\alpha^n}{\sqrt{n!}}|n\rangle$$
+推导过程：设$|\alpha\rangle = \sum_n c_n|n\rangle$，代入本征方程：
+$$\hat{a}|\alpha\rangle = \sum_n c_n\sqrt{n}|n-1\rangle = \alpha\sum_n c_n|n\rangle$$
+比较$|n\rangle$的系数：
+$$c_n\sqrt{n+1} = \alpha c_{n+1}$$
+递推关系：$c_{n+1} = \frac{\alpha}{\sqrt{n+1}}c_n = \frac{\alpha^{n+1}}{\sqrt{(n+1)!}}c_0$</p>
+<p>归一化条件：
+$$1 = \langle\alpha|\alpha\rangle = |c_0|^2\sum_n \frac{|\alpha|^{2n}}{n!} = |c_0|^2 e^{|\alpha|^2}$$
+因此$c_0 = e^{-|\alpha|^2/2}$（选择相位为0）。</p>
+<h4 id="_30">相干态的非正交性</h4>
+<p>两个相干态的内积：
+$$\langle\alpha|\beta\rangle = e^{-\frac{|\alpha|^2+|\beta|^2}{2}}\sum_n \frac{(\alpha^<em>)^n\beta^n}{n!} = e^{-\frac{|\alpha|^2+|\beta|^2}{2}}e^{\alpha^</em>\beta}$$
+简化为：
+$$\langle\alpha|\beta\rangle = e^{-\frac{1}{2}|\alpha-\beta|^2}e^{i\text{Im}(\alpha^*\beta)}$$
+物理意义：</p>
+<ul>
+<li>重叠随距离$|\alpha-\beta|$呈高斯衰减</li>
+<li>当$|\alpha-\beta| &gt; 3$时，$|\langle\alpha|\beta\rangle|^2 &lt; 10^{-4}$（近似正交）</li>
+<li>相位因子$e^{i\text{Im}(\alpha^*\beta)}$反映了量子相位</li>
+</ul>
+<h4 id="_31">过完备性</h4>
+<p>相干态构成过完备基：
+$$\frac{1}{\pi}\int d^2\alpha |\alpha\rangle\langle\alpha| = \mathbb{I}$$
+证明：利用Fock基展开
+$$\frac{1}{\pi}\int d^2\alpha |\alpha\rangle\langle\alpha| = \frac{1}{\pi}\int d^2\alpha e^{-|\alpha|^2}\sum_{n,m}\frac{\alpha^n(\alpha^*)^m}{\sqrt{n!m!}}|n\rangle\langle m|$$
+极坐标下$\alpha = re^{i\theta}$：
+$$\int_0^{2\pi}d\theta e^{i(n-m)\theta} = 2\pi\delta_{nm}$$
+径向积分：
+$$\int_0^\infty r dr \, r^{2n}e^{-r^2} = \frac{n!}{2}$$
+因此：
+$$\frac{1}{\pi}\int d^2\alpha |\alpha\rangle\langle\alpha| = \sum_n |n\rangle\langle n| = \mathbb{I}$$</p>
+<h4 id="_32">相干态的生成</h4>
+<p>实验上产生相干态的方法：</p>
+<ol>
+<li><strong>激光输出</strong>：理想单模激光产生相干态</li>
+<li><strong>强衰减相干光</strong>：$|\alpha| \ll 1$时近似单光子源</li>
+<li><strong>位移真空态</strong>：$|\alpha\rangle = \hat{D}(\alpha)|0\rangle$</li>
+</ol>
+<h3 id="2722">27.2.2 相干态性质</h3>
+<h4 id="_33">光子统计</h4>
+<ol>
+<li>
+<p><strong>平均光子数</strong>：
+$$\langle\hat{n}\rangle = \langle\alpha|\hat{a}^\dagger\hat{a}|\alpha\rangle = |\alpha|^2$$
+推导：利用$\hat{a}|\alpha\rangle = \alpha|\alpha\rangle$
+$$\langle\hat{n}\rangle = \langle\alpha|\hat{a}^\dagger\hat{a}|\alpha\rangle = \alpha^*\alpha\langle\alpha|\alpha\rangle = |\alpha|^2$$</p>
+</li>
+<li>
+<p><strong>高阶矩</strong>：
+$$\langle\hat{n}^k\rangle = \langle\alpha|(\hat{a}^\dagger\hat{a})^k|\alpha\rangle$$
+利用正规序和$\hat{a}|\alpha\rangle = \alpha|\alpha\rangle$：
+$$\langle:\hat{n}^k:\rangle = |\alpha|^{2k}$$
+但实际的$k$阶矩包含了正规序修正。</p>
+</li>
+<li>
+<p><strong>光子数方差</strong>：
+$$\langle\hat{n}^2\rangle = \langle\alpha|\hat{n}(\hat{n}-1)+\hat{n}|\alpha\rangle = |\alpha|^4 + |\alpha|^2$$
+因此：
+$$(\Delta n)^2 = \langle\hat{n}^2\rangle - \langle\hat{n}\rangle^2 = |\alpha|^2 = \langle\hat{n}\rangle$$
+这是泊松统计的特征：方差等于平均值。</p>
+</li>
+<li>
+<p><strong>光子数分布</strong>（泊松分布）：
+$$P(n) = |\langle n|\alpha\rangle|^2 = \frac{|\alpha|^{2n}}{n!}e^{-|\alpha|^2} = \frac{\bar{n}^n}{n!}e^{-\bar{n}}$$
+其中$\bar{n} = |\alpha|^2$是平均光子数。</p>
+</li>
+</ol>
+<h4 id="_34">场的期望值</h4>
+<p>电场算符（单模）：
+$$\hat{E}(r,t) = i\sqrt{\frac{\hbar\omega}{2\epsilon_0 V}}\epsilon\left[\hat{a}e^{i(k \cdot r - \omega t)} - \hat{a}^\dagger e^{-i(k \cdot r - \omega t)}\right]$$
+期望值：
+$$\langle\alpha|\hat{E}(r,t)|\alpha\rangle = i\sqrt{\frac{\hbar\omega}{2\epsilon_0 V}}\epsilon\left[\alpha e^{i(k \cdot r - \omega t)} - \alpha^* e^{-i(k \cdot r - \omega t)}\right]$$
+设$\alpha = |\alpha|e^{i\phi}$：
+$$\langle\hat{E}(r,t)\rangle = 2\sqrt{\frac{\hbar\omega}{2\epsilon_0 V}}|\alpha|\epsilon\sin(k \cdot r - \omega t + \phi)$$
+这正是经典相干波，振幅$E_0 = 2|\alpha|\sqrt{\frac{\hbar\omega}{2\epsilon_0 V}}$。</p>
+<h4 id="_35">相位空间表示</h4>
+<p>正交分量的期望值：
+$$\langle\hat{X}\rangle = \frac{1}{\sqrt{2}}\langle\alpha|\hat{a} + \hat{a}^\dagger|\alpha\rangle = \frac{1}{\sqrt{2}}(\alpha + \alpha^<em>) = \sqrt{2}\text{Re}(\alpha)$$
+$$\langle\hat{P}\rangle = \frac{i}{\sqrt{2}}\langle\alpha|\hat{a}^\dagger - \hat{a}|\alpha\rangle = \frac{i}{\sqrt{2}}(\alpha^</em> - \alpha) = \sqrt{2}\text{Im}(\alpha)$$
+方差：
+$$(\Delta X)^2 = \langle\hat{X}^2\rangle - \langle\hat{X}\rangle^2 = \frac{1}{2}$$
+$$(\Delta P)^2 = \langle\hat{P}^2\rangle - \langle\hat{P}\rangle^2 = \frac{1}{2}$$
+相干态特征：</p>
+<ul>
+<li>最小不确定性：$\Delta X \Delta P = \frac{1}{2}$</li>
+<li>各向同性：$\Delta X = \Delta P$</li>
+<li>高斯分布：Wigner函数为高斯形</li>
+</ul>
+<h4 id="_36">时间演化</h4>
+<p>在自由演化下：
+$$|\alpha(t)\rangle = e^{-i\hat{H}t/\hbar}|\alpha(0)\rangle = e^{-i\omega t/2}|\alpha(0)e^{-i\omega t}\rangle$$
+相干态保持相干态，只是复振幅旋转：
+$$\alpha(t) = \alpha(0)e^{-i\omega t}$$
+这对应经典谐振子的运动。</p>
+<h4 id="_37">相干态的准经典性</h4>
+<p>相干态被称为"准经典态"的原因：</p>
+<ol>
+<li><strong>最小不确定性</strong>：达到海森堡极限</li>
+<li><strong>泊松光子统计</strong>：类似经典随机过程</li>
+<li><strong>场的经典行为</strong>：期望值满足经典方程</li>
+<li><strong>相位空间局域化</strong>：Wigner函数为正定高斯</li>
+<li><strong>动力学对应</strong>：演化遵循经典轨迹</li>
+</ol>
+<h3 id="2723">27.2.3 位移算符</h3>
+<p>位移算符定义：
+$$\hat{D}(\alpha) = \exp(\alpha\hat{a}^\dagger - \alpha^*\hat{a})$$</p>
+<h4 id="_38">物理意义</h4>
+<p>位移算符在相位空间中平移量子态：</p>
+<ul>
+<li>将真空态变为相干态</li>
+<li>实现相位空间的平移变换</li>
+<li>对应经典场的叠加</li>
+</ul>
+<h4 id="baker-campbell-hausdorff">Baker-Campbell-Hausdorff公式</h4>
+<p>对于两个算符$\hat{A}$和$\hat{B}$，若$[\hat{A}, \hat{B}] = c$（c数），则：
+$$e^{\hat{A}+\hat{B}} = e^{-c/2}e^{\hat{A}}e^{\hat{B}} = e^{c/2}e^{\hat{B}}e^{\hat{A}}$$
+应用于位移算符，设$\hat{A} = \alpha\hat{a}^\dagger$，$\hat{B} = -\alpha^<em>\hat{a}$：
+$$[\hat{A}, \hat{B}] = \alpha(-\alpha^</em>)[\hat{a}^\dagger, \hat{a}] = |\alpha|^2$$
+因此：
+$$\hat{D}(\alpha) = e^{-|\alpha|^2/2}e^{\alpha\hat{a}^\dagger}e^{-\alpha^<em>\hat{a}} = e^{|\alpha|^2/2}e^{-\alpha^</em>\hat{a}}e^{\alpha\hat{a}^\dagger}$$</p>
+<h4 id="_39">位移算符的基本性质</h4>
+<ol>
+<li>
+<p><strong>幺正性</strong>：
+$$\hat{D}^\dagger(\alpha) = \exp(\alpha^*\hat{a} - \alpha\hat{a}^\dagger) = \hat{D}(-\alpha)$$
+因此：$\hat{D}^\dagger(\alpha)\hat{D}(\alpha) = \hat{D}(-\alpha)\hat{D}(\alpha) = \mathbb{I}$</p>
+</li>
+<li>
+<p><strong>群性质</strong>：
+$$\hat{D}(\alpha)\hat{D}(\beta) = e^{i\text{Im}(\alpha^<em>\beta)}\hat{D}(\alpha+\beta)$$
+证明：使用BCH公式和$[\alpha\hat{a}^\dagger - \alpha^</em>\hat{a}, \beta\hat{a}^\dagger - \beta^<em>\hat{a}] = 2i\text{Im}(\alpha^</em>\beta)$</p>
+</li>
+<li>
+<p><strong>变换性质</strong>：</p>
+</li>
+</ol>
+<p>利用$e^{\hat{A}}\hat{B}e^{-\hat{A}} = \hat{B} + [\hat{A}, \hat{B}] + \frac{1}{2!}[\hat{A}, [\hat{A}, \hat{B}]] + ...$</p>
+<p>对于$\hat{A} = \alpha\hat{a}^\dagger - \alpha^<em>\hat{a}$：
+$$[\hat{A}, \hat{a}] = -\alpha, \quad [\hat{A}, \hat{a}^\dagger] = \alpha^</em>$$
+高阶对易子为零，因此：
+$$\hat{D}^\dagger(\alpha)\hat{a}\hat{D}(\alpha) = \hat{a} + \alpha$$
+   $$\hat{D}^\dagger(\alpha)\hat{a}^\dagger\hat{D}(\alpha) = \hat{a}^\dagger + \alpha^*$$</p>
+<ol start="4">
+<li><strong>生成相干态</strong>：
+$$|\alpha\rangle = \hat{D}(\alpha)|0\rangle$$
+验证：
+$$\hat{a}|\alpha\rangle = \hat{a}\hat{D}(\alpha)|0\rangle = \hat{D}(\alpha)[\hat{D}^\dagger(\alpha)\hat{a}\hat{D}(\alpha)]|0\rangle$$
+   $$= \hat{D}(\alpha)(\hat{a} + \alpha)|0\rangle = \alpha\hat{D}(\alpha)|0\rangle = \alpha|\alpha\rangle$$</li>
+</ol>
+<h4 id="_40">位移算符的表示</h4>
+<ol>
+<li>
+<p><strong>Fock基表示</strong>：
+$$\langle n|\hat{D}(\alpha)|m\rangle = \sqrt{\frac{m!}{n!}}e^{-|\alpha|^2/2}\alpha^{n-m}L_m^{n-m}(|\alpha|^2)$$
+其中$L_m^{n-m}$是关联Laguerre多项式（$n \geq m$时）。</p>
+</li>
+<li>
+<p><strong>相干态表示</strong>：
+$$\hat{D}(\alpha) = \int \frac{d^2\beta}{\pi}|\beta+\alpha\rangle\langle\beta|$$</p>
+</li>
+</ol>
+<h4 id="_41">实验实现</h4>
+<p>位移操作的实验方法：</p>
+<ol>
+<li><strong>经典场注入</strong>：将弱相干态与强局域振荡器混合</li>
+<li><strong>参量放大器</strong>：使用简并参量下转换</li>
+<li><strong>电光调制</strong>：通过Pockels效应实现相位空间位移</li>
+</ol>
+<h3 id="2724">27.2.4 压缩态</h3>
+<p>压缩算符定义：
+$$\hat{S}(\xi) = \exp\left[\frac{1}{2}(\xi^*\hat{a}^2 - \xi\hat{a}^{\dagger 2})\right]$$
+其中$\xi = re^{i\theta}$，$r \geq 0$是压缩强度，$\theta$是压缩方向。</p>
+<h4 id="_42">物理起源</h4>
+<p>压缩态的产生机制：</p>
+<ol>
+<li><strong>参量下转换</strong>：二阶非线性过程$\chi^{(2)}$</li>
+<li><strong>四波混频</strong>：三阶非线性过程$\chi^{(3)}$</li>
+<li><strong>原子系综</strong>：集体自旋压缩</li>
+<li><strong>光机械系统</strong>：辐射压力耦合</li>
+</ol>
+<h4 id="_43">压缩算符的李代数结构</h4>
+<p>定义$SU(1,1)$生成元：
+$$\hat{K}_+ = \frac{1}{2}\hat{a}^{\dagger 2}, \quad \hat{K}_- = \frac{1}{2}\hat{a}^2, \quad \hat{K}_0 = \frac{1}{2}(\hat{a}^\dagger\hat{a} + \frac{1}{2})$$
+对易关系：
+$$[\hat{K}_-, \hat{K}_+] = 2\hat{K}_0, \quad [\hat{K}_0, \hat{K}_\pm] = \pm\hat{K}_\pm$$
+压缩算符表示为：
+$$\hat{S}(\xi) = \exp(\xi^*\hat{K}_- - \xi\hat{K}_+)$$</p>
+<h4 id="_44">压缩算符的分解</h4>
+<p>利用$SU(1,1)$的BCH公式：
+$$\hat{S}(\xi) = \exp\left[\frac{\tanh r}{2}e^{-i\theta}\hat{a}^{\dagger 2}\right]\exp\left[-\ln(\cosh r)(\hat{a}^\dagger\hat{a} + \frac{1}{2})\right]\exp\left[-\frac{\tanh r}{2}e^{i\theta}\hat{a}^2\right]$$
+这个分解对计算矩阵元很有用。</p>
+<h4 id="_45">压缩真空态</h4>
+<p>压缩真空态：
+$$|\xi\rangle = \hat{S}(\xi)|0\rangle$$
+Fock基展开：
+$$|\xi\rangle = \frac{1}{\sqrt{\cosh r}}\sum_{n=0}^{\infty}\frac{\sqrt{(2n)!}}{2^n n!}(-e^{i\theta}\tanh r)^n|2n\rangle$$
+推导要点：</p>
+<ul>
+<li>$\hat{a}^2|0\rangle = 0$使得$\exp[-\frac{\tanh r}{2}e^{i\theta}\hat{a}^2]|0\rangle = |0\rangle$</li>
+<li>中间项贡献因子$(\cosh r)^{-1/2}$</li>
+<li>$\hat{a}^{\dagger 2}$只产生偶数光子态</li>
+</ul>
+<p>物理特征：</p>
+<ol>
+<li><strong>双光子关联</strong>：只有偶数光子态</li>
+<li><strong>平均光子数</strong>：$\langle\hat{n}\rangle = \sinh^2 r$</li>
+<li><strong>光子数方差</strong>：$(\Delta n)^2 = 2\sinh^2 r \cosh 2r$（超泊松）</li>
+</ol>
+<h4 id="_46">压缩相干态</h4>
+<p>一般的压缩相干态：
+$$|\alpha,\xi\rangle = \hat{D}(\alpha)\hat{S}(\xi)|0\rangle$$
+注意算符顺序。另一种定义：
+$$|\alpha,\xi\rangle' = \hat{S}(\xi)\hat{D}(\beta)|0\rangle$$
+其中$\beta$与$\alpha$的关系由Bogoliubov变换确定。</p>
+<h4 id="_47">压缩变换下的算符</h4>
+<p>Bogoliubov变换：
+$$\hat{S}^\dagger(\xi)\hat{a}\hat{S}(\xi) = \mu\hat{a} - \nu\hat{a}^\dagger$$
+$$\hat{S}^\dagger(\xi)\hat{a}^\dagger\hat{S}(\xi) = \mu^<em>\hat{a}^\dagger - \nu^</em>\hat{a}$$
+其中：
+$$\mu = \cosh r, \quad \nu = e^{i\theta}\sinh r$$
+满足$|\mu|^2 - |\nu|^2 = 1$（保持对易关系）。</p>
+<h4 id="_48">双模压缩</h4>
+<p>双模压缩算符：
+$$\hat{S}_{12}(\xi) = \exp[\xi^*\hat{a}_1\hat{a}_2 - \xi\hat{a}_1^\dagger\hat{a}_2^\dagger]$$
+双模压缩真空态（EPR态）：
+$$|\xi\rangle_{12} = \frac{1}{\cosh r}\sum_{n=0}^{\infty}(-e^{i\theta}\tanh r)^n|n\rangle_1|n\rangle_2$$
+特性：</p>
+<ul>
+<li>完美的光子数关联：$\langle\hat{n}_1\hat{n}_2\rangle - \langle\hat{n}_1\rangle\langle\hat{n}_2\rangle = \sinh^2 r \cosh^2 r$</li>
+<li>连续变量纠缠：正交分量的EPR关联</li>
+<li>量子通信资源：用于量子隐形传态和密集编码</li>
+</ul>
+<h3 id="2725">27.2.5 压缩态的不确定性</h3>
+<h4 id="_49">正交分量的变换</h4>
+<p>在压缩变换下：
+$$\hat{S}^\dagger(\xi)\hat{a}\hat{S}(\xi) = \cosh r \cdot \hat{a} - e^{i\theta}\sinh r \cdot \hat{a}^\dagger$$
+定义旋转的正交分量：
+$$\hat{X}_\phi = \frac{1}{\sqrt{2}}(\hat{a}e^{-i\phi} + \hat{a}^\dagger e^{i\phi})$$
+$$\hat{P}_\phi = \frac{i}{\sqrt{2}}(\hat{a}^\dagger e^{i\phi} - \hat{a}e^{-i\phi})$$
+对于压缩真空态，当$\phi = \theta/2$时：
+$$(\Delta X_{\theta/2})^2 = \frac{1}{2}e^{-2r}, \quad (\Delta P_{\theta/2})^2 = \frac{1}{2}e^{2r}$$
+不确定性乘积：$\Delta X_{\theta/2} \Delta P_{\theta/2} = \frac{1}{2}$（最小不确定性）</p>
+<h4 id="_50">压缩的物理意义</h4>
+<ol>
+<li><strong>噪声重分配</strong>：压缩不减少总噪声，而是将噪声从一个正交分量转移到另一个</li>
+<li><strong>量子优势</strong>：在压缩方向上，噪声低于真空涨落（散粒噪声极限）</li>
+<li><strong>应用</strong>：
+   - 引力波探测（LIGO使用压缩光提高灵敏度）
+   - 量子密钥分发（连续变量QKD）
+   - 超分辨成像</li>
+</ol>
+<h4 id="_51">双模压缩</h4>
+<p>双模压缩算符：
+$$\hat{S}_{12}(\xi) = \exp[\xi^*\hat{a}_1\hat{a}_2 - \xi\hat{a}_1^\dagger\hat{a}_2^\dagger]$$
+产生纠缠的双模压缩真空态：
+$$|\xi\rangle_{12} = \frac{1}{\cosh r}\sum_{n=0}^{\infty}(-e^{i\theta}\tanh r)^n|n\rangle_1|n\rangle_2$$
+这是Einstein-Podolsky-Rosen (EPR)态的一种实现。</p>
+<hr />
+<h2 id="273">27.3 光子统计</h2>
+<h3 id="2731">27.3.1 光子计数分布</h3>
+<p>光子统计描述了在给定时间窗口内探测到特定数目光子的概率。对于一般的量子态$\hat{\rho}$，光子数分布为：
+$$P(n) = \langle n|\hat{\rho}|n\rangle = \text{Tr}(\hat{\rho}|n\rangle\langle n|)$$</p>
+<h4 id="_52">矩和累积量</h4>
+<p>光子数的各阶矩：
+$$\langle n^k\rangle = \text{Tr}(\hat{\rho}\hat{n}^k) = \sum_{n=0}^{\infty} n^k P(n)$$
+特别重要的是前两阶矩：</p>
+<ul>
+<li>一阶矩（平均值）：$\langle n\rangle = \text{Tr}(\hat{\rho}\hat{a}^\dagger\hat{a})$</li>
+<li>二阶矩：$\langle n^2\rangle = \text{Tr}(\hat{\rho}\hat{a}^\dagger\hat{a}\hat{a}^\dagger\hat{a})$</li>
+</ul>
+<p>利用对易关系$[\hat{a}, \hat{a}^\dagger] = 1$：
+$$\langle n^2\rangle = \langle\hat{a}^\dagger\hat{a}^\dagger\hat{a}\hat{a}\rangle + \langle\hat{n}\rangle$$</p>
+<h4 id="_53">阶乘矩</h4>
+<p>阶乘矩在光子统计中特别有用：
+$$\langle n^{(k)}\rangle = \langle n(n-1)...(n-k+1)\rangle = \langle\hat{a}^{\dagger k}\hat{a}^k\rangle$$
+例如：</p>
+<ul>
+<li>$\langle n^{(1)}\rangle = \langle n\rangle$</li>
+<li>$\langle n^{(2)}\rangle = \langle n(n-1)\rangle = \langle\hat{a}^\dagger\hat{a}^\dagger\hat{a}\hat{a}\rangle$</li>
+</ul>
+<h3 id="2732">27.3.2 典型光源的统计分布</h3>
+<h4 id="_54">相干光（泊松分布）</h4>
+<p>对于相干态$|\alpha\rangle$：
+$$P(n) = \frac{|\alpha|^{2n}}{n!}e^{-|\alpha|^2} = \frac{\bar{n}^n}{n!}e^{-\bar{n}}$$
+其中$\bar{n} = |\alpha|^2$。</p>
+<p>统计特性：</p>
+<ul>
+<li>平均值：$\langle n\rangle = \bar{n}$</li>
+<li>方差：$(\Delta n)^2 = \bar{n}$</li>
+<li>所有阶乘矩：$\langle n^{(k)}\rangle = \bar{n}^k$</li>
+</ul>
+<h4 id="-">热光（玻色-爱因斯坦分布）</h4>
+<p>热平衡光场的光子数分布：
+$$P(n) = \frac{\bar{n}^n}{(1+\bar{n})^{n+1}}$$
+这是几何分布，源于黑体辐射的量子统计。</p>
+<p>统计特性：</p>
+<ul>
+<li>平均值：$\langle n\rangle = \bar{n}$</li>
+<li>方差：$(\Delta n)^2 = \bar{n} + \bar{n}^2$</li>
+<li>二阶阶乘矩：$\langle n^{(2)}\rangle = 2\bar{n}^2$</li>
+</ul>
+<h4 id="fock_4">Fock态</h4>
+<p>纯光子数态$|m\rangle$的分布：
+$$P(n) = \delta_{n,m}$$
+统计特性：</p>
+<ul>
+<li>平均值：$\langle n\rangle = m$</li>
+<li>方差：$(\Delta n)^2 = 0$（无涨落）</li>
+<li>这是唯一具有确定光子数的态</li>
+</ul>
+<h4 id="_55">压缩态</h4>
+<p>压缩真空态的光子数分布：
+$$P(n) = \begin{cases}
+\frac{(2m)!}{2^{2m}(m!)^2}\frac{(\tanh r)^{2m}}{\cosh r} &amp; n = 2m \
+0 &amp; n = 2m+1
+\end{cases}$$
+统计特性：</p>
+<ul>
+<li>平均值：$\langle n\rangle = \sinh^2 r$</li>
+<li>方差：$(\Delta n)^2 = 2\sinh^2 r(\cosh 2r)$</li>
+<li>表现出超泊松统计</li>
+</ul>
+<h3 id="2733">27.3.3 统计参数</h3>
+<h4 id="mandel-q">Mandel Q参数</h4>
+<p>定义：
+$$Q = \frac{(\Delta n)^2 - \langle n\rangle}{\langle n\rangle} = \frac{\langle n^2\rangle - \langle n\rangle^2 - \langle n\rangle}{\langle n\rangle}$$
+使用阶乘矩表示：
+$$Q = \frac{\langle n^{(2)}\rangle}{\langle n\rangle} - 1$$
+物理分类：</p>
+<ul>
+<li>$Q = 0$：泊松统计（相干光）</li>
+<li>$Q &gt; 0$：超泊松统计（聚束光，如热光$Q = \bar{n}$）</li>
+<li>$Q &lt; 0$：亚泊松统计（反聚束光，纯量子效应）</li>
+<li>$Q = -1$：Fock态（最小值）</li>
+</ul>
+<h4 id="fano">Fano因子</h4>
+<p>定义：
+$$F = \frac{(\Delta n)^2}{\langle n\rangle} = Q + 1$$
+物理意义：</p>
+<ul>
+<li>$F = 1$：泊松噪声水平</li>
+<li>$F &gt; 1$：超泊松（噪声增强）</li>
+<li>$F &lt; 1$：亚泊松（噪声抑制）</li>
+</ul>
+<h4 id="_56">相对涨落</h4>
+<p>$$\frac{\Delta n}{\langle n\rangle} = \frac{1}{\sqrt{\langle n\rangle}}\sqrt{F}$$
+对于大光子数，相干光的相对涨落按$1/\sqrt{\langle n\rangle}$减小。</p>
+<h3 id="2734">27.3.4 光子聚束与反聚束</h3>
+<h4 id="_57">物理图像</h4>
+<p><strong>聚束（Bunching）</strong>：</p>
+<ul>
+<li>光子倾向于成群到达探测器</li>
+<li>经典波动性的体现</li>
+<li>源于光场振幅的经典涨落</li>
+</ul>
+<p><strong>反聚束（Antibunching）</strong>：</p>
+<ul>
+<li>光子倾向于分开到达</li>
+<li>纯量子效应，无经典对应</li>
+<li>体现光的粒子性</li>
+</ul>
+<h4 id="_58">条件概率解释</h4>
+<p>设在时刻$t$探测到一个光子，则在$t+\tau$探测到另一个光子的条件概率：</p>
+<p>对于聚束光：
+$$P(t+\tau|t) &gt; P_{random}$$（高于随机情况）</p>
+<p>对于反聚束光：
+$$P(t+\tau|t) &lt; P_{random}$$（低于随机情况）</p>
+<h4 id="_59">与二阶相干函数的关系</h4>
+<p>聚束/反聚束可通过$g^{(2)}(\tau)$定量描述：</p>
+<ul>
+<li>聚束：$g^{(2)}(0) &gt; 1$</li>
+<li>随机（相干）：$g^{(2)}(0) = 1$</li>
+<li>反聚束：$g^{(2)}(0) &lt; 1$</li>
+</ul>
+<h3 id="2735">27.3.5 光子统计的测量</h3>
+<h4 id="_60">直接光子计数</h4>
+<p>使用单光子探测器（如APD、PMT）直接计数：</p>
+<ol>
+<li>设定计数时间窗口$T$</li>
+<li>重复测量获得分布$P(n)$</li>
+<li>计算统计参数</li>
+</ol>
+<h4 id="_61">探测器影响</h4>
+<p>实际探测器的影响：</p>
+<ul>
+<li><strong>量子效率</strong>$\eta &lt; 1$：测得的分布是真实分布与二项分布的卷积</li>
+<li><strong>暗计数</strong>：增加泊松背景</li>
+<li><strong>死时间</strong>：限制最大计数率</li>
+</ul>
+<p>修正后的分布：
+$$P_{measured}(m) = \sum_{n=m}^{\infty} P_{true}(n)\binom{n}{m}\eta^m(1-\eta)^{n-m}$$</p>
+<h4 id="_62">间接方法</h4>
+<ol>
+<li><strong>强度关联测量</strong>：通过HBT实验测量$g^{(2)}(0)$推断Q参数</li>
+<li><strong>平衡零拍探测</strong>：测量场的正交分量涨落</li>
+<li><strong>光子数分辨探测</strong>：使用超导纳米线等技术直接分辨光子数</li>
+</ol>
+<hr />
+<h2 id="274-g2">27.4 二阶相干函数g^(2)</h2>
+<h3 id="2741">27.4.1 定义</h3>
+<p>归一化二阶相干函数：
+$$g^{(2)}(\tau) = \frac{\langle\hat{a}^\dagger(t)\hat{a}^\dagger(t+\tau)\hat{a}(t+\tau)\hat{a}(t)\rangle}{\langle\hat{a}^\dagger(t)\hat{a}(t)\rangle^2}$$
+对于平稳过程：
+$$g^{(2)}(\tau) = \frac{\langle\hat{a}^\dagger\hat{a}^\dagger(\tau)\hat{a}(\tau)\hat{a}\rangle}{\langle\hat{n}\rangle^2}$$</p>
+<h3 id="2742-g20">27.4.2 零延迟值g^(2)(0)</h3>
+<p>$$g^{(2)}(0) = \frac{\langle\hat{n}(\hat{n}-1)\rangle}{\langle\hat{n}\rangle^2} = \frac{\langle\hat{n}^2\rangle - \langle\hat{n}\rangle}{\langle\hat{n}\rangle^2}$$
+与Mandel Q参数的关系：
+$$g^{(2)}(0) = 1 + \frac{Q}{\langle n\rangle}$$</p>
+<h3 id="2743-g20">27.4.3 不同光源的g^(2)(0)</h3>
+<ol>
+<li>
+<p><strong>相干光</strong>：
+$$g^{(2)}(0) = 1$$</p>
+</li>
+<li>
+<p><strong>热光</strong>（混沌光）：
+$$g^{(2)}(0) = 2$$</p>
+</li>
+<li>
+<p><strong>Fock态</strong>$|n\rangle$：
+$$g^{(2)}(0) = \frac{n(n-1)}{n^2} = 1 - \frac{1}{n}$$
+特别地，单光子态：$g^{(2)}(0) = 0$</p>
+</li>
+</ol>
+<h3 id="2744-hanbury-brown-twiss">27.4.4 Hanbury Brown-Twiss实验</h3>
+<p>实验装置测量强度关联：
+$$G^{(2)}(\tau) = \langle I(t)I(t+\tau)\rangle$$
+归一化：
+$$g^{(2)}(\tau) = \frac{G^{(2)}(\tau)}{\langle I\rangle^2}$$</p>
+<h3 id="2745">27.4.5 经典与量子界限</h3>
+<p>经典光场的Cauchy-Schwarz不等式：
+$$g^{(2)}(0) \geq 1$$
+量子光可以违反此界限：
+$$0 \leq g^{(2)}(0) &lt; 1$$ （反聚束，纯量子效应）</p>
+<hr />
+<h2 id="275">27.5 量子噪声与散粒噪声</h2>
+<h3 id="2751">27.5.1 散粒噪声的起源</h3>
+<p>光电探测中的电流：
+$$I(t) = e\sum_{i}\delta(t-t_i)$$
+其中$t_i$是光电子到达时间。</p>
+<p>平均电流：
+$$\langle I\rangle = e\langle\dot{N}\rangle = e\eta P/\hbar\omega$$
+其中$\eta$是量子效率，$P$是光功率。</p>
+<h3 id="2752">27.5.2 噪声功率谱</h3>
+<p>散粒噪声的功率谱密度（白噪声）：
+$$S_I(f) = 2e\langle I\rangle$$
+对于相干光，光子数涨落导致的电流噪声：
+$$\langle\Delta I^2\rangle = e^2\langle\Delta n^2\rangle/T^2 = e\langle I\rangle/T$$</p>
+<h3 id="2753">27.5.3 信噪比</h3>
+<p>光电探测的信噪比：
+$$\text{SNR} = \frac{\langle I\rangle}{\sqrt{\langle\Delta I^2\rangle}} = \sqrt{\frac{\eta P T}{\hbar\omega}}$$
+这定义了散粒噪声极限。</p>
+<h3 id="2754">27.5.4 标准量子极限</h3>
+<p>相位测量的不确定性：
+$$\Delta\phi \geq \frac{1}{2\sqrt{\langle n\rangle}}$$
+这是使用相干光的标准量子极限（SQL）。</p>
+<h3 id="2755">27.5.5 压缩态降噪</h3>
+<p>使用压缩光可以突破标准量子极限：</p>
+<ol>
+<li>
+<p><strong>振幅压缩</strong>：降低强度噪声
+$$(\Delta I)_{squeezed} = e^{-r}(\Delta I)_{coherent}$$</p>
+</li>
+<li>
+<p><strong>相位压缩</strong>：提高相位测量精度
+$$(\Delta\phi)_{squeezed} = e^{-r}(\Delta\phi)_{coherent}$$</p>
+</li>
+</ol>
+<h3 id="2756">27.5.6 量子噪声在成像中的影响</h3>
+<p>成像系统的量子噪声限制：</p>
+<ul>
+<li>每个像素的光子数涨落：$\Delta n_{pixel} = \sqrt{n_{pixel}}$</li>
+<li>图像信噪比：$\text{SNR} = \sqrt{n_{pixel}}$</li>
+<li>需要的总光子数：$N_{total} = N_{pixels} \times \text{SNR}^2$</li>
+</ul>
+<hr />
+<h2 id="_63">本章小结</h2>
+<p>本章介绍了量子光学的核心概念：</p>
+<ol>
+<li><strong>光的量子化</strong>：从经典电磁场过渡到量子场论描述，引入产生湮灭算符和Fock态</li>
+<li><strong>相干态</strong>：最接近经典光的量子态，具有泊松光子统计和最小不确定性</li>
+<li><strong>压缩态</strong>：通过重新分配量子涨落，可在某个正交分量上突破标准量子极限</li>
+<li><strong>光子统计</strong>：Mandel Q参数区分经典（Q≥0）和非经典光（Q&lt;0）</li>
+<li><strong>二阶相干函数</strong>：g^(2)(0)&lt;1标志着量子反聚束效应</li>
+<li><strong>量子噪声</strong>：散粒噪声源于光的粒子性，定义了测量的基本极限</li>
+</ol>
+<p>这些概念为理解量子成像、量子计算和未来光学技术奠定了基础。</p>
+<hr />
+<h2 id="_64">练习题</h2>
+<h3 id="_65">基础题</h3>
+<p><strong>27.1</strong> 证明相干态不正交：计算$\langle\alpha|\beta\rangle$并说明其物理意义。</p>
+<p><em>提示</em>：使用相干态的Fock基展开式。</p>
+<details>
+<summary>答案</summary>
+<p>$$\langle\alpha|\beta\rangle = e^{-\frac{1}{2}(|\alpha|^2+|\beta|^2-2\alpha^*\beta)}$$
+当$|\alpha-\beta|^2 \gg 1$时，两态近似正交。这反映了相干态的准经典特性。</p>
+</details>
+<p><strong>27.2</strong> 对于热光场，证明$g^{(2)}(0) = 2$。假设热光服从玻色-爱因斯坦分布。</p>
+<p><em>提示</em>：计算$\langle n^2\rangle$和$\langle n\rangle$的关系。</p>
+<details>
+<summary>答案</summary>
+<p>对于热光：$P(n) = \frac{\bar{n}^n}{(1+\bar{n})^{n+1}}$</p>
+<p>计算得：$\langle n^2\rangle = 2\bar{n}^2 + \bar{n}$</p>
+<p>因此：$g^{(2)}(0) = \frac{\langle n^2\rangle - \langle n\rangle}{\langle n\rangle^2} = 2$</p>
+</details>
+<p><strong>27.3</strong> 计算压缩真空态的光子数分布$P(n)$。</p>
+<p><em>提示</em>：只有偶数光子数态有非零概率。</p>
+<details>
+<summary>答案</summary>
+<p>$$P(2m) = \frac{(2m)!}{2^{2m}(m!)^2}\frac{(\tanh r)^{2m}}{\cosh r}$$
+$$P(2m+1) = 0$$
+平均光子数：$\langle n\rangle = \sinh^2 r$</p>
+</details>
+<h3 id="_66">挑战题</h3>
+<p><strong>27.4</strong> 推导压缩相干态$|\alpha,\xi\rangle = \hat{D}(\alpha)\hat{S}(\xi)|0\rangle$的g^(2)(0)。</p>
+<p><em>提示</em>：先计算$\langle\hat{n}\rangle$和$\langle\hat{n}^2\rangle$。</p>
+<details>
+<summary>答案</summary>
+<p>经过复杂计算：
+$$g^{(2)}(0) = 1 + \frac{2\sinh^2 r}{(|\alpha|^2\cosh 2r + \sinh^2 r)^2}[\cosh 2r - \text{Re}(\alpha^2e^{-i\theta}/|\alpha|^2)]$$</p>
+<p>其中$\xi = re^{i\theta}$。当$r=0$（无压缩）时，回到$g^{(2)}(0)=1$。</p>
+</details>
+<p><strong>27.5</strong> 考虑双模压缩真空态（参量下转换产生）。证明两个模式间存在完美关联。</p>
+<p><em>提示</em>：计算联合光子数分布$P(n_1,n_2)$。</p>
+<details>
+<summary>答案</summary>
+<p>双模压缩态：$|\psi\rangle = \frac{1}{\cosh r}\sum_{n=0}^{\infty}(\tanh r)^n|n\rangle_1|n\rangle_2$</p>
+<p>联合分布：$P(n_1,n_2) = \delta_{n_1,n_2}\frac{(\tanh r)^{2n_1}}{\cosh^2 r}$</p>
+<p>完美关联：测量模式1得到n个光子，模式2必定也是n个光子。</p>
+</details>
+<p><strong>27.6</strong> 设计一个实验方案，区分单光子源和衰减的相干光源。两者平均光子数都很小（$\langle n\rangle \ll 1$）。</p>
+<p><em>提示</em>：利用g^(2)(0)的差异。</p>
+<details>
+<summary>答案</summary>
+<p>使用Hanbury Brown-Twiss装置测量g^(2)(0)：</p>
+<ol>
+<li>单光子源：g^(2)(0) = 0（理想情况）</li>
+<li>衰减相干光：g^(2)(0) = 1</li>
+</ol>
+<p>即使$\langle n\rangle$相同，通过测量符合计数率可以明确区分。实际单光子源的$g^{(2)}(0) &lt; 0.5$即可认为是量子光源。</p>
+</details>
+<h3 id="_67">开放性思考题</h3>
+<p><strong>27.7</strong> 在量子密钥分发(QKD)中，为什么单光子源比衰减激光更安全？从光子统计角度分析。</p>
+<p><strong>27.8</strong> 讨论如何将量子光学概念应用于计算机图形学的全局照明算法。考虑光子映射中的"光子"与量子光学中光子的本质区别。</p>
+<hr />
+<h2 id="_68">常见陷阱与错误</h2>
+<ol>
+<li>
+<p><strong>混淆经典相干性与量子相干性</strong>
+   - 错误：认为激光是"量子光"
+   - 正确：激光是相干态，最接近经典光，g^(2)(0)=1</p>
+</li>
+<li>
+<p><strong>误解光子数态</strong>
+   - 错误：认为"n个光子"的Fock态容易制备
+   - 正确：Fock态极难制备，需要特殊的非线性过程</p>
+</li>
+<li>
+<p><strong>压缩态的误用</strong>
+   - 错误：认为压缩可以同时减小所有噪声
+   - 正确：压缩只是重新分配噪声，总不确定性不变</p>
+</li>
+<li>
+<p><strong>g^(2)函数的测量</strong>
+   - 错误：直接测量光强关联
+   - 正确：需要考虑探测器响应时间、死时间等因素</p>
+</li>
+<li>
+<p><strong>量子效率的忽视</strong>
+   - 错误：假设探测器完美
+   - 正确：实际探测器η&lt;1会改变测量的光子统计</p>
+</li>
+</ol>
+<hr />
+<h2 id="_69">最佳实践检查清单</h2>
+<h3 id="_70">理论分析</h3>
+<ul>
+<li>[ ] 明确区分经典场与量子场描述</li>
+<li>[ ] 正确使用产生湮灭算符的对易关系</li>
+<li>[ ] 检查态的归一化条件</li>
+<li>[ ] 验证物理量的期望值合理性</li>
+</ul>
+<h3 id="_71">实验设计</h3>
+<ul>
+<li>[ ] 考虑探测器的量子效率和暗计数</li>
+<li>[ ] 评估需要的积分时间达到统计显著性</li>
+<li>[ ] 选择合适的光源功率避免饱和</li>
+<li>[ ] 考虑背景光和杂散光的影响</li>
+</ul>
+<h3 id="_72">数值计算</h3>
+<ul>
+<li>[ ] 使用适当的Hilbert空间截断</li>
+<li>[ ] 检查数值精度对高阶矩的影响</li>
+<li>[ ] 验证概率分布的归一化</li>
+<li>[ ] 考虑数值不稳定性（如大光子数）</li>
+</ul>
+<h3 id="_73">应用考虑</h3>
+<ul>
+<li>[ ] 评估量子优势的实际可达性</li>
+<li>[ ] 考虑退相干和损耗的影响</li>
+<li>[ ] 比较量子方案与经典方案的资源需求</li>
+<li>[ ] 分析系统的可扩展性</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter26.html" class="nav-link prev">← 第26章：拓扑光子学</a><a href="./chapter28.html" class="nav-link next">第28章：量子成像与计算 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

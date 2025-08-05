@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第8章：4D神经表示与频域方法</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class="active"><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="84d">第8章：4D神经表示与频域方法</h1>
+<h2 id="_1">章节大纲</h2>
+<ol>
+<li>
+<p><strong>引言</strong>
+   - 4D表示的动机：时间维度的重要性
+   - 频域方法在动态场景中的优势
+   - 本章学习目标</p>
+</li>
+<li>
+<p><strong>4D时空辐射场</strong>
+   - 从3D到4D的扩展
+   - 时空连续性假设
+   - 4D体积渲染方程</p>
+</li>
+<li>
+<p><strong>傅里叶体积渲染</strong>
+   - 傅里叶变换在体积渲染中的应用
+   - 频域中的投影-切片定理
+   - 相位一致性与时间演化</p>
+</li>
+<li>
+<p><strong>K-Planes：分解的4D表示</strong>
+   - 张量分解基础
+   - 平面分解策略
+   - 特征组合与重建</p>
+</li>
+<li>
+<p><strong>频域中的时间插值</strong>
+   - 时间频率分析
+   - 相位插值方法
+   - 运动补偿与频域</p>
+</li>
+<li>
+<p><strong>带宽限制与采样理论</strong>
+   - Nyquist-Shannon采样定理在4D中的应用
+   - 时空带宽的权衡
+   - 抗锯齿与重建滤波器</p>
+</li>
+<li>
+<p><strong>本章小结</strong></p>
+</li>
+<li>
+<p><strong>练习题</strong></p>
+</li>
+<li>
+<p><strong>常见陷阱与错误</strong></p>
+</li>
+<li>
+<p><strong>最佳实践检查清单</strong></p>
+</li>
+</ol>
+<hr />
+<h2 id="_2">引言</h2>
+<p>在前面的章节中，我们探讨了静态场景的神经辐射场表示。然而，真实世界是动态的——物体运动、光照变化、材质属性随时间演化。本章将神经表示扩展到时间维度，探讨4D时空辐射场的数学框架，并深入研究频域方法如何帮助我们更有效地表示和渲染动态场景。</p>
+<p>频域分析不仅提供了理解时空信号的强大工具，还揭示了动态场景的内在结构。通过在频域中工作，我们可以利用信号的稀疏性、分离不同的运动成分，并设计更高效的表示方法。</p>
+<h3 id="4d">为什么需要4D表示？</h3>
+<p>传统的动态场景表示方法通常将时间维度作为独立的参数处理，例如关键帧动画或运动向量场。这些方法虽然在特定应用中有效，但存在根本性限制：</p>
+<ol>
+<li>
+<p><strong>离散时间表示的限制</strong>：关键帧方法只能捕获离散时刻的状态，中间时刻通过插值获得，这可能导致运动不自然或细节丢失。</p>
+</li>
+<li>
+<p><strong>运动表示的局限性</strong>：基于运动向量的方法假设场景可以通过简单的变换描述，难以处理复杂的非刚体变形、拓扑变化或光照变化。</p>
+</li>
+<li>
+<p><strong>存储效率问题</strong>：独立存储每个时刻的3D表示会导致巨大的存储开销，特别是对于长时间序列。</p>
+</li>
+</ol>
+<p>4D神经表示通过将时间作为连续维度集成到辐射场中，提供了一个统一且高效的框架来解决这些挑战。</p>
+<h3 id="_3">频域方法的优势</h3>
+<p>频域分析在4D表示中扮演着关键角色，其优势包括：</p>
+<ol>
+<li>
+<p><strong>运动模式识别</strong>：不同类型的运动（平移、旋转、振动）在频域中有独特的特征，便于分析和分离。</p>
+</li>
+<li>
+<p><strong>压缩效率</strong>：自然场景在频域中通常是稀疏的，特别是在高频区域，这为压缩提供了机会。</p>
+</li>
+<li>
+<p><strong>插值质量</strong>：频域插值可以保持信号的频谱特性，避免时域插值可能产生的伪影。</p>
+</li>
+<li>
+<p><strong>计算加速</strong>：某些操作（如卷积、相关）在频域中可以更高效地计算。</p>
+</li>
+<li>
+<p><strong>物理洞察</strong>：频域表示与物理现象（如波动、振动）有自然的联系，有助于理解和建模动态场景。</p>
+</li>
+</ol>
+<h3 id="_4">本章结构</h3>
+<p>本章将从4D时空辐射场的数学定义开始，逐步深入到频域分析和高效表示方法：</p>
+<ul>
+<li>
+<p><strong>第2节</strong>：建立4D时空辐射场的数学框架，包括体积渲染方程的时间扩展和连续性约束。</p>
+</li>
+<li>
+<p><strong>第3节</strong>：介绍傅里叶体积渲染，探讨投影-切片定理在4D中的应用，以及如何利用相位相干性进行运动分析。</p>
+</li>
+<li>
+<p><strong>第4节</strong>：详细介绍K-Planes方法，这是一种基于张量分解的高效4D表示，通过将4D张量分解为2D平面的组合来降低复杂度。</p>
+</li>
+<li>
+<p><strong>第5节</strong>：探讨频域中的时间插值技术，包括相位插值和运动补偿方法。</p>
+</li>
+<li>
+<p><strong>第6节</strong>：应用采样理论到4D表示，讨论Nyquist-Shannon定理的推广以及自适应采样策略。</p>
+</li>
+</ul>
+<h3 id="_5">数学准备</h3>
+<p>在深入技术细节之前，让我们回顾一些关键的数学概念：</p>
+<p><strong>傅里叶变换对</strong>：</p>
+<ul>
+<li>时域/空域：$f(t) \leftrightarrow \tilde{f}(\omega)$</li>
+<li>卷积定理：$f * g \leftrightarrow \tilde{f} \cdot \tilde{g}$</li>
+<li>Parseval定理：$\int |f(t)|^2 dt = \int |\tilde{f}(\omega)|^2 d\omega$</li>
+</ul>
+<p><strong>张量表示</strong>：</p>
+<ul>
+<li>4阶张量：$\mathcal{T} \in \mathbb{R}^{N_x \times N_y \times N_z \times N_t}$</li>
+<li>张量积：$\mathbf{a} \otimes \mathbf{b} \otimes \mathbf{c} \otimes \mathbf{d}$</li>
+<li>张量分解：CP分解、Tucker分解</li>
+</ul>
+<p><strong>采样理论</strong>：</p>
+<ul>
+<li>Nyquist频率：$f_N = 1/(2\Delta t)$</li>
+<li>Shannon插值：$f(t) = \sum_n f(n\Delta t) \text{sinc}((t-n\Delta t)/\Delta t)$</li>
+</ul>
+<h3 id="_6">学习目标</h3>
+<p>完成本章后，您将能够：</p>
+<ol>
+<li>将体积渲染方程扩展到4D时空域，理解时间维度带来的新挑战和机遇</li>
+<li>理解并应用傅里叶分析于动态体积渲染，包括4D投影-切片定理</li>
+<li>实现和分析K-Planes等分解表示方法，理解其背后的低秩假设</li>
+<li>在频域中进行时间插值和运动分析，利用相位信息提高插值质量</li>
+<li>应用采样理论优化4D神经表示的存储和计算，设计自适应采样策略</li>
+<li>识别并解决4D表示中的常见问题，如频域混叠和数值稳定性</li>
+</ol>
+<hr />
+<h2 id="4d_1">4D时空辐射场</h2>
+<h3 id="_7">时空辐射场的数学定义</h3>
+<p>将3D辐射场扩展到时间维度，我们定义4D时空辐射场为：</p>
+<p>$$L(\mathbf{x}, t, \boldsymbol{\omega}) : \mathbb{R}^3 \times \mathbb{R} \times S^2 \rightarrow \mathbb{R}^3$$
+其中：</p>
+<ul>
+<li>$\mathbf{x} \in \mathbb{R}^3$ 是空间位置</li>
+<li>$t \in \mathbb{R}$ 是时间</li>
+<li>$\boldsymbol{\omega} \in S^2$ 是观察方向</li>
+<li>输出是RGB辐射值</li>
+</ul>
+<p>相应的，密度场也成为时变函数：
+$$\sigma(\mathbf{x}, t) : \mathbb{R}^3 \times \mathbb{R} \rightarrow \mathbb{R}^+$$
+这种表示自然地将场景的所有时变特性编码在一个统一的函数中，包括：</p>
+<ul>
+<li><strong>几何变化</strong>：物体的运动、变形、出现和消失</li>
+<li><strong>外观变化</strong>：颜色、纹理、反射属性的时间演化</li>
+<li><strong>光照变化</strong>：动态光源、阴影运动、全局光照的时间变化</li>
+</ul>
+<h4 id="_8">物理意义与约束</h4>
+<p>4D辐射场不是任意的数学函数，而是受物理定律约束的。这些约束对于获得真实的重建至关重要：</p>
+<ol>
+<li>
+<p><strong>因果性约束</strong>：未来的状态不能影响过去
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) \perp L(\mathbf{x}, t', \boldsymbol{\omega}), \quad \forall t' &gt; t$$</p>
+</li>
+<li>
+<p><strong>能量守恒</strong>：在没有外部能量输入的封闭系统中
+$$\frac{d}{dt} \int_V \int_{S^2} L(\mathbf{x}, t, \boldsymbol{\omega}) d\boldsymbol{\omega} dV = P_{in}(t) - P_{out}(t)$$</p>
+</li>
+<li>
+<p><strong>光速限制</strong>：信息传播速度不能超过光速
+$$|L(\mathbf{x}_1, t, \boldsymbol{\omega}) - L(\mathbf{x}_2, t + \Delta t, \boldsymbol{\omega})| = 0 \text{ if } |\mathbf{x}_1 - \mathbf{x}_2| &gt; c\Delta t$$</p>
+</li>
+</ol>
+<h4 id="_9">边界条件与初始条件</h4>
+<p>完整的4D辐射场问题需要指定：</p>
+<ol>
+<li>
+<p><strong>空间边界条件</strong>：
+   - Dirichlet条件：$L(\mathbf{x}, t, \boldsymbol{\omega})|_{\mathbf{x} \in \partial V} = L_{boundary}(\mathbf{x}, t, \boldsymbol{\omega})$
+   - Neumann条件：$\nabla L \cdot \mathbf{n}|_{\mathbf{x} \in \partial V} = g(\mathbf{x}, t)$
+   - 吸收边界：模拟开放场景</p>
+</li>
+<li>
+<p><strong>时间边界条件</strong>：
+   - 初始条件：$L(\mathbf{x}, 0, \boldsymbol{\omega}) = L_0(\mathbf{x}, \boldsymbol{\omega})$
+   - 终止条件（如果有限时间）：$L(\mathbf{x}, T, \boldsymbol{\omega}) = L_T(\mathbf{x}, \boldsymbol{\omega})$</p>
+</li>
+<li>
+<p><strong>周期边界条件</strong>（对于循环动画）：
+$$L(\mathbf{x}, t + T_{period}, \boldsymbol{\omega}) = L(\mathbf{x}, t, \boldsymbol{\omega})$$</p>
+</li>
+</ol>
+<h3 id="4d_2">4D体积渲染方程</h3>
+<p>对于时刻$t$的一条射线$\mathbf{r}(s) = \mathbf{o} + s\mathbf{d}$，体积渲染方程变为：
+$$C(\mathbf{r}, t) = \int_0^{\infty} T(s, t) \sigma(\mathbf{r}(s), t) L(\mathbf{r}(s), t, -\mathbf{d}) ds$$
+其中透射率：
+$$T(s, t) = \exp\left(-\int_0^s \sigma(\mathbf{r}(u), t) du\right)$$</p>
+<h4 id="_10">数值积分形式</h4>
+<p>在实际实现中，我们将连续积分离散化为黎曼和：
+$$C(\mathbf{r}, t) \approx \sum_{i=1}^{N} T_i(t) \alpha_i(t) L_i(t)$$
+其中：</p>
+<ul>
+<li>$T_i(t) = \exp\left(-\sum_{j=1}^{i-1} \sigma_j(t) \delta_j\right)$ 是累积透射率</li>
+<li>$\alpha_i(t) = 1 - \exp(-\sigma_i(t) \delta_i)$ 是不透明度</li>
+<li>$\delta_i = s_{i+1} - s_i$ 是采样间隔</li>
+</ul>
+<h4 id="_11">时变采样策略</h4>
+<p>对于动态场景，采样策略需要考虑时间维度：</p>
+<ol>
+<li>
+<p><strong>时空自适应采样</strong>：基于场景的时空梯度动态调整采样密度
+$$\rho(\mathbf{x}, t) = \rho_0 \cdot \max\left(1, |\nabla_{x,t} \sigma|_2 / \tau\right)$$
+实际实现中，梯度可以通过有限差分近似：
+$$\nabla_{x,t} \sigma \approx \left(\frac{\partial \sigma}{\partial x}, \frac{\partial \sigma}{\partial y}, \frac{\partial \sigma}{\partial z}, \frac{\partial \sigma}{\partial t}\right)$$
+其中时间梯度尤其重要，它指示了场景变化的速度。</p>
+</li>
+<li>
+<p><strong>运动感知采样</strong>：沿运动轨迹增加采样点
+$$\mathbf{s}_i(t) = \mathbf{s}_i(0) + \int_0^t \mathbf{v}(\mathbf{s}_i(\tau), \tau) d\tau$$
+对于快速运动的区域，需要更密集的采样以避免运动模糊和采样不足。</p>
+</li>
+<li>
+<p><strong>重要性采样扩展到时间维度</strong>：
+$$p(\mathbf{x}, t) \propto \sigma(\mathbf{x}, t) \cdot |L(\mathbf{x}, t, -\mathbf{d})| \cdot \left(1 + \left|\frac{\partial L}{\partial t}\right|\right)$$
+这确保了在视觉上重要且快速变化的区域获得更多采样。</p>
+</li>
+<li>
+<p><strong>层次时空采样</strong>：
+   - 粗级别：稀疏采样识别感兴趣区域
+   - 细级别：在识别的区域密集采样
+   - 时间金字塔：不同时间尺度的层次采样</p>
+</li>
+</ol>
+<h3 id="_12">时空连续性约束</h3>
+<p>物理世界的连续性给4D辐射场带来了额外的约束：</p>
+<ol>
+<li><strong>时间连续性</strong>（Lipschitz连续）：
+$$|L(\mathbf{x}, t_1, \boldsymbol{\omega}) - L(\mathbf{x}, t_2, \boldsymbol{\omega})| \leq L_t |t_1 - t_2|$$
+其中$L_t$是时间Lipschitz常数</li>
+</ol>
+<p>这个约束防止了物理上不可能的瞬时变化，如物体的瞬间传送或颜色的突变。</p>
+<ol start="2">
+<li><strong>运动连续性</strong>（对于刚体运动）：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = L(\mathbf{R}(t)\mathbf{x} + \mathbf{t}(t), 0, \mathbf{R}(t)\boldsymbol{\omega})$$
+其中$\mathbf{R}(t)$和$\mathbf{t}(t)$描述刚体变换</li>
+</ol>
+<p>对于非刚体运动，这可以推广为：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = L(\mathbf{W}(\mathbf{x}, t), 0, \mathbf{J}_{\mathbf{W}}^T\boldsymbol{\omega})$$
+其中$\mathbf{W}$是形变场，$\mathbf{J}_{\mathbf{W}}$是其雅可比矩阵。</p>
+<ol start="3">
+<li><strong>光流约束</strong>（亮度恒定假设）：
+$$\frac{\partial L}{\partial t} + (\mathbf{v} \cdot \nabla)L = S(\mathbf{x}, t)$$
+其中$\mathbf{v}$是速度场，$S$是源项（如光照变化）</li>
+</ol>
+<p>展开为分量形式：
+$$\frac{\partial L}{\partial t} + v_x\frac{\partial L}{\partial x} + v_y\frac{\partial L}{\partial y} + v_z\frac{\partial L}{\partial z} = S(\mathbf{x}, t)$$
+当$S = 0$时，这就是经典的光流方程。</p>
+<ol start="4">
+<li><strong>能量守恒</strong>：
+$$\int_{\mathbb{R}^3} \int_{S^2} L(\mathbf{x}, t, \boldsymbol{\omega}) d\boldsymbol{\omega} d\mathbf{x} = E(t)$$
+其中$E(t)$是场景的总能量，对于封闭系统应保持恒定</li>
+</ol>
+<p>实际上，由于吸收和散射，通常有：
+$$\frac{dE}{dt} = -\int_V \alpha(\mathbf{x}, t) dV$$
+其中$\alpha$是吸收系数。</p>
+<ol start="5">
+<li>
+<p><strong>动量守恒</strong>（对于流体和粒子系统）：
+$$\frac{\partial}{\partial t}(\rho \mathbf{v}) + \nabla \cdot (\rho \mathbf{v} \otimes \mathbf{v}) = -\nabla p + \mathbf{f}_{ext}$$
+这在模拟烟雾、火焰等参与介质时特别重要。</p>
+</li>
+<li>
+<p><strong>相干性约束</strong>：
+   时间相邻帧之间应该保持某种程度的相似性：
+$$\mathcal{C}(t, t+\Delta t) = \frac{\langle L(\cdot, t), L(\cdot, t+\Delta t) \rangle}{|L(\cdot, t)| |L(\cdot, t+\Delta t)|} &gt; \theta$$
+其中$\theta$是相干性阈值，通常接近1。</p>
+</li>
+</ol>
+<h3 id="_13">时空场的参数化方法</h3>
+<h4 id="1">1. 直接参数化</h4>
+<p>最直接的方法是使用神经网络直接建模：
+$$(\sigma, \mathbf{c}) = \Phi_\theta(\mathbf{x}, t)$$
+优点：表达能力强
+缺点：难以施加物理约束</p>
+<h4 id="2">2. 分解参数化</h4>
+<p>将时空变化分解为不同成分：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = L_{static}(\mathbf{x}, \boldsymbol{\omega}) + L_{dynamic}(\mathbf{x}, t, \boldsymbol{\omega})$$
+或者更细粒度的分解：
+$$L = L_{ambient} + L_{diffuse}(t) + L_{specular}(t) + L_{transient}(t)$$</p>
+<h4 id="3">3. 形变场参数化</h4>
+<p>通过形变场$\mathbf{W}(\mathbf{x}, t)$将动态场景映射到正则空间：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = L_{canonical}(\mathbf{W}(\mathbf{x}, t), \boldsymbol{\omega})$$
+这种方法特别适合处理非刚体变形，如人体运动。</p>
+<h3 id="4d_3">4D表示的计算复杂度分析</h3>
+<p>直接存储4D辐射场面临严峻的计算挑战：</p>
+<h4 id="_14">存储复杂度</h4>
+<ul>
+<li><strong>密集网格</strong>：$O(N_x \times N_y \times N_z \times N_t)$</li>
+<li><strong>稀疏表示</strong>：$O(k \cdot N_{occupied})$，其中$k$是稀疏度</li>
+<li><strong>神经表示</strong>：$O(|\theta|)$，与场景复杂度解耦</li>
+</ul>
+<h4 id="_15">渲染复杂度</h4>
+<ul>
+<li><strong>单条射线</strong>：$O(N_{samples} \times \Phi_{eval})$</li>
+<li><strong>完整图像</strong>：$O(H \times W \times N_{samples} \times \Phi_{eval})$</li>
+<li><strong>时间序列</strong>：$O(T \times H \times W \times N_{samples} \times \Phi_{eval})$</li>
+</ul>
+<p>其中$\Phi_{eval}$是神经网络评估的复杂度。</p>
+<h4 id="_16">优化复杂度</h4>
+<ul>
+<li><strong>梯度计算</strong>：$O(|\theta| \times N_{rays} \times N_{samples})$</li>
+<li><strong>参数更新</strong>：$O(|\theta|)$</li>
+</ul>
+<h3 id="4d_4">4D表示的正则化</h3>
+<p>为了获得合理的4D重建，需要适当的正则化：</p>
+<ol>
+<li>
+<p><strong>时间平滑正则化</strong>：
+$$\mathcal{L}_{smooth} = \int \int \left|\frac{\partial^2 L}{\partial t^2}\right|^2 d\mathbf{x} dt$$</p>
+</li>
+<li>
+<p><strong>场景流正则化</strong>：
+$$\mathcal{L}_{flow} = \int \int |\nabla \times \mathbf{v}(\mathbf{x}, t)|^2 d\mathbf{x} dt$$
+鼓励无旋流场（适用于大多数自然运动）</p>
+</li>
+<li>
+<p><strong>稀疏性正则化</strong>：
+$$\mathcal{L}_{sparse} = \int \int |\mathbf{v}(\mathbf{x}, t)|_1 d\mathbf{x} dt$$
+鼓励静止区域保持静止</p>
+</li>
+<li>
+<p><strong>时间一致性正则化</strong>：
+$$\mathcal{L}_{consistency} = \sum_{t} |C(\mathbf{r}, t) - \hat{C}(\mathbf{r}, t)|^2$$
+其中$\hat{C}$是通过时间传播预测的颜色</p>
+</li>
+</ol>
+<hr />
+<h2 id="_17">傅里叶体积渲染</h2>
+<p>傅里叶分析为理解和处理4D时空辐射场提供了强大的数学工具。在频域中，许多复杂的时空现象变得更加清晰和易于处理。</p>
+<h3 id="4d_5">4D傅里叶变换</h3>
+<p>对于4D时空辐射场，我们定义其傅里叶变换为：
+$$\tilde{L}(\mathbf{k}, \omega_t, \boldsymbol{\omega}) = \int_{\mathbb{R}^3} \int_{\mathbb{R}} L(\mathbf{x}, t, \boldsymbol{\omega}) e^{-2\pi i(\mathbf{k} \cdot \mathbf{x} + \omega_t t)} d\mathbf{x} dt$$
+其中：</p>
+<ul>
+<li>$\mathbf{k} \in \mathbb{R}^3$ 是空间频率</li>
+<li>$\omega_t \in \mathbb{R}$ 是时间频率</li>
+</ul>
+<p>逆变换给出：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = \int_{\mathbb{R}^3} \int_{\mathbb{R}} \tilde{L}(\mathbf{k}, \omega_t, \boldsymbol{\omega}) e^{2\pi i(\mathbf{k} \cdot \mathbf{x} + \omega_t t)} d\mathbf{k} d\omega_t$$</p>
+<h4 id="_18">时空频率的物理意义</h4>
+<ul>
+<li><strong>空间频率</strong> $\mathbf{k}$：描述空间变化的快慢</li>
+<li>低频：大尺度结构、平滑区域</li>
+<li>高频：细节、边缘、纹理</li>
+<li>
+<p>各向异性：不同方向的频率成分反映场景的方向性结构</p>
+</li>
+<li>
+<p><strong>时间频率</strong> $\omega_t$：描述时间变化的快慢</p>
+</li>
+<li>$\omega_t = 0$：静态成分</li>
+<li>$|\omega_t|$大：快速变化（如振动、闪烁）</li>
+<li>负频率：与正频率共轭，保证实值信号</li>
+</ul>
+<h4 id="4d_6">4D傅里叶变换的性质</h4>
+<ol>
+<li>
+<p><strong>线性性</strong>：
+$$\mathcal{F}{aL_1 + bL_2} = a\tilde{L}_1 + b\tilde{L}_2$$</p>
+</li>
+<li>
+<p><strong>平移定理</strong>：
+$$\mathcal{F}{L(\mathbf{x} - \mathbf{x}_0, t - t_0)} = \tilde{L}(\mathbf{k}, \omega_t) e^{-2\pi i(\mathbf{k} \cdot \mathbf{x}_0 + \omega_t t_0)}$$</p>
+</li>
+<li>
+<p><strong>缩放定理</strong>：
+$$\mathcal{F}{L(a\mathbf{x}, bt)} = \frac{1}{|ab|^3} \tilde{L}(\mathbf{k}/a, \omega_t/b)$$</p>
+</li>
+<li>
+<p><strong>卷积定理</strong>：
+$$\mathcal{F}{L_1 * L_2} = \tilde{L}_1 \cdot \tilde{L}_2$$</p>
+</li>
+<li>
+<p><strong>Parseval定理</strong>（能量守恒）：
+$$\int \int |L(\mathbf{x}, t)|^2 d\mathbf{x} dt = \int \int |\tilde{L}(\mathbf{k}, \omega_t)|^2 d\mathbf{k} d\omega_t$$</p>
+</li>
+</ol>
+<h4 id="_19">窗口傅里叶变换</h4>
+<p>由于实际信号是有限长度的，我们常使用窗口傅里叶变换（STFT）：
+$$\tilde{L}_{win}(\mathbf{k}, \omega_t, \mathbf{x}_0, t_0) = \int \int L(\mathbf{x}, t) w(\mathbf{x} - \mathbf{x}_0, t - t_0) e^{-2\pi i(\mathbf{k} \cdot \mathbf{x} + \omega_t t)} d\mathbf{x} dt$$
+其中$w$是窗函数，常用的包括：</p>
+<ul>
+<li>Gaussian窗：$w(\mathbf{x}, t) = \exp(-|\mathbf{x}|^2/2\sigma_x^2 - t^2/2\sigma_t^2)$</li>
+<li>Hann窗：$w(x, t) = \frac{1}{2}(1 + \cos(\pi x/L_x))(1 + \cos(\pi t/L_t))$</li>
+</ul>
+<p>窗口大小决定了时频分辨率的权衡：</p>
+<ul>
+<li>大窗口：好的频率分辨率，差的时空定位</li>
+<li>小窗口：好的时空定位，差的频率分辨率</li>
+</ul>
+<h3 id="-4d">投影-切片定理的4D扩展</h3>
+<p>经典的投影-切片定理是计算机断层成像（CT）的理论基础。在4D中，这个定理有更丰富的结构：</p>
+<p><strong>定理（4D投影-切片）</strong>：沿方向$\mathbf{n}$在时刻$t$的2D投影图像的2D傅里叶变换，等于4D傅里叶体积在特定3D超平面上的切片。</p>
+<h4 id="_20">数学推导</h4>
+<p>设投影操作符$\mathcal{P}_{\mathbf{n},t}$定义为：
+$$p(u, v, t) = \int_{-\infty}^{\infty} L(u\mathbf{u} + v\mathbf{v} + s\mathbf{n}, t, -\mathbf{n}) \sigma(u\mathbf{u} + v\mathbf{v} + s\mathbf{n}, t) ds$$
+其中${\mathbf{u}, \mathbf{v}, \mathbf{n}}$构成正交基。</p>
+<p>对投影进行2D傅里叶变换：
+$$\tilde{p}(k_u, k_v, t) = \int \int p(u, v, t) e^{-2\pi i(k_u u + k_v v)} du dv$$
+代入投影定义并交换积分顺序：
+$$\tilde{p}(k_u, k_v, t) = \int_{-\infty}^{\infty} \tilde{L}(k_u\mathbf{u} + k_v\mathbf{v}, 0, -\mathbf{n}) e^{-2\pi i \omega_t t} d\omega_t$$
+这正是4D傅里叶体积在超平面$k_\parallel = 0$上的切片。</p>
+<h4 id="_21">应用：频域重建</h4>
+<p>利用投影-切片定理，可以从多个视角的投影重建4D体积：</p>
+<ol>
+<li><strong>数据采集</strong>：在不同时刻$t_i$和视角$\mathbf{n}_j$获取投影$p_{ij}$</li>
+<li><strong>频域填充</strong>：计算$\tilde{p}_{ij}$并填充到4D频域相应位置</li>
+<li><strong>逆变换</strong>：通过4D逆傅里叶变换重建$L(\mathbf{x}, t, \boldsymbol{\omega})$</li>
+</ol>
+<h3 id="_22">频域体积渲染</h3>
+<p>体积渲染方程在频域中有优雅的表达形式。考虑简化情况（忽略散射），渲染方程可写为：
+$$C(\mathbf{r}, t) = \int_0^{\infty} e^{-\tau(s, t)} \sigma(\mathbf{r}(s), t) L(\mathbf{r}(s), t, -\mathbf{d}) ds$$
+其中光学深度：
+$$\tau(s, t) = \int_0^s \sigma(\mathbf{r}(u), t) du$$</p>
+<h4 id="_23">频域形式</h4>
+<p>在频域中，指数衰减变为卷积：
+$$\tilde{C}(\mathbf{k}_\perp, \omega_t) = \mathcal{F}{e^{-\tau}} * \tilde{S}(\mathbf{k}, \omega_t)$$
+其中源项$S = \sigma \cdot L$。</p>
+<p>对于薄介质近似（$\tau \ll 1$），有：
+$$\tilde{C}(\mathbf{k}_\perp, \omega_t) \approx \tilde{S}(\mathbf{k}_\perp, 0, \omega_t) - \tilde{\tau} * \tilde{S}$$</p>
+<h3 id="_24">相位相干性与运动分析</h3>
+<p>频域分析最强大的应用之一是运动分析。不同类型的运动在频域中有特征性的表现：</p>
+<h4 id="1_1">1. 平移运动</h4>
+<p>对于匀速平移$\mathbf{x}' = \mathbf{x} + \mathbf{v}t$：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \tilde{L}(\mathbf{k}, \omega_t - \mathbf{k} \cdot \mathbf{v})$$
+这是频域中的多普勒效应。当观察固定频率$\omega_t$时，相当于相位调制：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \tilde{L}(\mathbf{k}, \omega_t) e^{-2\pi i \mathbf{k} \cdot \mathbf{v} / \omega_t}$$</p>
+<h4 id="2_1">2. 旋转运动</h4>
+<p>对于绕轴$\boldsymbol{\omega}$的旋转，角速度$|\boldsymbol{\omega}|$：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \sum_{n=-\infty}^{\infty} J_n\left(\frac{|\mathbf{k} \times \boldsymbol{\omega}|}{|\boldsymbol{\omega}|}\right) \tilde{L}(\mathbf{R}_n\mathbf{k}, \omega_t - n|\boldsymbol{\omega}|)$$
+其中$J_n$是贝塞尔函数，$\mathbf{R}_n$是旋转算子。</p>
+<h4 id="3_1">3. 周期运动</h4>
+<p>对于周期$T$的运动，频谱在时间频率上呈现离散峰：
+$$\tilde{L}(\mathbf{k}, \omega_t) = \sum_{n=-\infty}^{\infty} \tilde{L}_n(\mathbf{k}) \delta(\omega_t - 2\pi n/T)$$</p>
+<h4 id="_25">运动分离算法</h4>
+<p>基于频域分析，可以分离不同的运动成分：</p>
+<ol>
+<li>
+<p><strong>静态/动态分离</strong>：
+$$L_{static}(\mathbf{x}) = \int \tilde{L}(\mathbf{k}, 0, \boldsymbol{\omega}) e^{2\pi i \mathbf{k} \cdot \mathbf{x}} d\mathbf{k}$$
+   $$L_{dynamic}(\mathbf{x}, t) = L(\mathbf{x}, t) - L_{static}(\mathbf{x})$$</p>
+</li>
+<li>
+<p><strong>多运动分解</strong>：使用独立成分分析（ICA）或稀疏编码在频域分离不同运动模式</p>
+</li>
+</ol>
+<h3 id="_26">频域滤波与信号处理</h3>
+<p>频域表示允许我们设计各种滤波器来增强或抑制特定的时空模式：</p>
+<h4 id="1_2">1. 时间滤波器</h4>
+<p><strong>低通滤波</strong>（运动平滑）：
+$$H_{LP}(\omega_t) = \frac{1}{1 + (\omega_t/\omega_c)^{2n}}$$
+<strong>带通滤波</strong>（提取特定频率运动）：
+$$H_{BP}(\omega_t) = \exp\left(-\frac{(\omega_t - \omega_0)^2}{2\sigma_\omega^2}\right)$$
+<strong>陷波滤波</strong>（去除周期性噪声）：
+$$H_{notch}(\omega_t) = 1 - \exp\left(-\frac{(\omega_t - \omega_{noise})^2}{2\sigma_{notch}^2}\right)$$</p>
+<h4 id="2_2">2. 空间滤波器</h4>
+<p><strong>各向同性滤波</strong>：
+$$H_{iso}(\mathbf{k}) = \exp\left(-\frac{|\mathbf{k}|^2}{2\sigma_k^2}\right)$$
+<strong>方向性滤波</strong>（增强特定方向的结构）：
+$$H_{dir}(\mathbf{k}) = \cos^{2n}\angle(\mathbf{k}, \mathbf{k}_0)$$</p>
+<h4 id="3_2">3. 时空联合滤波</h4>
+<p><strong>运动自适应滤波</strong>：
+$$H(\mathbf{k}, \omega_t) = \exp\left(-\frac{(\omega_t - \mathbf{k} \cdot \mathbf{v}_{est})^2}{2\sigma^2}\right)$$
+这种滤波器沿估计的运动轨迹保持锐利，而在垂直方向上平滑。</p>
+<h3 id="_27">计算效率与实现考虑</h3>
+<h4 id="fft">FFT加速</h4>
+<p>4D FFT的计算复杂度：</p>
+<ul>
+<li>直接计算：$O(N^8)$（$N^4$个点，每个点$N^4$次运算）</li>
+<li>FFT算法：$O(N^4 \log N)$</li>
+</ul>
+<p>实际实现策略：</p>
+<ol>
+<li><strong>分离变换</strong>：先3D空间FFT，再1D时间FFT</li>
+<li><strong>块处理</strong>：将大体积分块，使用重叠保存法</li>
+<li><strong>GPU加速</strong>：利用GPU的并行性，可达到实时性能</li>
+</ol>
+<h4 id="_28">内存优化</h4>
+<p>4D数据的内存需求巨大。优化策略包括：</p>
+<ol>
+<li>
+<p><strong>压缩感知</strong>：利用信号在频域的稀疏性
+$$\min_{\tilde{L}} |\tilde{L}|_1 \text{ s.t. } |\mathcal{A}\tilde{L} - \mathbf{y}|_2 &lt; \epsilon$$</p>
+</li>
+<li>
+<p><strong>低秩近似</strong>：将4D张量分解为低秩因子的乘积</p>
+</li>
+<li>
+<p><strong>自适应采样</strong>：在频域中非均匀采样，重要区域密集采样</p>
+</li>
+</ol>
+<hr />
+<h2 id="k-planes4d">K-Planes：分解的4D表示</h2>
+<h3 id="_29">动机与基本思想</h3>
+<p>K-Planes方法基于一个关键观察：4D时空信号通常具有低秩结构。通过将4D张量分解为2D平面的组合，我们可以大幅降低存储和计算复杂度。</p>
+<h3 id="_30">数学框架</h3>
+<p>K-Planes将4D辐射场分解为多个2D特征平面的外积：
+$$f(\mathbf{x}, t) = \sum_{i=1}^{R} \sum_{j \in {xy, xz, yz, xt, yt, zt}} \alpha_{ij} P_{ij}(\pi_j(\mathbf{x}, t))$$
+其中：</p>
+<ul>
+<li>$R$ 是秩（特征通道数）</li>
+<li>$P_{ij}$ 是第$i$个特征通道在平面$j$上的2D特征网格</li>
+<li>$\pi_j$ 是投影操作符，将4D点投影到相应的2D平面</li>
+<li>$\alpha_{ij}$ 是组合权重</li>
+</ul>
+<h3 id="_31">张量分解视角</h3>
+<p>从张量分解的角度，K-Planes可以视为一种特殊的CP分解（Canonical Polyadic Decomposition）的变体：
+$$\mathcal{T} \approx \sum_{r=1}^{R} \mathbf{a}_r \otimes \mathbf{b}_r \otimes \mathbf{c}_r \otimes \mathbf{d}_r$$
+但K-Planes通过共享某些维度的因子来进一步压缩表示。</p>
+<h3 id="_32">特征组合策略</h3>
+<p>不同的特征组合策略对应不同的假设：</p>
+<ol>
+<li>
+<p><strong>乘法组合</strong>（适用于密度场）：
+$$\sigma(\mathbf{x}, t) = \prod_{j} \exp(P_j^{\sigma}(\pi_j(\mathbf{x}, t)))$$</p>
+</li>
+<li>
+<p><strong>加法组合</strong>（适用于颜色场）：
+$$\mathbf{c}(\mathbf{x}, t) = \sum_{j} P_j^{c}(\pi_j(\mathbf{x}, t))$$</p>
+</li>
+<li>
+<p><strong>混合组合</strong>：
+$$f(\mathbf{x}, t) = MLP\left(\bigoplus_{j} P_j(\pi_j(\mathbf{x}, t))\right)$$
+其中$\bigoplus$表示特征连接</p>
+</li>
+</ol>
+<h3 id="_33">存储和计算复杂度分析</h3>
+<p>相比于完整的4D网格：</p>
+<ul>
+<li><strong>存储</strong>：从$O(N^3T)$降至$O(RN^2T^{1/2})$</li>
+<li><strong>查询</strong>：从$O(1)$增至$O(R \cdot 6)$（6个平面查询）</li>
+</ul>
+<p>当$R \ll N$时，这提供了显著的压缩。</p>
+<hr />
+<h2 id="_34">频域中的时间插值</h2>
+<h3 id="_35">相位插值原理</h3>
+<p>在频域中，时间插值可以通过相位调整实现。对于两个时刻$t_1$和$t_2$之间的插值：
+$$\tilde{L}(\mathbf{k}, \omega_t, t) = \tilde{L}(\mathbf{k}, \omega_t, t_1) e^{i\phi(\omega_t)(t-t_1)/(t_2-t_1)}$$
+其中相位差：
+$$\phi(\omega_t) = \arg\left(\frac{\tilde{L}(\mathbf{k}, \omega_t, t_2)}{\tilde{L}(\mathbf{k}, \omega_t, t_1)}\right)$$</p>
+<h3 id="_36">运动补偿的频域方法</h3>
+<p>对于已知运动场$\mathbf{v}(\mathbf{x}, t)$，频域运动补偿可表示为：
+$$\tilde{L}_{comp}(\mathbf{k}, \omega_t) = \tilde{L}(\mathbf{k}, \omega_t) \exp\left(2\pi i \int \mathbf{k} \cdot \mathbf{v}(\mathbf{x}, t) \delta(\mathbf{k} - \nabla_{\mathbf{x}}\phi) dt\right)$$
+这允许我们在频域中直接补偿运动，而无需在空间域进行昂贵的扭曲操作。</p>
+<h3 id="_37">多尺度时间分解</h3>
+<p>利用小波变换或多分辨率分析，我们可以将时间信号分解为不同尺度：
+$$L(\mathbf{x}, t, \boldsymbol{\omega}) = \sum_{j} \sum_{k} c_{jk}(\mathbf{x}, \boldsymbol{\omega}) \psi_{jk}(t)$$
+其中$\psi_{jk}$是小波基函数，$j$是尺度索引，$k$是平移索引。</p>
+<p>这种分解允许：</p>
+<ul>
+<li>自适应时间采样</li>
+<li>多尺度运动分析</li>
+<li>高效的时间压缩</li>
+</ul>
+<h3 id="_38">频域插值的数值稳定性</h3>
+<p>频域插值需要注意数值稳定性问题：</p>
+<ol>
+<li><strong>相位展开</strong>：避免$2\pi$相位跳变</li>
+<li><strong>频谱泄漏</strong>：使用窗函数减少边界效应</li>
+<li><strong>噪声放大</strong>：在高频区域使用正则化</li>
+</ol>
+<hr />
+<h2 id="_39">带宽限制与采样理论</h2>
+<h3 id="4d-nyquist-shannon">4D Nyquist-Shannon定理</h3>
+<p>对于带限的4D信号$L(\mathbf{x}, t, \boldsymbol{\omega})$，如果其傅里叶变换满足：
+$$\tilde{L}(\mathbf{k}, \omega_t, \boldsymbol{\omega}) = 0, \quad \forall |\mathbf{k}| &gt; \mathbf{B}, |\omega_t| &gt; \Omega_t$$
+则最小采样率为：</p>
+<ul>
+<li>空间：$f_s &gt; 2B_i$（每个维度）</li>
+<li>时间：$f_t &gt; 2\Omega_t$</li>
+</ul>
+<h3 id="_40">时空带宽的权衡</h3>
+<p>实际场景中，空间和时间带宽存在权衡关系。对于固定的总采样预算$N_{total}$：
+$$N_{spatial}^3 \times N_{temporal} = N_{total}$$
+最优分配取决于信号特性：</p>
+<ul>
+<li>快速运动场景：增加时间采样</li>
+<li>高细节静态场景：增加空间采样</li>
+</ul>
+<h3 id="_41">自适应采样策略</h3>
+<p>基于局部频谱分析的自适应采样：</p>
+<ol>
+<li>
+<p><strong>局部频谱估计</strong>：
+$$S_{local}(\mathbf{x}_0, t_0) = \left|\mathcal{F}_{local}{L}(\mathbf{k}, \omega_t)\right|^2$$</p>
+</li>
+<li>
+<p><strong>采样密度调整</strong>：
+$$\rho(\mathbf{x}, t) = \rho_0 \cdot \max\left(1, \frac{|\nabla_{\mathbf{x},t} S_{local}|}{\tau}\right)$$
+其中$\tau$是阈值参数。</p>
+</li>
+</ol>
+<h3 id="_42">抗锯齿滤波器设计</h3>
+<p>对于4D重建，理想的低通滤波器为：
+$$H_{ideal}(\mathbf{k}, \omega_t) = \begin{cases}
+1 &amp; \text{if } |\mathbf{k}| &lt; \mathbf{B}, |\omega_t| &lt; \Omega_t \
+0 &amp; \text{otherwise}
+\end{cases}$$
+实际中使用可分离的窗函数：
+$$H(\mathbf{k}, \omega_t) = h_x(k_x)h_y(k_y)h_z(k_z)h_t(\omega_t)$$
+常用选择包括：</p>
+<ul>
+<li>Kaiser窗（可调节主瓣宽度与旁瓣抑制）</li>
+<li>Lanczos窗（良好的频率特性）</li>
+<li>Gaussian窗（无振铃效应）</li>
+</ul>
+<hr />
+<h2 id="_43">本章小结</h2>
+<p>本章探讨了4D神经表示和频域方法在动态场景渲染中的应用。关键概念包括：</p>
+<ol>
+<li>
+<p><strong>4D时空辐射场</strong>：将静态3D辐射场扩展到时间维度，引入时空连续性约束
+   - 体积渲染方程：$C(\mathbf{r}, t) = \int_0^{\infty} T(s, t) \sigma(\mathbf{r}(s), t) L(\mathbf{r}(s), t, -\mathbf{d}) ds$</p>
+</li>
+<li>
+<p><strong>傅里叶体积渲染</strong>：利用频域分析理解和优化动态渲染
+   - 4D投影-切片定理的扩展
+   - 相位相干性揭示运动模式：$\tilde{L}'(\mathbf{k}, \omega_t) = \tilde{L}(\mathbf{k}, \omega_t) e^{-2\pi i \mathbf{k} \cdot \mathbf{v} / \omega_t}$</p>
+</li>
+<li>
+<p><strong>K-Planes分解表示</strong>：通过2D平面分解降低4D表示的复杂度
+   - 存储复杂度从$O(N^3T)$降至$O(RN^2T^{1/2})$
+   - 基于低秩假设的高效表示</p>
+</li>
+<li>
+<p><strong>频域时间插值</strong>：利用相位信息进行高质量时间插值
+   - 相位插值：$\tilde{L}(\mathbf{k}, \omega_t, t) = \tilde{L}(\mathbf{k}, \omega_t, t_1) e^{i\phi(\omega_t)(t-t_1)/(t_2-t_1)}$
+   - 多尺度时间分解支持自适应采样</p>
+</li>
+<li>
+<p><strong>采样理论应用</strong>：4D Nyquist-Shannon定理指导采样策略
+   - 时空带宽权衡
+   - 自适应采样和抗锯齿滤波器设计</p>
+</li>
+</ol>
+<p>这些技术共同构成了现代动态神经渲染的理论基础，在保持渲染质量的同时大幅提升了效率。</p>
+<hr />
+<h2 id="_44">练习题</h2>
+<h3 id="_45">基础题</h3>
+<p><strong>练习8.1</strong> 推导4D体积渲染方程中透射率$T(s,t)$的时间导数$\frac{\partial T}{\partial t}$。</p>
+<details>
+<summary>提示</summary>
+<p>从透射率的定义出发，使用链式法则，注意$\sigma$对时间的依赖性。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>从透射率定义：
+$$T(s, t) = \exp\left(-\int_0^s \sigma(\mathbf{r}(u), t) du\right)$$
+对时间求导：
+$$\frac{\partial T}{\partial t} = T(s, t) \cdot \left(-\int_0^s \frac{\partial \sigma(\mathbf{r}(u), t)}{\partial t} du\right)$$
+这表明透射率的时间变化率与密度场的时间变化率成正比，且受当前透射率调制。</p>
+</details>
+<p><strong>练习8.2</strong> 证明对于纯平移运动$\mathbf{x}' = \mathbf{x} + \mathbf{v}t$，频域表示满足：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \tilde{L}(\mathbf{k}, \omega_t) e^{-2\pi i \mathbf{k} \cdot \mathbf{v} / \omega_t}$$</p>
+<details>
+<summary>提示</summary>
+<p>从傅里叶变换的定义出发，进行变量替换。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>设原始场为$L(\mathbf{x}, t)$，平移后为$L'(\mathbf{x}, t) = L(\mathbf{x} - \mathbf{v}t, t)$。</p>
+<p>傅里叶变换：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \int \int L(\mathbf{x} - \mathbf{v}t, t) e^{-2\pi i(\mathbf{k} \cdot \mathbf{x} + \omega_t t)} d\mathbf{x} dt$$
+令$\mathbf{y} = \mathbf{x} - \mathbf{v}t$，则$d\mathbf{x} = d\mathbf{y}$：
+$$\tilde{L}'(\mathbf{k}, \omega_t) = \int \int L(\mathbf{y}, t) e^{-2\pi i(\mathbf{k} \cdot (\mathbf{y} + \mathbf{v}t) + \omega_t t)} d\mathbf{y} dt$$</p>
+<p>$$= \int \int L(\mathbf{y}, t) e^{-2\pi i(\mathbf{k} \cdot \mathbf{y} + (\mathbf{k} \cdot \mathbf{v} + \omega_t)t)} d\mathbf{y} dt$$</p>
+<p>$$= \tilde{L}(\mathbf{k}, \omega_t + \mathbf{k} \cdot \mathbf{v})$$
+当频率固定为$\omega_t$时，相当于乘以相位因子$e^{-2\pi i \mathbf{k} \cdot \mathbf{v} / \omega_t}$。</p>
+</details>
+<p><strong>练习8.3</strong> 对于K-Planes表示，计算查询一个4D点$(x, y, z, t)$所需的内存访问次数和浮点运算次数。</p>
+<details>
+<summary>提示</summary>
+<p>考虑6个2D平面，每个平面需要双线性插值。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>对于每个2D平面：</p>
+<ul>
+<li>双线性插值需要访问4个网格点</li>
+<li>每个网格点存储$R$个特征通道</li>
+<li>双线性插值需要3次乘法和3次加法</li>
+</ul>
+<p>总计：</p>
+<ul>
+<li>内存访问：$6 \times 4 \times R = 24R$次</li>
+<li>浮点运算：</li>
+<li>插值：$6 \times R \times 6 = 36R$次</li>
+<li>特征组合：约$6R$次（取决于具体策略）</li>
+<li>总计：约$42R$次浮点运算</li>
+</ul>
+</details>
+<h3 id="_46">挑战题</h3>
+<p><strong>练习8.4</strong> 设计一个自适应K-Planes方法，能够根据场景复杂度自动调整不同平面的分辨率。描述你的算法并分析其复杂度。</p>
+<details>
+<summary>提示</summary>
+<p>考虑使用梯度信息或重建误差来指导分辨率分配。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>自适应K-Planes算法：</p>
+<ol>
+<li>
+<p><strong>初始化</strong>：所有平面使用低分辨率$N_0 \times N_0$</p>
+</li>
+<li>
+<p><strong>误差估计</strong>：对每个平面$P_j$，计算重建误差：
+$$E_j = \sum_{samples} |f(\mathbf{x}, t) - f_j(\mathbf{x}, t)|^2$$
+其中$f_j$是仅使用平面$j$的重建</p>
+</li>
+<li>
+<p><strong>分辨率分配</strong>：基于误差分配总预算$B$：
+$$N_j = N_0 \cdot \left(1 + \alpha \frac{E_j}{\sum_k E_k}\right)$$
+受限于$\sum_j N_j^2 \leq B$</p>
+</li>
+<li>
+<p><strong>渐进细化</strong>：使用多重网格方法，从粗到细优化</p>
+</li>
+</ol>
+<p>复杂度分析：</p>
+<ul>
+<li>空间：$O(\sum_j N_j^2 R) \leq O(BR)$</li>
+<li>时间：误差估计$O(S \cdot 6R)$，其中$S$是采样点数</li>
+<li>优势：在复杂区域自动增加分辨率，简单区域保持低分辨率</li>
+</ul>
+</details>
+<p><strong>练习8.5</strong> 推导频域中进行运动模糊渲染的公式。假设在曝光时间$[0, T]$内，场景以速度$\mathbf{v}(\mathbf{x}, t)$运动。</p>
+<details>
+<summary>提示</summary>
+<p>运动模糊是时间积分，考虑其在频域的表现。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>运动模糊图像：
+$$I_{blur}(\mathbf{p}) = \frac{1}{T} \int_0^T C(\mathbf{p}, t) dt$$
+在频域中：
+$$\tilde{I}_{blur}(\mathbf{k}_{\perp}) = \frac{1}{T} \int_0^T \tilde{C}(\mathbf{k}_{\perp}, t) dt$$
+对于线性运动$\mathbf{v}$，利用相位关系：
+$$\tilde{I}_{blur}(\mathbf{k}_{\perp}) = \tilde{C}(\mathbf{k}_{\perp}, 0) \cdot \frac{\sin(\pi \mathbf{k}_{\perp} \cdot \mathbf{v}_{\perp} T)}{\pi \mathbf{k}_{\perp} \cdot \mathbf{v}_{\perp} T}$$
+这是一个sinc函数，表明运动模糊在频域中表现为低通滤波器。</p>
+<p>对于非线性运动，需要考虑高阶项：
+$$\tilde{I}_{blur}(\mathbf{k}_{\perp}) = \sum_{n=0}^{\infty} \frac{(-2\pi i)^n}{n!} \mathbf{k}_{\perp}^n : \mathcal{M}_n$$
+其中$\mathcal{M}_n$是运动的第$n$阶矩张量。</p>
+</details>
+<p><strong>练习8.6</strong> 考虑一个周期运动场景（如旋转的风扇）。如何修改K-Planes表示来高效编码这种周期性？给出数学公式和存储分析。</p>
+<details>
+<summary>提示</summary>
+<p>利用傅里叶级数展开周期信号。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>对于周期$T_p$的运动，使用傅里叶级数展开时间维度：
+$$f(\mathbf{x}, t) = \sum_{n=-N}^{N} \sum_{j \in {xy, xz, yz}} c_{nj}(\pi_j(\mathbf{x})) e^{2\pi i n t / T_p}$$
+修改的K-Planes表示：</p>
+<ol>
+<li>空间平面保持不变：$P_{xy}, P_{xz}, P_{yz}$</li>
+<li>时间平面替换为傅里叶系数平面：$C_n^{(j)}(\mathbf{x})$</li>
+</ol>
+<p>存储分析：</p>
+<ul>
+<li>原始：$O(3N^2 + 3NT)$</li>
+<li>周期性：$O(3N^2 + 3N^2(2N_{fourier}+1))$</li>
+<li>当$N_{fourier} \ll T$时，显著节省存储</li>
+</ul>
+<p>实现细节：
+$$P_{xt}(\mathbf{x}, t) = \sum_{n=-N_{fourier}}^{N_{fourier}} C_n^{(xt)}(x) e^{2\pi i n t / T_p}$$</p>
+<p>这种表示自动保证了时间连续性和周期性，同时支持任意时刻的高质量插值。</p>
+</details>
+<hr />
+<h2 id="_47">常见陷阱与错误</h2>
+<h3 id="1_3">1. 频域混叠</h3>
+<p><strong>问题</strong>：采样率不足导致频域混叠，表现为时间闪烁或空间摩尔纹。</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+<li>预先估计场景的最高频率成分</li>
+<li>使用抗混叠滤波器</li>
+<li>自适应提高问题区域的采样率</li>
+</ul>
+<h3 id="2_3">2. 相位展开错误</h3>
+<p><strong>问题</strong>：频域插值时，相位差超过$\pi$导致错误的展开。</p>
+<p><strong>调试技巧</strong>：</p>
+<pre class="codehilite"><code class="language-python"># 正确的相位展开
+phase_diff = np.angle(F_t2 / F_t1)
+phase_diff = np.unwrap(phase_diff)  # 关键步骤
+</code></pre>
+
+<h3 id="3-k-planes">3. K-Planes中的平面对齐</h3>
+<p><strong>问题</strong>：不同平面的特征未正确对齐，导致重建伪影。</p>
+<p><strong>最佳实践</strong>：</p>
+<ul>
+<li>使用共同的网格分辨率</li>
+<li>确保投影操作的一致性</li>
+<li>在边界处使用适当的填充</li>
+</ul>
+<h3 id="4">4. 时间插值中的运动模糊</h3>
+<p><strong>问题</strong>：快速运动物体在插值帧中出现重影。</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+<li>考虑运动补偿的插值</li>
+<li>增加时间采样密度</li>
+<li>使用运动感知的正则化</li>
+</ul>
+<h3 id="5">5. 数值精度问题</h3>
+<p><strong>问题</strong>：频域计算中的数值误差累积。</p>
+<p><strong>预防措施</strong>：</p>
+<ul>
+<li>使用双精度浮点数</li>
+<li>定期进行正交化</li>
+<li>在关键步骤添加数值稳定性检查</li>
+</ul>
+<hr />
+<h2 id="_48">最佳实践检查清单</h2>
+<h3 id="_49">设计阶段</h3>
+<ul>
+<li>[ ] 分析场景的时空频率特性</li>
+<li>[ ] 确定合适的空间和时间分辨率</li>
+<li>[ ] 选择适当的表示方法（全4D vs 分解表示）</li>
+<li>[ ] 考虑存储和计算预算限制</li>
+</ul>
+<h3 id="_50">实现阶段</h3>
+<ul>
+<li>[ ] 正确实现4D采样和插值</li>
+<li>[ ] 验证频域变换的正确性</li>
+<li>[ ] 实现数值稳定的相位处理</li>
+<li>[ ] 添加适当的正则化项</li>
+</ul>
+<h3 id="_51">优化阶段</h3>
+<ul>
+<li>[ ] 使用自适应采样减少冗余</li>
+<li>[ ] 利用时空局部性优化缓存</li>
+<li>[ ] 考虑GPU并行化策略</li>
+<li>[ ] 实现渐进式细化</li>
+</ul>
+<h3 id="_52">验证阶段</h3>
+<ul>
+<li>[ ] 测试不同运动模式（平移、旋转、形变）</li>
+<li>[ ] 验证时间插值的平滑性</li>
+<li>[ ] 检查频域混叠和振铃效应</li>
+<li>[ ] 评估压缩率与质量的权衡</li>
+</ul>
+<h3 id="_53">部署阶段</h3>
+<ul>
+<li>[ ] 优化内存访问模式</li>
+<li>[ ] 实现流式处理支持</li>
+<li>[ ] 添加质量自适应机制</li>
+<li>[ ] 提供降级路径</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter7.html" class="nav-link prev">← 第7章：动态神经辐射场</a><a href="./chapter9.html" class="nav-link next">第9章：显式神经表示 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

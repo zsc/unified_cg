@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统一计算机图形学：从几何光学到波动物理</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class="active"><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="_1">统一计算机图形学：从几何光学到波动物理</h1>
+<h2 id="_2">课程概述</h2>
+<p>本课程提供了一个统一的计算机图形学数学框架，从经典渲染技术发展到现代神经表示，最终连接到物理光学。我们将体积渲染方程作为核心形式，涵盖了基于点的渲染、基于图像的渲染和神经渲染方法，然后将其扩展以包含波动现象。</p>
+<h3 id="_3">先修要求</h3>
+<ul>
+<li>线性代数（特征值、SVD、张量记法）</li>
+<li>多元微积分（偏导数、多重积分、向量微积分）</li>
+<li>概率论（PDF、期望、蒙特卡洛方法）</li>
+<li>基础复分析（用于波动光学章节）</li>
+<li>傅里叶分析（连续和离散变换）</li>
+</ul>
+<h3 id="_4">学习目标</h3>
+<p>完成本课程后，您将能够：</p>
+<ol>
+<li>将渲染理解为积分方程的解</li>
+<li>在统一的体积渲染框架内表述各种渲染技术</li>
+<li>将经典计算机图形学与物理光学联系起来</li>
+<li>从第一性原理推导渲染算法</li>
+<li>分析渲染方法的收敛性和误差界</li>
+</ol>
+<h2 id="_5">目录</h2>
+<h3 id="_6">第一部分：基础</h3>
+<h4 id="1"><a href="chapter1.html">第1章：几何光学与渲染基础</a></h4>
+<ul>
+<li>光线追踪基础与渲染方程</li>
+<li>坐标系统与变换</li>
+<li>BRDF、BSDF和BSSRDF</li>
+<li>渲染中的蒙特卡洛积分</li>
+<li>路径积分表述</li>
+</ul>
+<h4 id="2"><a href="chapter2.html">第2章：光场与近场光学</a></h4>
+<ul>
+<li>4D和5D光场表示</li>
+<li>全光函数</li>
+<li>光学中的维格纳分布函数</li>
+<li>菲涅尔和夫琅禾费衍射</li>
+<li>空间和时间相干性</li>
+</ul>
+<h3 id="_7">第二部分：体积渲染统一化</h3>
+<h4 id="3"><a href="chapter3.html">第3章：基于点的渲染与统一体积渲染方程</a></h4>
+<ul>
+<li><strong>统一体积渲染方程的推导</strong></li>
+<li>点云作为δ函数分布</li>
+<li>溅射核与重建滤波器</li>
+<li>离散样本的体积渲染方程</li>
+<li>误差分析与收敛性：数学界限到计算复杂度O(N log N)</li>
+</ul>
+<h4 id="4-ch2"><a href="chapter4.html">第4章：基于图像的渲染</a> <em>[需要: Ch2]</em></h4>
+<ul>
+<li>光场渲染作为4D插值</li>
+<li>视图合成与极线约束</li>
+<li>光图与表面光场</li>
+<li>傅里叶切片定理应用</li>
+<li>IBR的采样理论与计算复杂度</li>
+</ul>
+<h4 id="5"><a href="chapter5.html">第5章：基于物理的渲染</a></h4>
+<ul>
+<li>辐射传输方程</li>
+<li>体积散射与相位函数</li>
+<li>通过扩散的次表面散射</li>
+<li>参与介质</li>
+<li>能量守恒与互易性</li>
+</ul>
+<h4 id="6nerf"><a href="chapter6.html">第6章：神经辐射场基础（NeRF）</a></h4>
+<ul>
+<li>连续体积表示</li>
+<li>位置编码与频谱偏差</li>
+<li>作为函数逼近的体积渲染</li>
+<li>基于梯度的优化</li>
+<li>正则化与先验</li>
+</ul>
+<h4 id="7-ch6"><a href="chapter7.html">第7章：动态神经辐射场</a> <em>[需要: Ch6]</em></h4>
+<ul>
+<li>时变辐射场表示</li>
+<li>形变场（Deformation Field）建模</li>
+<li>光流与场景流约束</li>
+<li>基于Warp的运动表示</li>
+<li>正则流（Canonical Space）方法</li>
+</ul>
+<h4 id="84d-ch2-ch6"><a href="chapter8.html">第8章：4D神经表示与频域方法</a> <em>[需要: Ch2, Ch6]</em></h4>
+<ul>
+<li>4D时空辐射场</li>
+<li>傅里叶体积渲染</li>
+<li>K-Planes：分解的4D表示</li>
+<li>频域中的时间插值</li>
+<li>带宽限制与采样理论</li>
+</ul>
+<h4 id="9"><a href="chapter9.html">第9章：显式神经表示</a></h4>
+<ul>
+<li>体素网格与八叉树</li>
+<li>Plenoxels：球谐函数体素</li>
+<li>TensoRF：张量分解辐射场</li>
+<li>低秩与稀疏表示</li>
+<li>显式vs隐式权衡</li>
+</ul>
+<h4 id="103d"><a href="chapter10.html">第10章：3D高斯溅射</a></h4>
+<ul>
+<li>场景的高斯混合模型</li>
+<li>各向异性核与协方差</li>
+<li>可微光栅化</li>
+<li>自适应密度控制</li>
+<li>实时考虑</li>
+</ul>
+<h3 id="_8">第三部分：逆向渲染</h3>
+<h4 id="11"><a href="chapter11.html">第11章：逆向渲染的数学基础</a></h4>
+<ul>
+<li>渲染方程的逆问题</li>
+<li>不适定性与正则化</li>
+<li>梯度计算：伴随法与自动微分</li>
+<li>贝叶斯推断框架</li>
+<li>凸优化与非凸优化</li>
+</ul>
+<h4 id="12-ch11"><a href="chapter12.html">第12章：可微渲染</a> <em>[需要: Ch11]</em></h4>
+<ul>
+<li>可微光线追踪</li>
+<li>边缘采样与重参数化</li>
+<li>可微阴影与可见性</li>
+<li>梯度偏差与方差权衡</li>
+<li>实现框架：Mitsuba3, DIRT, Redner</li>
+</ul>
+<h4 id="13-ch5-ch12"><a href="chapter13.html">第13章：材质与几何重建</a> <em>[需要: Ch5, Ch12]</em></h4>
+<ul>
+<li>BRDF/BSSRDF估计</li>
+<li>形状从明暗恢复</li>
+<li>多视图立体重建中的优化</li>
+<li>联合材质-几何优化</li>
+<li>物理约束与先验</li>
+</ul>
+<h4 id="14-ch6-9-ch12"><a href="chapter14.html">第14章：神经逆向渲染</a> <em>[需要: Ch6-9, Ch12]</em></h4>
+<ul>
+<li>神经场的逆优化</li>
+<li>分解表示：几何、材质、光照</li>
+<li>生成模型作为先验</li>
+<li>少样本重建</li>
+<li>实时逆向渲染系统</li>
+</ul>
+<h3 id="_9">第四部分：波动光学及其扩展</h3>
+<h4 id="15"><a href="chapter15.html">第15章：标量波动光学基础</a></h4>
+<ul>
+<li>从麦克斯韦方程到亥姆霍兹方程</li>
+<li>惠更斯-菲涅尔原理</li>
+<li>菲涅尔衍射积分</li>
+<li>夫琅禾费衍射与傅里叶光学</li>
+<li>衍射受限成像系统</li>
+</ul>
+<h4 id="16"><a href="chapter16.html">第16章：相干性理论</a></h4>
+<ul>
+<li>时间相干性与光谱</li>
+<li>空间相干性与杨氏实验</li>
+<li>互相干函数与维纳-辛钦定理</li>
+<li>van Cittert-Zernike定理</li>
+<li>部分相干光的传播</li>
+</ul>
+<h4 id="17-ch15-ch16"><a href="chapter17.html">第17章：波前塑形与自适应光学</a> <em>[需要: Ch15, Ch16]</em></h4>
+<ul>
+<li>Zernike多项式与波前描述</li>
+<li>空间光调制器（SLM）原理</li>
+<li>相位共轭与时间反演</li>
+<li>散射介质中的聚焦</li>
+<li>图形学中的自适应采样与优化</li>
+</ul>
+<h4 id="18"><a href="chapter18.html">第18章：统计光学与散斑</a></h4>
+<ul>
+<li>光场的统计描述</li>
+<li>散斑的形成与统计</li>
+<li>粗糙表面散射</li>
+<li>相干成像中的散斑</li>
+<li>散斑的应用与抑制</li>
+</ul>
+<h4 id="19"><a href="chapter19.html">第19章：衍射理论与计算方法</a></h4>
+<ul>
+<li>几何绕射理论（GTD）</li>
+<li>物理绕射理论（PTD/UTD）</li>
+<li>Ufimtsev的边缘波理论</li>
+<li>复射线与衍射系数</li>
+<li>计算机图形学中的衍射效应</li>
+</ul>
+<h4 id="20"><a href="chapter20.html">第20章：非线性光学与显微成像</a></h4>
+<ul>
+<li>激光扫描共聚焦显微镜原理</li>
+<li>点扩散函数与光学切片</li>
+<li>双光子激发与非线性吸收</li>
+<li>体积渲染中的聚焦积分</li>
+<li>图形学中的景深与显微成像模拟</li>
+</ul>
+<h3 id="_10">第五部分：高级光学现象</h3>
+<h4 id="21-"><a href="chapter21.html">第21章：半经典光-物质相互作用</a></h4>
+<ul>
+<li>经典场与量子化物质</li>
+<li>二能级系统与Bloch方程</li>
+<li>拉比振荡与光学章动</li>
+<li>饱和与功率展宽</li>
+<li>从经典到量子的过渡</li>
+</ul>
+<h4 id="22"><a href="chapter22.html">第22章：偏振光学基础</a></h4>
+<ul>
+<li>偏振态的描述</li>
+<li>琼斯矢量与琼斯矩阵</li>
+<li>斯托克斯参数</li>
+<li>庞加莱球表示</li>
+<li>偏振器件的矩阵描述</li>
+</ul>
+<h4 id="23-ch22"><a href="chapter23.html">第23章：偏振渲染</a> <em>[需要: Ch22]</em></h4>
+<ul>
+<li>米勒矩阵方法</li>
+<li>偏振BRDF模型</li>
+<li>双折射材料渲染</li>
+<li>薄膜干涉与偏振</li>
+<li>偏振在计算机视觉中的应用</li>
+</ul>
+<h4 id="24"><a href="chapter24.html">第24章：全息显示与计算全息</a></h4>
+<ul>
+<li>全息记录与重建原理</li>
+<li>计算机生成全息图（CGH）</li>
+<li>空间光调制器显示技术</li>
+<li>相位恢复算法</li>
+<li>全息渲染管线</li>
+</ul>
+<h4 id="25"><a href="chapter25.html">第25章：超材料与变换光学</a></h4>
+<ul>
+<li>负折射率材料</li>
+<li>隐身斗篷原理</li>
+<li>梯度折射率光学</li>
+<li>超表面与相位调控</li>
+<li>图形学中的材料设计</li>
+</ul>
+<h4 id="26"><a href="chapter26.html">第26章：拓扑光子学</a></h4>
+<ul>
+<li>光子晶体与带隙</li>
+<li>拓扑边缘态</li>
+<li>手性与单向传播</li>
+<li>鲁棒光传输</li>
+<li>拓扑优化在渲染中的应用</li>
+</ul>
+<h3 id="_11">第六部分：量子光学与未来方向</h3>
+<h4 id="27"><a href="chapter27.html">第27章：量子光学基础</a></h4>
+<ul>
+<li>光的量子化</li>
+<li>相干态与压缩态</li>
+<li>光子统计</li>
+<li>二阶相干函数g^(2)</li>
+<li>量子噪声与散粒噪声</li>
+</ul>
+<h4 id="28-ch27"><a href="chapter28.html">第28章：量子成像与计算</a> <em>[需要: Ch27]</em></h4>
+<ul>
+<li>鬼成像与关联成像</li>
+<li>量子照明</li>
+<li>纠缠光子对成像</li>
+<li>量子计算在渲染中的潜力</li>
+<li>未来展望</li>
+</ul>
+<h2 id="_12">数学符号</h2>
+<p>本课程全程使用一致的符号：</p>
+<ul>
+<li><strong>向量</strong>：粗体小写（如 <strong>x</strong>、<strong>ω</strong>）</li>
+<li><strong>矩阵</strong>：粗体大写（如 <strong>M</strong>、<strong>R</strong>）</li>
+<li><strong>函数</strong>：斜体（如 <em>f</em>、<em>L</em>）</li>
+<li><strong>算子</strong>：花体（如 𝒯、ℒ）</li>
+<li><strong>复量</strong>：帽子记号（如 Ê、ψ̂）</li>
+<li><strong>傅里叶对</strong>：ℱ{f} = f̃</li>
+</ul>
+<h2 id="_13">章节依赖关系</h2>
+<pre class="codehilite"><code>第1章 ─┬─→ 第3章 ──→ 第4-10章（渲染技术）──→ 第11-14章（逆向渲染）
+       └─→ 第2章 ──┬→ 第4章, 第8章
+                    └→ 第15章 ──→ 第16-20章（波动光学）
+                                   └→ 第21章 ──→ 第27-28章（量子）
+</code></pre>
+
+<h2 id="_14">评估理念</h2>
+<p>每章包含：</p>
+<ul>
+<li><strong>2-3道基础练习</strong>：建立直觉并验证理解</li>
+<li><strong>2-3道挑战问题</strong>：推导新结果或证明定理</li>
+<li><strong>1道计算实现题</strong>：从数学到算法</li>
+<li><strong>提示</strong>：引导解题而不透露答案</li>
+<li><strong>解答</strong>：默认隐藏，强调数学推理</li>
+</ul>
+<h2 id="_15">推荐阅读</h2>
+<h3 id="_16">核心参考文献</h3>
+<ol>
+<li>Pharr, Jakob &amp; Humphreys - <em>Physically Based Rendering</em></li>
+<li>Born &amp; Wolf - <em>Principles of Optics</em></li>
+<li>Goodman - <em>Statistical Optics</em></li>
+<li>Saleh &amp; Teich - <em>Fundamentals of Photonics</em></li>
+</ol>
+<h3 id="_17">补充材料</h3>
+<ul>
+<li>各章节内链接的研究论文</li>
+<li>交互式笔记本（独立仓库）</li>
+<li>实现说明（语言无关）</li>
+</ul>
+<hr />
+<p><em>从<a href="chapter1.html">第1章：基础</a>开始 →</em></p>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter1.html" class="nav-link next">第1章：几何光学与渲染基础 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

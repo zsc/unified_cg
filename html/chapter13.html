@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第13章：材质与几何重建</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class="active"><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="13">第13章：材质与几何重建</h1>
+<p>本章探讨逆向渲染的核心问题：从观察图像中恢复场景的材质属性和几何形状。我们将建立在前面章节的可微渲染基础上，展示如何通过优化框架同时重建材质和几何。这些技术在计算机视觉、虚拟现实和数字资产创建中有着广泛应用。</p>
+<h2 id="_1">学习目标</h2>
+<p>完成本章后，您将能够：</p>
+<ol>
+<li>从多视图图像估计BRDF和BSSRDF参数</li>
+<li>理解并推导shape-from-shading的变分公式</li>
+<li>分析多视图立体重建中的优化景观</li>
+<li>设计联合材质-几何优化的能量函数</li>
+<li>应用物理约束提高重建质量</li>
+<li>评估不同先验对重建结果的影响</li>
+</ol>
+<h2 id="131-brdfbssrdf">13.1 BRDF/BSSRDF估计</h2>
+<h3 id="1311">13.1.1 逆向渲染方程</h3>
+<p>给定观察图像 $I(\mathbf{x})$，我们寻求恢复表面反射属性。渲染方程的逆问题可表述为：</p>
+<p>$$\min_{\rho} \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \int_{\Omega} L(\mathbf{x}, \boldsymbol{\omega}_o) d\boldsymbol{\omega}_o \right|^2$$
+其中出射辐射度由BRDF $\rho$ 决定：
+$$L(\mathbf{x}, \boldsymbol{\omega}_o) = \int_{\Omega} \rho(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) L_i(\mathbf{x}, \boldsymbol{\omega}_i) (\boldsymbol{\omega}_i \cdot \mathbf{n}) d\boldsymbol{\omega}_i$$
+这是一个典型的不适定逆问题，因为：</p>
+<ol>
+<li><strong>非唯一性</strong>：不同的BRDF和光照组合可能产生相同图像</li>
+<li><strong>不稳定性</strong>：观察中的小扰动可能导致解的大变化</li>
+<li><strong>不完备性</strong>：有限视角无法观察到所有反射方向</li>
+</ol>
+<p>为了使问题适定，我们引入正则化项：
+$$\mathcal{L}[\rho] = \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \mathcal{R}<a href="\mathbf{x}">\rho</a> \right|^2 + \lambda \mathcal{R}_{prior}[\rho]$$
+其中 $\mathcal{R}[\rho]$ 表示渲染算子，$\mathcal{R}_{prior}$ 为先验正则化。</p>
+<h3 id="1312-brdf">13.1.2 参数化BRDF模型</h3>
+<p>实际应用中，我们通常采用参数化BRDF模型：</p>
+<p><strong>微表面模型</strong>：
+$$\rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{F(\boldsymbol{\omega}_i, \mathbf{h}) G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) D(\mathbf{h})}{4(\boldsymbol{\omega}_i \cdot \mathbf{n})(\boldsymbol{\omega}_o \cdot \mathbf{n})}$$
+其中：</p>
+<ul>
+<li>$F$: Fresnel项，参数为折射率 $\eta$</li>
+<li>$G$: 几何衰减，参数为粗糙度 $\alpha$</li>
+<li>$D$: 法线分布，如GGX分布</li>
+<li>$\mathbf{h} = (\boldsymbol{\omega}_i + \boldsymbol{\omega}_o)/|\boldsymbol{\omega}_i + \boldsymbol{\omega}_o|$</li>
+</ul>
+<p><strong>Fresnel项</strong>（Schlick近似）：
+$$F(\boldsymbol{\omega}_i, \mathbf{h}) = F_0 + (1 - F_0)(1 - \boldsymbol{\omega}_i \cdot \mathbf{h})^5$$
+其中 $F_0 = \left(\frac{\eta - 1}{\eta + 1}\right)^2$ 为垂直入射时的反射率。</p>
+<p><strong>精确Fresnel方程</strong>：
+对于非偏振光：
+$$F = \frac{1}{2}(F_s + F_p)$$
+其中：
+$$F_s = \left|\frac{n_1\cos\theta_i - n_2\cos\theta_t}{n_1\cos\theta_i + n_2\cos\theta_t}\right|^2$$
+$$F_p = \left|\frac{n_2\cos\theta_i - n_1\cos\theta_t}{n_2\cos\theta_i + n_1\cos\theta_t}\right|^2$$
+利用Snell定律 $n_1\sin\theta_i = n_2\sin\theta_t$ 可得：
+$$\cos\theta_t = \sqrt{1 - \left(\frac{n_1}{n_2}\right)^2\sin^2\theta_i}$$
+<strong>GGX法线分布</strong>：
+$$D_{GGX}(\mathbf{h}) = \frac{\alpha^2}{\pi((\mathbf{n} \cdot \mathbf{h})^2(\alpha^2 - 1) + 1)^2}$$
+<strong>各向异性GGX</strong>：
+$$D_{aniso}(\mathbf{h}) = \frac{1}{\pi\alpha_x\alpha_y} \frac{1}{\left(\frac{(\mathbf{h}\cdot\mathbf{t})^2}{\alpha_x^2} + \frac{(\mathbf{h}\cdot\mathbf{b})^2}{\alpha_y^2} + (\mathbf{h}\cdot\mathbf{n})^2\right)^2}$$
+其中 $\mathbf{t}$ 和 $\mathbf{b}$ 为切线和副切线方向。</p>
+<p><strong>Smith遮蔽函数</strong>：
+$$G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = G_1(\boldsymbol{\omega}_i) G_1(\boldsymbol{\omega}_o)$$
+其中：
+$$G_1(\boldsymbol{\omega}) = \frac{2(\mathbf{n} \cdot \boldsymbol{\omega})}{(\mathbf{n} \cdot \boldsymbol{\omega}) + \sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot \boldsymbol{\omega})^2}}$$
+<strong>Height-correlated Smith函数</strong>：
+考虑入射和出射方向的相关性：
+$$G_{corr}(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \frac{1}{1 + \Lambda(\boldsymbol{\omega}_i) + \Lambda(\boldsymbol{\omega}_o)}$$
+其中：
+$$\Lambda(\boldsymbol{\omega}) = \frac{\sqrt{1 + \alpha^2\tan^2\theta} - 1}{2}$$
+<strong>完整参数向量</strong>：
+$$\boldsymbol{\theta} = [\alpha, \eta, \mathbf{k}_d, \mathbf{k}_s, \mathbf{k}_e]$$
+包含粗糙度、折射率、漫反射率、镜面反射率和自发光。</p>
+<p><strong>Disney BRDF参数化</strong>：
+更直观的艺术家友好参数：</p>
+<ul>
+<li>baseColor: 基础颜色</li>
+<li>metallic: 金属度 $\in [0,1]$</li>
+<li>roughness: 粗糙度 $\in [0,1]$</li>
+<li>specular: 镜面反射强度</li>
+<li>specularTint: 镜面反射染色</li>
+<li>anisotropic: 各向异性 $\in [0,1]$</li>
+<li>sheen: 织物光泽</li>
+<li>sheenTint: 光泽染色</li>
+<li>clearcoat: 清漆层</li>
+<li>clearcoatGloss: 清漆光泽度</li>
+</ul>
+<p>参数映射：
+$$\alpha = roughness^2$$
+$$F_0 = lerp(0.08 \cdot specular, baseColor, metallic)$$
+<strong>分层材质模型</strong>：
+$$\rho_{total} = \rho_{coat} + (1 - F_{coat}) \cdot \rho_{base}$$
+其中 $F_{coat}$ 为清漆层的Fresnel反射率。</p>
+<h3 id="1313">13.1.3 梯度计算</h3>
+<p>对BRDF参数 $\boldsymbol{\theta} = [\alpha, \eta, \mathbf{k}_d, \mathbf{k}_s]$ 的梯度：
+$$\frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}} = -2\sum_{\mathbf{x}} (I(\mathbf{x}) - \hat{I}(\mathbf{x})) \frac{\partial \hat{I}(\mathbf{x})}{\partial \boldsymbol{\theta}}$$
+其中渲染图像对参数的导数通过链式法则计算：
+$$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} = \int_{\Omega} \frac{\partial \rho}{\partial \boldsymbol{\theta}} L_i (\boldsymbol{\omega}_i \cdot \mathbf{n}) d\boldsymbol{\omega}_i$$
+<strong>对粗糙度的导数</strong>：
+$$\frac{\partial \rho}{\partial \alpha} = \rho \left[ \frac{\partial \ln D}{\partial \alpha} + \frac{\partial \ln G}{\partial \alpha} \right]$$
+其中：
+$$\frac{\partial \ln D_{GGX}}{\partial \alpha} = \frac{2}{\alpha} - \frac{4\alpha((\mathbf{n} \cdot \mathbf{h})^2 - 1)}{(\mathbf{n} \cdot \mathbf{h})^2(\alpha^2 - 1) + 1}$$
+<strong>Smith函数对粗糙度的导数</strong>：
+$$\frac{\partial G_1}{\partial \alpha} = -\frac{G_1^2(\boldsymbol{\omega})}{2(\mathbf{n} \cdot \boldsymbol{\omega})} \cdot \frac{\alpha}{\sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot \boldsymbol{\omega})^2}}$$
+<strong>对折射率的导数</strong>：
+$$\frac{\partial \rho}{\partial \eta} = \frac{G D}{4(\boldsymbol{\omega}_i \cdot \mathbf{n})(\boldsymbol{\omega}_o \cdot \mathbf{n})} \frac{\partial F}{\partial \eta}$$</p>
+<p>$$\frac{\partial F}{\partial \eta} = \frac{\partial F_0}{\partial \eta}(1 - (1 - \boldsymbol{\omega}_i \cdot \mathbf{h})^5)$$
+其中 $\frac{\partial F_0}{\partial \eta} = \frac{4}{(\eta + 1)^3}$。</p>
+<p><strong>对漫反射系数的导数</strong>：
+对于包含漫反射项的完整BRDF：
+$$\rho_{total} = \frac{\mathbf{k}_d}{\pi}(1 - F) + \rho_{spec}$$
+梯度为：
+$$\frac{\partial \rho_{total}}{\partial \mathbf{k}_d} = \frac{1 - F}{\pi}$$
+<strong>蒙特卡洛估计</strong>：
+实际计算中使用重要性采样：
+$$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} \approx \frac{1}{N} \sum_{i=1}^N \frac{\partial \rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o)}{\partial \boldsymbol{\theta}} \frac{L_i(\boldsymbol{\omega}_i)(\boldsymbol{\omega}_i \cdot \mathbf{n})}{p(\boldsymbol{\omega}_i)}$$
+<strong>方差减少技术</strong>：</p>
+<ol>
+<li>
+<p><strong>多重重要性采样</strong>（MIS）：
+$$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} = \sum_{k} \frac{1}{N_k} \sum_{i=1}^{N_k} w_k(\boldsymbol{\omega}_i) \frac{\partial \rho}{\partial \boldsymbol{\theta}} \frac{L_i(\boldsymbol{\omega}_i \cdot \mathbf{n})}{p_k(\boldsymbol{\omega}_i)}$$
+其中权重函数：
+$$w_k(\boldsymbol{\omega}) = \frac{N_k p_k(\boldsymbol{\omega})}{\sum_j N_j p_j(\boldsymbol{\omega})}$$</p>
+</li>
+<li>
+<p><strong>控制变量</strong>：
+   使用已知期望的辅助函数减少方差：
+$$\frac{\partial \hat{I}}{\partial \boldsymbol{\theta}} = \frac{\partial \hat{I}_{MC}}{\partial \boldsymbol{\theta}} - c(\frac{\partial \hat{I}_{CV}}{\partial \boldsymbol{\theta}} - E[\frac{\partial I_{CV}}{\partial \boldsymbol{\theta}}])$$
+<strong>Hessian计算</strong>：
+二阶导数对于优化算法的收敛性分析至关重要：
+$$\frac{\partial^2 \mathcal{L}}{\partial \boldsymbol{\theta}_i \partial \boldsymbol{\theta}_j} = 2\sum_{\mathbf{x}} \left[ \frac{\partial \hat{I}}{\partial \boldsymbol{\theta}_i} \frac{\partial \hat{I}}{\partial \boldsymbol{\theta}_j} - (I - \hat{I}) \frac{\partial^2 \hat{I}}{\partial \boldsymbol{\theta}_i \partial \boldsymbol{\theta}_j} \right]$$
+<strong>自动微分</strong>：
+使用反向模式自动微分（backpropagation）高效计算梯度：</p>
+</li>
+<li>
+<p>前向传播：计算渲染值</p>
+</li>
+<li>反向传播：从损失函数反向计算梯度</li>
+</ol>
+<p>对于路径追踪，需要处理不连续性：</p>
+<ul>
+<li>使用边缘采样处理可见性变化</li>
+<li>重参数化技巧处理采样相关的导数</li>
+</ul>
+<h3 id="1314-bssrdf">13.1.4 BSSRDF估计</h3>
+<p>对于半透明材质，需要考虑次表面散射：
+$$L_o(\mathbf{x}_o, \boldsymbol{\omega}_o) = \int_A \int_{\Omega} S(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) L_i(\mathbf{x}_i, \boldsymbol{\omega}_i) (\boldsymbol{\omega}_i \cdot \mathbf{n}_i) d\boldsymbol{\omega}_i dA$$
+<strong>完整BSSRDF分解</strong>：
+$$S(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) = S^{(1)}(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i) + S^{d}(\mathbf{x}_o, \boldsymbol{\omega}_o, \mathbf{x}_i, \boldsymbol{\omega}_i)$$
+其中：</p>
+<ul>
+<li>$S^{(1)}$: 单次散射项</li>
+<li>$S^{d}$: 多次散射（扩散）项</li>
+</ul>
+<p>偶极子近似下的BSSRDF：
+$$S(\mathbf{x}_o, \mathbf{x}_i) = \frac{1}{\pi} F_t(\eta) R_d(|\mathbf{x}_o - \mathbf{x}_i|) F_t(\eta)$$
+其中 $R_d(r)$ 为扩散剖面，依赖于吸收系数 $\sigma_a$ 和散射系数 $\sigma_s$。</p>
+<p><strong>扩散剖面</strong>：
+$$R_d(r) = \frac{\alpha'}{4\pi} \left[ \frac{z_r(1 + \sigma_{tr}d_r)e^{-\sigma_{tr}d_r}}{d_r^3} + \frac{z_v(1 + \sigma_{tr}d_v)e^{-\sigma_{tr}d_v}}{d_v^3} \right]$$
+其中：</p>
+<ul>
+<li>$\sigma_{tr} = \sqrt{3\sigma_a(\sigma_a + \sigma_s')}$ 为有效传输系数</li>
+<li>$\sigma_s' = \sigma_s(1 - g)$ 为约化散射系数</li>
+<li>$\alpha' = \sigma_s'/\sigma_{tr}$ 为反照率</li>
+<li>$z_r = 1/\sigma_{tr}$，$z_v = z_r + 4AD$ 为偶极子深度</li>
+<li>$d_r = \sqrt{r^2 + z_r^2}$，$d_v = \sqrt{r^2 + z_v^2}$ 为偶极子距离</li>
+<li>$A = \frac{1 + F_{dr}}{1 - F_{dr}}$，$D = 1/(3\sigma_{tr})$ 为边界条件参数</li>
+</ul>
+<p><strong>改进的扩散模型</strong>：</p>
+<ol>
+<li>
+<p><strong>量化扩散</strong>（Quantized Diffusion）：
+   处理多层材质的离散化方法：
+$$R_d(r) = \sum_{n=0}^{\infty} R_n \exp(-\sigma_n r)$$
+其中 $R_n$ 和 $\sigma_n$ 通过求解扩散方程的特征值问题得到。</p>
+</li>
+<li>
+<p><strong>光子束扩散</strong>（Photon Beam Diffusion）：
+   更准确地处理各向异性和几何边界：
+$$R_{PBD}(r, \theta) = \int_0^{\infty} J_0(sr) \tilde{R}(s) e^{-\mu_0 s \cos\theta} s ds$$
+其中 $J_0$ 为零阶贝塞尔函数，$\tilde{R}(s)$ 为频域反射率。</p>
+</li>
+</ol>
+<p><strong>参数化优化</strong>：
+我们优化材质参数 $\boldsymbol{\phi} = [\sigma_a, \sigma_s, g, \eta]$：
+$$\min_{\boldsymbol{\phi}} \sum_{\mathbf{x}} \left| I(\mathbf{x}) - \int_A S<a href="\mathbf{x}, \mathbf{x}" title=") L(\mathbf{x}">\boldsymbol{\phi}</a> dA' \right|^2$$
+<strong>梯度计算</strong>：
+对于扩散参数的导数：
+$$\frac{\partial R_d}{\partial \sigma_a} = R_d \left[ \frac{\partial \ln \alpha'}{\partial \sigma_a} + \sum_{i \in {r,v}} \frac{\partial \ln T_i}{\partial \sigma_a} \right]$$
+其中传输项：
+$$T_i = \frac{z_i(1 + \sigma_{tr}d_i)e^{-\sigma_{tr}d_i}}{d_i^3}$$
+<strong>采样策略</strong>：</p>
+<ol>
+<li>
+<p><strong>重要性采样</strong>：
+   根据扩散剖面采样入射点：
+$$p(\mathbf{x}_i | \mathbf{x}_o) \propto R_d(|\mathbf{x}_o - \mathbf{x}_i|)$$</p>
+</li>
+<li>
+<p><strong>分层采样</strong>：
+   将采样域分为近场（$r &lt; 3l_t$）和远场（$r \geq 3l_t$）</p>
+</li>
+</ol>
+<p><strong>分层表示</strong>：
+对于多层材质，使用分层BSSRDF：
+$$S_{total} = \sum_{k=1}^K w_k S_k(\sigma_{a,k}, \sigma_{s,k})$$
+其中 $w_k$ 为各层权重，满足 $\sum_k w_k = 1$。</p>
+<p><strong>快速近似</strong>：</p>
+<ol>
+<li>
+<p><strong>可分离近似</strong>：
+$$S(\mathbf{x}_o, \mathbf{x}_i) \approx S_r(|\mathbf{x}_o - \mathbf{x}_i|) S_{\omega}(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$$</p>
+</li>
+<li>
+<p><strong>高斯和近似</strong>：
+$$R_d(r) \approx \sum_{i=1}^n w_i \frac{e^{-r^2/2v_i}}{2\pi v_i}$$
+其中 $w_i$ 和 $v_i$ 通过最小二乘拟合得到。</p>
+</li>
+</ol>
+<p><strong>非均匀介质</strong>：
+对于空间变化的散射参数：
+$$\nabla \cdot (D(\mathbf{x})\nabla\phi(\mathbf{x})) - \sigma_a(\mathbf{x})\phi(\mathbf{x}) + Q(\mathbf{x}) = 0$$
+其中 $\phi$ 为光通量密度，$Q$ 为源项。使用有限元方法（FEM）求解。</p>
+<h2 id="132">13.2 形状从明暗恢复</h2>
+<h3 id="1321">13.2.1 经典形状从明暗</h3>
+<p>对于朗伯表面在正交投影下，亮度方程为：
+$$I(x,y) = \rho \mathbf{n}(x,y) \cdot \mathbf{l}$$
+其中表面法线与深度函数 $z(x,y)$ 的关系：
+$$\mathbf{n} = \frac{(-\partial z/\partial x, -\partial z/\partial y, 1)}{\sqrt{1 + (\partial z/\partial x)^2 + (\partial z/\partial y)^2}}$$
+引入梯度符号 $\mathbf{p} = -\partial z/\partial x$，$\mathbf{q} = -\partial z/\partial y$，则：
+$$\mathbf{n} = \frac{(p, q, 1)}{\sqrt{1 + p^2 + q^2}}$$
+<strong>反射图方程</strong>：
+当光源方向 $\mathbf{l} = (l_x, l_y, l_z)$ 已知时，亮度方程变为：
+$$I(x,y) = \frac{\rho(p l_x + q l_y + l_z)}{\sqrt{1 + p^2 + q^2}}$$
+这是一个关于 $(p, q)$ 的非线性偏微分方程，称为 <strong>Eikonal方程</strong>。</p>
+<p><strong>特征条带方法</strong>：
+沿着特征曲线，方程可以简化为常微分方程。特征曲线满足：
+$$\frac{dx}{dt} = \frac{\partial H}{\partial p}, \quad \frac{dy}{dt} = \frac{\partial H}{\partial q}$$
+其中 $H(p, q) = \sqrt{1 + p^2 + q^2} I(x,y) - \rho(p l_x + q l_y + l_z)$ 为Hamiltonian。</p>
+<h3 id="1322">13.2.2 变分公式</h3>
+<p>能量泛函包含数据项和正则化项：
+$$E[z] = \int_{\Omega} (I(x,y) - \rho \mathbf{n}[z] \cdot \mathbf{l})^2 dxdy + \lambda \int_{\Omega} |\nabla z|^2 dxdy$$
+<strong>泛函变分推导</strong>：
+设 $z + \epsilon h$ 为深度的扰动，其中 $h$ 为测试函数，$\epsilon \to 0$。</p>
+<p>首先计算法线的变分：
+$$\mathbf{n}[z + \epsilon h] = \frac{(-\nabla(z + \epsilon h), 1)}{\sqrt{1 + |\nabla(z + \epsilon h)|^2}}$$
+对 $\epsilon$ 求导并在 $\epsilon = 0$ 处计算：
+$$\frac{d\mathbf{n}}{d\epsilon}\bigg|_{\epsilon=0} = \frac{(-\nabla h, 0)}{\sqrt{1 + |\nabla z|^2}} - \frac{(-\nabla z, 1)(\nabla z \cdot \nabla h)}{(1 + |\nabla z|^2)^{3/2}}$$
+欧拉-拉格朗日方程：
+$$\frac{\partial}{\partial z}\left(\frac{(I - \rho \mathbf{n} \cdot \mathbf{l})^2}{\sqrt{1 + |\nabla z|^2}}\right) - \lambda \nabla^2 z = 0$$
+<strong>完整形式的欧拉-拉格朗日方程</strong>：
+对数据项进行变分：
+$$\frac{\delta E_{data}}{\delta z} = -2(I - \rho \mathbf{n} \cdot \mathbf{l}) \rho \frac{\partial (\mathbf{n} \cdot \mathbf{l})}{\partial z}$$
+其中：
+$$\frac{\partial (\mathbf{n} \cdot \mathbf{l})}{\partial z} = \frac{\mathbf{l} \cdot \nabla^2 z \cdot \mathbf{n} - (\mathbf{l} \cdot \mathbf{n})(\mathbf{n} \cdot \nabla^2 z \cdot \mathbf{n})}{(1 + |\nabla z|^2)^{3/2}}$$
+<strong>高阶正则化</strong>：
+考虑曲率正则化以获得更平滑的解：
+$$E_{reg}[z] = \int_{\Omega} \left(\kappa_1^2 + \kappa_2^2\right) dxdy$$
+其中主曲率：
+$$\kappa_1, \kappa_2 = \frac{z_{xx} + z_{yy} \pm \sqrt{(z_{xx} - z_{yy})^2 + 4z_{xy}^2}}{2(1 + |\nabla z|^2)^{3/2}}$$
+<strong>数值解法</strong>：</p>
+<ol>
+<li>
+<p><strong>固定点迭代</strong>：
+$$z^{(k+1)} = z^{(k)} - \tau \left[ \frac{\delta E_{data}}{\delta z} + \lambda \nabla^2 z^{(k)} \right]$$
+其中步长 $\tau$ 通过线搜索确定。</p>
+</li>
+<li>
+<p><strong>多重网格方法</strong>：
+   从粗网格到细网格逐步求解，避免局部最小值</p>
+</li>
+</ol>
+<ul>
+<li>限制算子：$I_h^{2h}: \Omega_h \to \Omega_{2h}$</li>
+<li>延拓算子：$I_{2h}^h: \Omega_{2h} \to \Omega_h$</li>
+<li>V-循环或W-循环迭代</li>
+</ul>
+<ol start="3">
+<li>
+<p><strong>线性化方法</strong>：
+   在每次迭代中将非线性项线性化：
+$$I \approx \rho(\mathbf{n}^{(k)} \cdot \mathbf{l}) + \rho \frac{\partial(\mathbf{n} \cdot \mathbf{l})}{\partial z}\bigg|_{z^{(k)}} (z - z^{(k)})$$</p>
+</li>
+<li>
+<p><strong>半隐式方案</strong>：
+   处理非线性和刚性问题：
+$$\frac{z^{(k+1)} - z^{(k)}}{\Delta t} = -\frac{\delta E}{\delta z}[z^{(k+1)}]_{linear} - \frac{\delta E}{\delta z}[z^{(k)}]_{nonlinear}$$
+<strong>边界条件处理</strong>：</p>
+</li>
+<li>
+<p><strong>Dirichlet条件</strong>：$z|_{\partial\Omega} = z_0$</p>
+</li>
+<li><strong>Neumann条件</strong>：$\frac{\partial z}{\partial n}|_{\partial\Omega} = 0$</li>
+<li><strong>混合条件</strong>：结合已知深度和法线信息</li>
+</ol>
+<p><strong>稳定性分析</strong>：
+线性化算子的谱半径决定收敛性：
+$$\rho(L) = \max_i |\lambda_i(L)| &lt; 1$$
+其中 $L$ 为迭代矩阵。CFL条件：
+$$\tau &lt; \frac{2}{\lambda_{max}(H)}$$
+其中 $H$ 为Hessian矩阵。</p>
+<h3 id="1323">13.2.3 多光源形状从明暗</h3>
+<p>给定 $m$ 个光照条件下的图像 ${I_j}_{j=1}^m$：
+$$E[z] = \sum_{j=1}^m \int_{\Omega} (I_j - \rho \mathbf{n}[z] \cdot \mathbf{l}_j)^2 dxdy$$
+最优性条件产生非线性PDE系统。</p>
+<p><strong>约束优化公式</strong>：
+引入辅助变量 $\mathbf{N} = (n_x, n_y, n_z)$ 表示法线场：
+$$\min_{z, \mathbf{N}} \sum_{j=1}^m \int_{\Omega} (I_j - \rho \mathbf{N} \cdot \mathbf{l}_j)^2 dxdy$$
+s.t. $\mathbf{N} = \frac{(-z_x, -z_y, 1)}{\sqrt{1 + z_x^2 + z_y^2}}$, $|\mathbf{N}| = 1$</p>
+<p><strong>交替方向乘子法</strong>（ADMM）：
+$$\mathcal{L} = \sum_j |I_j - \rho \mathbf{N} \cdot \mathbf{l}_j|^2 + \frac{\mu}{2}|\mathbf{N} - \mathbf{n}[z] + \mathbf{u}|^2$$
+迭代步骤：</p>
+<ol>
+<li><strong>N-子问题</strong>：$\mathbf{N}^{(k+1)} = \arg\min_{|\mathbf{N}|=1} \mathcal{L}(\mathbf{N}, z^{(k)}, \mathbf{u}^{(k)})$</li>
+<li><strong>z-子问题</strong>：$z^{(k+1)} = \arg\min_z |\mathbf{N}^{(k+1)} - \mathbf{n}[z] + \mathbf{u}^{(k)}|^2$</li>
+<li><strong>对偶更新</strong>：$\mathbf{u}^{(k+1)} = \mathbf{u}^{(k)} + \mathbf{N}^{(k+1)} - \mathbf{n}[z^{(k+1)}]$</li>
+</ol>
+<p><strong>鲁棒估计</strong>：
+使用Huber损失函数处理异常值：
+$$\rho_{Huber}(r) = \begin{cases} 
+\frac{1}{2}r^2 &amp; |r| \leq \delta \
+\delta(|r| - \frac{\delta}{2}) &amp; |r| &gt; \delta
+\end{cases}$$</p>
+<h3 id="1324">13.2.4 光度立体</h3>
+<p>当 $m \geq 3$ 时，可以线性求解法线：
+$$\begin{bmatrix} I_1 \ I_2 \ \vdots \ I_m \end{bmatrix} = \rho \begin{bmatrix} \mathbf{l}_1^T \ \mathbf{l}_2^T \ \vdots \ \mathbf{l}_m^T \end{bmatrix} \mathbf{n}$$
+通过最小二乘：$\mathbf{n} = \frac{1}{\rho}(\mathbf{L}^T\mathbf{L})^{-1}\mathbf{L}^T\mathbf{I}$</p>
+<p><strong>鲁棒光度立体</strong>：
+处理阴影和高光的鲁棒估计：</p>
+<ol>
+<li>
+<p><strong>RANSAC方法</strong>：
+   随机选择3个光源，估计法线，计算内点</p>
+</li>
+<li>
+<p><strong>稀疏回归</strong>：
+$$\min_{\mathbf{n}, \mathbf{e}} |\mathbf{I} - \rho\mathbf{L}\mathbf{n} - \mathbf{e}|^2 + \lambda|\mathbf{e}|_1$$
+其中 $\mathbf{e}$ 为稀疏误差项（阴影/高光）。</p>
+</li>
+<li>
+<p><strong>矩阵秩最小化</strong>：
+$$\min_{\mathbf{N}, \mathbf{E}} rank(\mathbf{N}) + \lambda|\mathbf{E}|_0$$
+s.t. $\mathbf{I} = \mathbf{N} + \mathbf{E}$</p>
+</li>
+</ol>
+<p><strong>法线积分</strong>：
+从法线场恢复深度需要满足可积性条件：
+$$\frac{\partial n_x/n_z}{\partial y} = \frac{\partial n_y/n_z}{\partial x}$$
+使用泊松方程求解：
+$$\nabla^2 z = \nabla \cdot \left( \frac{n_x}{n_z}, \frac{n_y}{n_z} \right)$$
+<strong>快速傅里叶变换求解</strong>：
+在频域中：
+$$\hat{z}(u,v) = \frac{i2\pi(u\hat{n}_x + v\hat{n}_y)/\hat{n}_z}{-4\pi^2(u^2 + v^2)}$$
+其中 $\hat{·}$ 表示傅里叶变换。</p>
+<p><strong>最小二乘积分</strong>：
+考虑噪声的影响，最小化：
+$$E[z] = \int_{\Omega} \left[ \left(\frac{\partial z}{\partial x} + \frac{n_x}{n_z}\right)^2 + \left(\frac{\partial z}{\partial y} + \frac{n_y}{n_z}\right)^2 \right] dxdy$$
+<strong>非朗伯表面的光度立体</strong>：
+对于一般的BRDF $\rho(\mathbf{n}, \mathbf{l}, \mathbf{v})$：
+$$I_j = \rho(\mathbf{n}, \mathbf{l}_j, \mathbf{v})$$
+<strong>球谐函数方法</strong>：
+使用球谐函数展开：
+$$\rho(\mathbf{n}, \mathbf{l}, \mathbf{v}) \approx \sum_{l=0}^{L} \sum_{m=-l}^{l} a_{lm}(\mathbf{v}) Y_{lm}(\mathbf{n}) Y_{lm}(\mathbf{l})$$
+这将非线性问题转化为线性系统。</p>
+<p>对于各向同性BRDF，使用Zernike多项式：
+$$\rho(\theta_h) = \sum_{n=0}^{N} c_n P_n(\cos\theta_h)$$
+其中 $\theta_h$ 为半角，$P_n$ 为Legendre多项式。</p>
+<p><strong>双向纹理函数</strong>（BTF）：
+考虑空间变化的BRDF：
+$$I_j(\mathbf{x}) = \rho(\mathbf{x}, \mathbf{n}(\mathbf{x}), \mathbf{l}_j, \mathbf{v})$$
+使用张量分解：
+$$\rho(\mathbf{x}, \boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \approx \sum_{k=1}^{K} a_k(\mathbf{x}) b_k(\boldsymbol{\omega}_i) c_k(\boldsymbol{\omega}_o)$$
+<strong>校准光度立体</strong>：
+使用已知形状的参考物体校准光源方向：
+$$\mathbf{l}_j = \arg\min_{|\mathbf{l}|=1} \sum_{\mathbf{x} \in \mathcal{R}} (I_j(\mathbf{x}) - \rho_{ref} \mathbf{n}_{ref}(\mathbf{x}) \cdot \mathbf{l})^2$$
+<strong>自校准方法</strong>：
+利用可积性约束同时估计光源和法线：
+$$\min_{\mathbf{L}, \mathbf{N}} |\mathbf{I} - \mathbf{L}\mathbf{N}|_F^2 + \lambda \int_{\Omega} \left|\frac{\partial \mathbf{p}}{\partial y} - \frac{\partial \mathbf{q}}{\partial x}\right|^2 dxdy$$
+其中 $\mathbf{p} = n_x/n_z$，$\mathbf{q} = n_y/n_z$。</p>
+<p><strong>深度学习方法</strong>：
+使用CNN直接从图像预测法线：
+$$\mathbf{n} = f_{\theta}({I_j}_{j=1}^m)$$
+其中 $f_{\theta}$ 为神经网络，$\theta$ 为学习参数。</p>
+<h2 id="133">13.3 多视图立体重建中的优化</h2>
+<h3 id="1331">13.3.1 体积雕刻能量</h3>
+<p>定义占用场 $\phi: \mathbb{R}^3 \rightarrow {0,1}$，光度一致性能量：
+$$E[\phi] = \sum_{i,j} \int_{\partial\Omega[\phi]} |I_i(\pi_i(\mathbf{x})) - I_j(\pi_j(\mathbf{x}))|^2 dS$$
+其中 $\pi_i$ 为相机 $i$ 的投影函数。</p>
+<p><strong>投影函数</strong>：
+对于透视相机：
+$$\pi_i(\mathbf{x}) = \mathbf{K}_i \mathbf{R}_i (\mathbf{x} - \mathbf{c}_i)$$
+其中：</p>
+<ul>
+<li>$\mathbf{K}_i$ 为内参矩阵</li>
+<li>$\mathbf{R}_i$ 为旋转矩阵</li>
+<li>$\mathbf{c}_i$ 为相机中心</li>
+</ul>
+<p><strong>可见性约束</strong>：
+仅在点 $\mathbf{x}$ 对两个相机都可见时计算光度一致性：
+$$E[\phi] = \sum_{i,j} \int_{\partial\Omega[\phi]} V_i(\mathbf{x}) V_j(\mathbf{x}) |I_i - I_j|^2 dS$$
+其中 $V_i(\mathbf{x}) = 1$ 当 $\mathbf{x}$ 对相机 $i$ 可见。</p>
+<p><strong>空间雕刻算法</strong>：</p>
+<ol>
+<li>初始化为包含所有点的体积</li>
+<li>迭代删除不一致的体素：
+$$\phi^{(k+1)}(\mathbf{x}) = \begin{cases}
+   0 &amp; \text{if } \sum_{i,j} V_i V_j |I_i - I_j|^2 &gt; \tau \
+   \phi^{(k)}(\mathbf{x}) &amp; \text{otherwise}
+   \end{cases}$$</li>
+</ol>
+<h3 id="1332">13.3.2 变分水平集方法</h3>
+<p>使用隐式表面 ${\mathbf{x}: \phi(\mathbf{x}) = 0}$：
+$$E[\phi] = \sum_{i,j} \int_{\mathbb{R}^3} |I_i - I_j|^2 \delta(\phi) |\nabla\phi| d\mathbf{x}$$
+演化方程：
+$$\frac{\partial \phi}{\partial t} = \delta(\phi) \left[ \sum_{i,j} (I_i - I_j)(\nabla I_i - \nabla I_j) \cdot \frac{\nabla\phi}{|\nabla\phi|} + \lambda \kappa \right]$$
+<strong>完整的能量泛函</strong>：
+$$E[\phi] = E_{photo}[\phi] + \lambda_1 E_{smooth}[\phi] + \lambda_2 E_{silhouette}[\phi]$$
+其中：</p>
+<ul>
+<li><strong>光度一致性</strong>：$E_{photo} = \sum_{i,j} \int \rho(I_i - I_j) \delta(\phi) |\nabla\phi| d\mathbf{x}$</li>
+<li><strong>平滑性</strong>：$E_{smooth} = \int \delta(\phi) |\nabla\phi| d\mathbf{x}$ （最小表面积）</li>
+<li><strong>轮廓约束</strong>：$E_{silhouette} = \sum_i \int (S_i - \hat{S}_i[\phi])^2 d\mathbf{x}$</li>
+</ul>
+<p><strong>数值实现</strong>：</p>
+<ol>
+<li><strong>窄带水平集</strong>：仅在 $|\phi| &lt; \epsilon$ 的窄带内更新</li>
+<li><strong>重初始化</strong>：周期性将 $\phi$ 重初始化为符号距离函数</li>
+<li><strong>CFL条件</strong>：$\Delta t &lt; \frac{\Delta x}{\max|F|}$，其中 $F$ 为速度场</li>
+</ol>
+<p><strong>拓扑变化</strong>：
+水平集方法自然处理拓扑变化（合并、分裂）：
+$$\phi_{merge} = \min(\phi_1, \phi_2)$$
+$$\phi_{split} = \max(\phi_1, -\phi_2)$$</p>
+<h3 id="1333-patchmatch">13.3.3 PatchMatch立体</h3>
+<p>离散优化公式，为每个像素分配深度 $d_p$：
+$$E({d_p}) = \sum_p C(p, d_p) + \sum_{(p,q) \in \mathcal{N}} V(d_p, d_q)$$
+其中：</p>
+<ul>
+<li>$C(p,d)$: 匹配代价</li>
+<li>$V(d_p,d_q)$: 平滑项</li>
+</ul>
+<p><strong>匹配代价函数</strong>：
+基于局部窗口的归一化互相关（NCC）：
+$$C_{NCC}(p, d) = 1 - \frac{\sum_{q \in W(p)} (I_{ref}(q) - \bar{I}_{ref})(I_{src}(\pi(q,d)) - \bar{I}_{src})}{\sqrt{\sum_q (I_{ref}(q) - \bar{I}_{ref})^2} \sqrt{\sum_q (I_{src} - \bar{I}_{src})^2}}$$
+其中 $W(p)$ 为以 $p$ 为中心的窗口，$\pi(q,d)$ 为深度 $d$ 处的重投影。</p>
+<p><strong>PatchMatch传播</strong>：
+核心思想是利用空间连贯性：</p>
+<ol>
+<li><strong>随机初始化</strong>：$d_p \sim U[d_{min}, d_{max}]$</li>
+<li>
+<p><strong>传播</strong>：从邻域传播好的深度值
+$$d_p^{(k+1)} = \arg\min_{d \in {d_p^{(k)}, d_{p-1}^{(k)}, d_{p-w}^{(k)}}} C(p, d)$$</p>
+</li>
+<li>
+<p><strong>随机搜索</strong>：在当前值附近随机采样
+$$d_{test} = d_p + \Delta d \cdot \alpha^i, \quad \Delta d \sim U[-1, 1]$$
+其中 $\alpha &lt; 1$ 为搜索半径缩减系数。</p>
+</li>
+</ol>
+<p><strong>平面拟合扩展</strong>：
+为每个像素估计平面参数 $(a_p, b_p, c_p)$：
+$$d(x,y) = a_p x + b_p y + c_p$$
+这提供了亚像素精度和更好的传播。</p>
+<h3 id="1334">13.3.4 平面扫描体积</h3>
+<p>构建代价体积 $\mathcal{C}(x,y,d)$：
+$$\mathcal{C}(x,y,d) = \frac{1}{|\mathcal{V}|} \sum_{i \in \mathcal{V}} |I_{ref}(x,y) - I_i(\mathbf{H}_i(x,y,d))|$$
+其中 $\mathbf{H}_i$ 为深度 $d$ 处的单应变换。</p>
+<p><strong>单应变换推导</strong>：
+对于参考视图中的点 $(x,y)$ 在深度 $d$ 处：</p>
+<ol>
+<li>3D点：$\mathbf{X} = d \mathbf{K}_{ref}^{-1}[x, y, 1]^T$</li>
+<li>投影到源视图：$[x', y', 1]^T \sim \mathbf{K}_i \mathbf{R}_i (\mathbf{X} - \mathbf{c}_i)$</li>
+</ol>
+<p>单应矩阵：
+$$\mathbf{H}_i(d) = \mathbf{K}_i (\mathbf{R}_i - \frac{\mathbf{t}_i \mathbf{n}^T}{d}) \mathbf{K}_{ref}^{-1}$$
+其中 $\mathbf{n}$ 为参考视图中的平面法线（通常为 $[0,0,1]^T$）。</p>
+<p><strong>代价体积正则化</strong>：
+使用加权中值滤波或双边滤波：
+$$\tilde{\mathcal{C}}(x,y,d) = \frac{\sum_{(x',y',d') \in \mathcal{N}} w(x',y',d') \mathcal{C}(x',y',d')}{\sum_{(x',y',d') \in \mathcal{N}} w(x',y',d')}$$
+权重函数：
+$$w(x',y',d') = \exp\left(-\frac{|(x-x',y-y')|^2}{2\sigma_s^2} - \frac{(d-d')^2}{2\sigma_d^2}\right)$$
+<strong>深度图提取</strong>：</p>
+<ol>
+<li><strong>Winner-takes-all</strong>：$d^*(x,y) = \arg\min_d \mathcal{C}(x,y,d)$</li>
+<li><strong>亚像素精度</strong>：使用抛物线拟合
+$$d_{sub} = d^<em> - \frac{\mathcal{C}(d^</em>+1) - \mathcal{C}(d^<em>-1)}{2(\mathcal{C}(d^</em>+1) + \mathcal{C}(d^<em>-1) - 2\mathcal{C}(d^</em>))}$$</li>
+</ol>
+<h2 id="134-">13.4 联合材质-几何优化</h2>
+<h3 id="1341">13.4.1 耦合优化框架</h3>
+<p>同时优化几何 $\mathcal{G}$ 和材质 $\mathcal{M}$：
+$$E[\mathcal{G}, \mathcal{M}] = E_{photo}[\mathcal{G}, \mathcal{M}] + \lambda_g E_{geom}[\mathcal{G}] + \lambda_m E_{mat}[\mathcal{M}]$$
+<strong>详细的能量项</strong>：</p>
+<ol>
+<li>
+<p><strong>光度一致性</strong>：
+$$E_{photo} = \sum_{i} \int_{\Omega} V_i(\mathbf{x}) |I_i(\pi_i(\mathbf{x})) - \mathcal{R}<a href="\mathbf{x}, \boldsymbol{\omega}_i">\mathcal{G}, \mathcal{M}</a>|^2 d\mathbf{x}$$
+其中 $\mathcal{R}$ 为渲染算子，考虑几何和材质。</p>
+</li>
+<li>
+<p><strong>几何正则化</strong>：
+$$E_{geom} = \alpha_1 \int_{\mathcal{S}} H^2 dS + \alpha_2 \int_{\mathcal{S}} K^2 dS$$
+其中 $H$ 为平均曲率，$K$ 为高斯曲率。</p>
+</li>
+<li>
+<p><strong>材质正则化</strong>：
+$$E_{mat} = \beta_1 \int_{\mathcal{S}} |\nabla_{\mathcal{S}} \mathcal{M}|^2 dS + \beta_2 D_{KL}(p(\mathcal{M}) | p_{prior}(\mathcal{M}))$$
+其中 $\nabla_{\mathcal{S}}$ 为表面梯度，$D_{KL}$ 为KL散度。</p>
+</li>
+</ol>
+<h3 id="1342">13.4.2 交替优化</h3>
+<p><strong>几何步骤</strong>（固定材质）：
+$$\mathcal{G}^{(k+1)} = \arg\min_{\mathcal{G}} E[\mathcal{G}, \mathcal{M}^{(k)}]$$
+<strong>材质步骤</strong>（固定几何）：
+$$\mathcal{M}^{(k+1)} = \arg\min_{\mathcal{M}} E[\mathcal{G}^{(k+1)}, \mathcal{M}]$$
+<strong>收敛性分析</strong>：
+定义增广拉格朗日函数：
+$$\mathcal{L}(\mathcal{G}, \mathcal{M}, \mathbf{z}) = E[\mathcal{G}, \mathcal{M}] + \frac{\rho}{2}|\mathcal{F}(\mathcal{G}) - \mathcal{M} + \mathbf{z}|^2$$
+其中 $\mathcal{F}$ 为从几何到材质的映射（如法线到反照率）。</p>
+<p><strong>收敛条件</strong>：
+如果 $E$ 是下有界的，且每个子问题都有唯一解，则：
+$$E[\mathcal{G}^{(k+1)}, \mathcal{M}^{(k+1)}] \leq E[\mathcal{G}^{(k)}, \mathcal{M}^{(k)}]$$
+且序列收敛到驻点。</p>
+<p><strong>加速策略</strong>：</p>
+<ol>
+<li>
+<p><strong>动量方法</strong>：
+$$\mathcal{G}^{(k+1)} = \mathcal{G}^{(k)} - \alpha \nabla_{\mathcal{G}} E + \beta(\mathcal{G}^{(k)} - \mathcal{G}^{(k-1)})$$</p>
+</li>
+<li>
+<p><strong>多尺度优化</strong>：
+   从粗糙到精细的几何表示</p>
+</li>
+<li>
+<p><strong>预条件</strong>：
+   使用Hessian的对角近似</p>
+</li>
+</ol>
+<h3 id="1343">13.4.3 联合梯度下降</h3>
+<p>计算完整梯度：
+$$\begin{bmatrix} \mathcal{G}^{(k+1)} \ \mathcal{M}^{(k+1)} \end{bmatrix} = \begin{bmatrix} \mathcal{G}^{(k)} \ \mathcal{M}^{(k)} \end{bmatrix} - \alpha \begin{bmatrix} \nabla_{\mathcal{G}} E \ \nabla_{\mathcal{M}} E \end{bmatrix}$$
+需要考虑Hessian的条件数。</p>
+<p><strong>Hessian矩阵结构</strong>：
+$$\mathbf{H} = \begin{bmatrix} 
+\nabla_{\mathcal{G}\mathcal{G}}^2 E &amp; \nabla_{\mathcal{G}\mathcal{M}}^2 E \
+\nabla_{\mathcal{M}\mathcal{G}}^2 E &amp; \nabla_{\mathcal{M}\mathcal{M}}^2 E
+\end{bmatrix}$$
+其中交叉项 $\nabla_{\mathcal{G}\mathcal{M}}^2 E$ 反映了几何-材质耦合。</p>
+<p><strong>预条件器设计</strong>：
+使用块对角预条件器：
+$$\mathbf{P} = \begin{bmatrix} 
+(\nabla_{\mathcal{G}\mathcal{G}}^2 E)^{-1} &amp; 0 \
+0 &amp; (\nabla_{\mathcal{M}\mathcal{M}}^2 E)^{-1}
+\end{bmatrix}$$
+<strong>自适应步长</strong>：
+使用Armijo-Goldstein线搜索：
+$$\alpha^* = \arg\max_{\alpha} {\alpha : E(\mathbf{x} - \alpha\nabla E) \leq E(\mathbf{x}) - c\alpha|\nabla E|^2}$$
+其中 $c \in (0, 0.5)$ 为常数。</p>
+<p><strong>二阶方法</strong>：
+牛顿法更新：
+$$\begin{bmatrix} \Delta\mathcal{G} \ \Delta\mathcal{M} \end{bmatrix} = -\mathbf{H}^{-1} \begin{bmatrix} \nabla_{\mathcal{G}} E \ \nabla_{\mathcal{M}} E \end{bmatrix}$$
+使用拟Newton方法（L-BFGS）避免存储完整Hessian。</p>
+<h3 id="1344">13.4.4 分解歧义性</h3>
+<p>材质-几何-光照分解存在固有歧义：</p>
+<ul>
+<li>尺度歧义：$(\alpha\mathcal{M}, \mathcal{L}/\alpha)$ 产生相同图像</li>
+<li>低频歧义：光照与反照率的低频分量难以区分</li>
+</ul>
+<h2 id="135">13.5 物理约束与先验</h2>
+<h3 id="1351">13.5.1 材质物理约束</h3>
+<p><strong>能量守恒</strong>：
+$$\int_{\Omega} \rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o \leq 1$$
+<strong>Helmholtz互易性</strong>：
+$$\rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \rho(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$$
+<strong>单调性约束</strong>（对于粗糙度）：
+$$\alpha_1 &lt; \alpha_2 \Rightarrow D_{\alpha_1}(\mathbf{h}) &gt; D_{\alpha_2}(\mathbf{h}), \forall \mathbf{h} \neq \mathbf{n}$$</p>
+<h3 id="1352">13.5.2 几何先验</h3>
+<p><strong>最小表面积</strong>：
+$$E_{area}[\mathcal{S}] = \int_{\mathcal{S}} dS$$
+<strong>平均曲率流</strong>：
+$$E_{smooth}[\mathcal{S}] = \int_{\mathcal{S}} H^2 dS$$
+其中 $H = (\kappa_1 + \kappa_2)/2$ 为平均曲率。</p>
+<p><strong>体积保持</strong>：
+$$\int_{\Omega} \phi d\mathbf{x} = V_0$$</p>
+<h3 id="1353">13.5.3 统计先验</h3>
+<p><strong>材质分布先验</strong>（对数正态）：
+$$p(\alpha) = \frac{1}{\alpha\sigma\sqrt{2\pi}} \exp\left(-\frac{(\ln\alpha - \mu)^2}{2\sigma^2}\right)$$
+<strong>空间相关性</strong>（MRF）：
+$$p(\mathcal{M}) \propto \exp\left(-\sum_{(i,j) \in \mathcal{N}} \psi(\mathcal{M}_i, \mathcal{M}_j)\right)$$</p>
+<h3 id="1354">13.5.4 学习先验</h3>
+<p>使用神经网络编码先验：
+$$E_{prior}[\mathcal{M}] = |\mathcal{M} - G_\theta(z)|^2$$
+其中 $G_\theta$ 为预训练的材质生成器。</p>
+<h2 id="_2">本章小结</h2>
+<p>本章介绍了材质与几何重建的核心技术：</p>
+<p><strong>关键概念</strong>：</p>
+<ul>
+<li>BRDF/BSSRDF参数估计的优化框架</li>
+<li>形状从明暗的变分公式和数值解法</li>
+<li>多视图立体的连续和离散优化方法</li>
+<li>联合材质-几何优化的耦合问题</li>
+<li>物理约束和统计先验的作用</li>
+</ul>
+<p><strong>核心方程</strong>：</p>
+<ol>
+<li><strong>逆向渲染</strong>：$\min_{\rho} |I - \mathcal{R}[\rho]|^2$</li>
+<li><strong>形状从明暗</strong>：$(I - \rho\mathbf{n}\cdot\mathbf{l})^2 + \lambda|\nabla z|^2$</li>
+<li><strong>多视图立体</strong>：$\sum_{i,j}|I_i(\pi_i(\mathbf{x})) - I_j(\pi_j(\mathbf{x}))|^2$</li>
+<li><strong>联合优化</strong>：$E_{photo} + \lambda_g E_{geom} + \lambda_m E_{mat}$</li>
+</ol>
+<h2 id="_3">常见陷阱与错误</h2>
+<ol>
+<li><strong>局部最小值</strong>：非凸优化容易陷入局部最优，需要良好初始化</li>
+<li><strong>尺度歧义</strong>：忽略归一化导致材质-光照分解不稳定</li>
+<li><strong>过拟合</strong>：参数过多时容易过拟合观察数据</li>
+<li><strong>数值稳定性</strong>：法线计算中分母接近零需要正则化</li>
+<li><strong>边界处理</strong>：形状边界的可见性变化需要特殊处理</li>
+</ol>
+<h2 id="_4">最佳实践检查清单</h2>
+<ul>
+<li>[ ] 选择合适的BRDF参数化以平衡表达能力和稳定性</li>
+<li>[ ] 使用多尺度优化策略避免局部最小值</li>
+<li>[ ] 加入物理约束确保结果合理性</li>
+<li>[ ] 考虑光照-材质-几何的耦合关系</li>
+<li>[ ] 验证优化算法的收敛性</li>
+<li>[ ] 评估重建结果的不确定性</li>
+</ul>
+<h2 id="_5">练习题</h2>
+<h3 id="131brdf">练习 13.1：微表面BRDF的能量守恒</h3>
+<p>证明GGX微表面模型满足能量守恒约束。具体地，证明：
+$$\int_{\Omega} \rho_{GGX}(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o \leq 1$$
+<strong>提示</strong>：利用微表面理论中的遮蔽-阴影函数 $G$ 的性质。</p>
+<details>
+<summary>解答</summary>
+<p>对于微表面BRDF：
+$$\rho = \frac{F(\boldsymbol{\omega}_i, \mathbf{h}) G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) D(\mathbf{h})}{4(\boldsymbol{\omega}_i \cdot \mathbf{n})(\boldsymbol{\omega}_o \cdot \mathbf{n})}$$
+积分可以变换到半角向量空间：
+$$\int_{\Omega} \rho (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o = \int_{\Omega_h} F G D \frac{(\mathbf{h} \cdot \boldsymbol{\omega}_i)}{(\boldsymbol{\omega}_i \cdot \mathbf{n})} d\mathbf{h}$$
+利用Smith遮蔽函数的性质：
+$$\int_{\Omega} G(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) \frac{(\mathbf{h} \cdot \boldsymbol{\omega}_i)}{(\boldsymbol{\omega}_i \cdot \mathbf{n})} D(\mathbf{h}) d\mathbf{h} = 1$$
+由于 $F \leq 1$，因此：
+$$\int_{\Omega} \rho (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o \leq 1$$</p>
+</details>
+<h3 id="132_1">练习 13.2：形状从明暗的唯一性</h3>
+<p>考虑朗伯表面的形状从明暗问题。证明在以下条件下解不唯一：</p>
+<ol>
+<li>单一光源</li>
+<li>无边界条件</li>
+</ol>
+<p>构造两个不同的表面产生相同的图像。</p>
+<p><strong>提示</strong>：考虑凸/凹歧义。</p>
+<details>
+<summary>解答</summary>
+<p>给定亮度方程：$I(x,y) = \mathbf{n}(x,y) \cdot \mathbf{l}$</p>
+<p>设光源方向 $\mathbf{l} = (0, 0, 1)$（顶光照明）。则：
+$$I(x,y) = \frac{1}{\sqrt{1 + p^2 + q^2}}$$
+其中 $p = \partial z/\partial x$, $q = \partial z/\partial y$。</p>
+<p>两个解：</p>
+<ol>
+<li>凸解：$z_1(x,y) = \sqrt{R^2 - x^2 - y^2}$（上半球）</li>
+<li>凹解：$z_2(x,y) = -\sqrt{R^2 - x^2 - y^2}$（下半球）</li>
+</ol>
+<p>两者产生相同的图像，因为法线的 $z$ 分量相同：
+$$n_z = \frac{1}{\sqrt{1 + (x/z)^2 + (y/z)^2}} = \frac{|z|}{\sqrt{x^2 + y^2 + z^2}} = \frac{|z|}{R}$$</p>
+</details>
+<h3 id="133_1">练习 13.3：光度立体的最优光源配置</h3>
+<p>给定 $n = 3$ 个光源，求使光度立体重建最稳定的光源方向配置。稳定性用条件数 $\kappa(\mathbf{L}^T\mathbf{L})$ 衡量。</p>
+<p><strong>提示</strong>：最小化条件数等价于最大化最小特征值。</p>
+<details>
+<summary>解答</summary>
+<p>光源矩阵：
+$$\mathbf{L} = \begin{bmatrix} \mathbf{l}_1^T \ \mathbf{l}_2^T \ \mathbf{l}_3^T \end{bmatrix}$$
+条件数：$\kappa = \lambda_{max}/\lambda_{min}$</p>
+<p>对于 $n = 3$，最优配置使 $\mathbf{L}^T\mathbf{L} = I$，即光源正交：
+$$\mathbf{l}_i \cdot \mathbf{l}_j = \delta_{ij}$$
+一个最优配置：
+$$\mathbf{l}_1 = (1, 0, 0), \quad \mathbf{l}_2 = (0, 1, 0), \quad \mathbf{l}_3 = (0, 0, 1)$$
+此时 $\kappa = 1$（最小可能值）。</p>
+<p>实际中考虑阴影，通常选择：
+$$\mathbf{l}_i = (\sin\theta\cos(2\pi i/3), \sin\theta\sin(2\pi i/3), \cos\theta)$$
+其中 $\theta \approx 45°$。</p>
+</details>
+<h3 id="134bssrdf">练习 13.4：BSSRDF的扩散近似误差</h3>
+<p>评估偶极子近似对薄材质的误差。设材质厚度为 $d$，推导当 $d \ll l_t$（输运平均自由程）时的相对误差。</p>
+<p><strong>提示</strong>：比较精确解（平板几何）与偶极子近似。</p>
+<details>
+<summary>解答</summary>
+<p>平板几何的精确反射率：
+$$R_{exact} = \frac{1 - \exp(-2\tau)}{1 + \exp(-2\tau)}$$
+其中 $\tau = d/l_t$ 为光学厚度。</p>
+<p>偶极子近似：
+$$R_{dipole} \approx \frac{A}{1 + A}$$
+其中 $A = (1 + F_{dr})/(1 - F_{dr})$，$F_{dr}$ 为内部反射系数。</p>
+<p>泰勒展开对小 $\tau$：
+$$R_{exact} \approx \tau - \frac{2\tau^3}{3} + O(\tau^5)$$
+$$R_{dipole} \approx \tau - \tau^2 + O(\tau^3)$$
+相对误差：
+$$\epsilon = \frac{|R_{dipole} - R_{exact}|}{R_{exact}} \approx \tau = \frac{d}{l_t}$$
+因此误差与厚度成正比，薄材质时偶极子近似失效。</p>
+</details>
+<h3 id="135_1">练习 13.5：联合优化的收敛性分析</h3>
+<p>考虑简化的联合材质-几何优化：
+$$E(\alpha, z) = (I - \alpha h(z))^2 + \lambda z^2$$
+其中 $h(z)$ 是 $z$ 的非线性函数。分析交替优化的收敛条件。</p>
+<p><strong>提示</strong>：构造Lyapunov函数。</p>
+<details>
+<summary>解答</summary>
+<p>交替优化步骤：</p>
+<ol>
+<li>固定 $z$：$\alpha^{(k+1)} = I h(z^{(k)})/h^2(z^{(k)})$</li>
+<li>固定 $\alpha$：$z^{(k+1)} = \arg\min_z (I - \alpha^{(k+1)} h(z))^2 + \lambda z^2$</li>
+</ol>
+<p>定义增广能量：
+$$\tilde{E}(\alpha, z, \beta) = (I - \alpha h(z))^2 + \lambda z^2 + \mu(\alpha - \beta)^2$$
+可以证明：
+$$E(\alpha^{(k+1)}, z^{(k+1)}) \leq E(\alpha^{(k)}, z^{(k)})$$
+收敛条件：</p>
+<ol>
+<li>$h(z)$ Lipschitz连续：$|h(z_1) - h(z_2)| \leq L|z_1 - z_2|$</li>
+<li>$\lambda &gt; L^2 I^2/(4h_{min}^2)$</li>
+</ol>
+<p>其中 $h_{min} = \min_z |h(z)|$。</p>
+</details>
+<h3 id="136">练习 13.6：多视图立体的基线选择</h3>
+<p>推导多视图立体中深度估计误差与相机基线的关系。设深度 $z$，基线 $b$，视差误差 $\Delta d$。</p>
+<p><strong>提示</strong>：使用三角测量的误差传播。</p>
+<details>
+<summary>解答</summary>
+<p>三角测量关系：
+$$z = \frac{fb}{d}$$
+其中 $f$ 为焦距，$d$ 为视差。</p>
+<p>深度误差：
+$$\Delta z = \frac{\partial z}{\partial d} \Delta d = -\frac{fb}{d^2} \Delta d = -\frac{z^2}{fb} \Delta d$$
+相对误差：
+$$\frac{\Delta z}{z} = \frac{z}{fb} \Delta d$$
+结论：</p>
+<ol>
+<li>深度误差与深度平方成正比</li>
+<li>增大基线 $b$ 减小误差</li>
+<li>但基线过大导致遮挡和匹配困难</li>
+</ol>
+<p>最优基线选择需平衡精度和匹配可靠性：
+$$b_{opt} \approx 0.1 \cdot z_{avg}$$</p>
+</details>
+<h3 id="137">练习 13.7：材质先验的信息论分析</h3>
+<p>使用最大熵原理推导粗糙度参数 $\alpha \in [0,1]$ 的先验分布。已知约束：$E[\alpha] = \mu$，$E[\log\alpha] = \nu$。</p>
+<p><strong>提示</strong>：拉格朗日乘数法求解约束最大熵问题。</p>
+<details>
+<summary>解答</summary>
+<p>最大熵问题：
+$$\max_{p(\alpha)} H[p] = -\int_0^1 p(\alpha) \log p(\alpha) d\alpha$$
+约束条件：</p>
+<ol>
+<li>$\int_0^1 p(\alpha) d\alpha = 1$</li>
+<li>$\int_0^1 \alpha p(\alpha) d\alpha = \mu$</li>
+<li>$\int_0^1 \log\alpha \cdot p(\alpha) d\alpha = \nu$</li>
+</ol>
+<p>拉格朗日函数：
+$$\mathcal{L} = H[p] + \lambda_0(1 - \int p) + \lambda_1(\mu - \int \alpha p) + \lambda_2(\nu - \int \log\alpha \cdot p)$$
+变分得：
+$$p(\alpha) = \frac{1}{Z} \exp(-\lambda_1 \alpha - \lambda_2 \log\alpha) = \frac{1}{Z} \alpha^{-\lambda_2} \exp(-\lambda_1 \alpha)$$
+这是广义逆高斯分布的特例。当 $\lambda_2 = 1$ 时，退化为指数分布。</p>
+</details>
+<h3 id="138">练习 13.8：物理约束的投影算法</h3>
+<p>设计投影算子 $\Pi$ 将任意函数投影到满足互易性的BRDF空间。定义合适的度量并证明投影的最优性。</p>
+<p><strong>提示</strong>：考虑 $L^2$ 度量下的投影。</p>
+<details>
+<summary>解答</summary>
+<p>互易性约束：$\rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) = \rho(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)$</p>
+<p>对任意函数 $f$，定义投影：
+$$\Pi[f] = \arg\min_{\rho \in \mathcal{R}} \int_{\Omega^2} |f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) - \rho(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o)|^2 d\boldsymbol{\omega}_i d\boldsymbol{\omega}_o$$
+其中 $\mathcal{R}$ 为互易BRDF集合。</p>
+<p>解为对称化：
+$$\Pi<a href="\boldsymbol{\omega}_i, \boldsymbol{\omega}_o">f</a> = \frac{1}{2}[f(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) + f(\boldsymbol{\omega}_o, \boldsymbol{\omega}_i)]$$
+证明最优性：设 $\rho \in \mathcal{R}$，则：
+$$|f - \rho|^2 = |\frac{f + f^T}{2} - \rho|^2 + |\frac{f - f^T}{2}|^2 \geq |f - \Pi[f]|^2$$</p>
+<p>因为 $\rho$ 与 $(f - f^T)/2$ 正交。</p>
+</details>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter12.html" class="nav-link prev">← 第12章：可微渲染 (Differentiable Rendering)</a><a href="./chapter14.html" class="nav-link next">第14章：神经逆向渲染 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

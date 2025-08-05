@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第7章：动态神经辐射场</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class="active"><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="7">第7章：动态神经辐射场</h1>
+<p>现实世界本质上是动态的。虽然静态神经辐射场（NeRF）彻底改变了3D场景表示，但将其扩展以处理时间变化为建模从人类表演到流体动力学的一切事物开辟了可能性。本章探讨了如何将时间作为神经辐射场中的一个额外维度，转换体渲染方程以处理动态场景，同时保持我们统一框架的数学优雅。</p>
+<p>动态场景带来了独特的挑战：在没有混叠的情况下捕捉快速运动，保持时间连贯性，处理拓扑变化，以及在将时间作为第四维度添加时管理数据复杂性的指数增长。我们将看到，仔细的数学公式，结合物理学和信号处理的见解，如何带来实用且高效的解决方案。</p>
+<h2 id="_1">学习目标</h2>
+<p>完成本章后，您将能够：</p>
+<ol>
+<li><strong>公式化</strong>动态场景的时间扩展体渲染方程</li>
+<li><strong>设计</strong>在规范空间和观测空间之间映射的变形场</li>
+<li><strong>从</strong>体渲染框架中<strong>推导</strong>光学流和场景流约束</li>
+<li><strong>分析</strong>不同时间表示的计算和内存权衡</li>
+<li><strong>实现</strong>时间连贯重建的正则化策略</li>
+<li><strong>评估</strong>动态神经辐射场的收敛特性</li>
+</ol>
+<h2 id="_2">先决条件</h2>
+<p>本章建立在以下内容之上：</p>
+<ul>
+<li>第6章：神经辐射场（静态公式）</li>
+<li>向量微积分的理解（雅可比矩阵，散度定理）</li>
+<li>熟悉优化和正则化技术</li>
+<li>连续介质力学基础知识（有帮助但非必需）</li>
+</ul>
+<h2 id="71">7.1 时变辐射场表示</h2>
+<p>动态辐射场要求我们建模几何（密度 $\sigma$）和外观（颜色 $\mathbf{c}$）如何随时间演变。关键的见解是，虽然数学框架保持优雅，但时间表示的选择深刻影响表达能力和计算效率。</p>
+<h3 id="711">7.1.1 扩展体渲染方程</h3>
+<p>第6章中的静态体渲染方程：</p>
+<p>$$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t)\sigma(\mathbf{r}(t))\mathbf{c}(\mathbf{r}(t), \mathbf{d}) dt$$
+其中 $T(t) = \exp\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s))ds\right)$</p>
+<p>对于动态场景，我们引入时间 $\tau$ 作为附加参数（注意：我们使用 $\tau$ 表示场景时间以区别于射线参数 $t$）：
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt$$
+透射率也变得与时间相关：
+$$T(t, \tau) = \exp\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s), \tau)ds\right)$$
+这个看似简单的扩展具有深远的影响：</p>
+<ol>
+<li><strong>维度增加</strong>：辐射场现在是 $f: \mathbb{R}^3 \times \mathbb{S}^2 \times \mathbb{R} \rightarrow \mathbb{R}^4$</li>
+<li><strong>时间连贯性</strong>：相邻时间帧应产生相似的辐射值</li>
+<li><strong>运动模糊</strong>：曝光时间内的快速运动需要对 $\tau$ 进行积分</li>
+</ol>
+<p><strong>时间扩展场的数学性质：</strong></p>
+<p>时间扩展辐射场必须满足几个连续性条件以实现物理合理性：</p>
+<ol>
+<li>
+<p><strong>时间连续性</strong>：对于平滑运动，我们要求：
+$$\lim_{\Delta\tau \to 0} |\sigma(\mathbf{x}, \tau + \Delta\tau) - \sigma(\mathbf{x}, \tau)| = 0$$</p>
+</li>
+<li>
+<p><strong>时空耦合</strong>：梯度张量：
+$$\nabla_{(\mathbf{x},\tau)} f = \begin{bmatrix} \nabla_\mathbf{x} f \ \frac{\partial f}{\partial \tau} \end{bmatrix}$$
+捕捉了空间和时间变化如何相互作用。</p>
+</li>
+<li>
+<p><strong>守恒定律</strong>：对于物理场景，密度变化必须遵守质量守恒：
+$$\frac{\partial \rho}{\partial \tau} + \nabla \cdot (\rho \mathbf{v}) = 0$$
+其中 $\rho = \sigma$（将密度视为质量密度）且 $\mathbf{v}$ 是速度场。</p>
+</li>
+</ol>
+<p><strong>运动模糊公式：</strong></p>
+<p>为了实现真实的渲染，我们必须考虑有限的曝光时间。观察到的辐射变为时间积分：
+$$C_{\text{blur}}(\mathbf{r}) = \frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} C(\mathbf{r}, \tau) d\tau$$
+用体渲染方程展开：
+$$C_{\text{blur}}(\mathbf{r}) = \frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt d\tau$$
+根据富比尼定理（在适当的可积性条件下），我们可以交换积分顺序：
+$$C_{\text{blur}}(\mathbf{r}) = \int_{t_n}^{t_f} \left[\frac{1}{\Delta\tau} \int_{\tau_0}^{\tau_0+\Delta\tau} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) d\tau\right] dt$$
+这个公式揭示了运动模糊可以被解释为使用时间平均密度和颜色场进行渲染。</p>
+<p><strong>快门函数：</strong></p>
+<p>真实相机没有随时间均匀的曝光。我们用快门函数 $s(\tau)$ 进行泛化：
+$$C_{\text{blur}}(\mathbf{r}) = \int_{\tau_0}^{\tau_0+\Delta\tau} s(\tau) C(\mathbf{r}, \tau) d\tau$$
+其中 $\int s(\tau) d\tau = 1$。常见的快门函数包括：</p>
+<ol>
+<li><strong>盒式快门</strong>（理想）：$s(\tau) = \frac{1}{\Delta\tau}\mathbb{1}_{[\tau_0, \tau_0+\Delta\tau]}(\tau)$</li>
+<li><strong>三角快门</strong>：$s(\tau) = \frac{2}{\Delta\tau}\left(1 - \frac{2|\tau - \tau_0 - \Delta\tau/2|}{\Delta\tau}\right)$</li>
+<li><strong>高斯快门</strong>：$s(\tau) = \frac{1}{\sqrt{2\pi}\sigma_s}\exp\left(-\frac{(\tau - \tau_0 - \Delta\tau/2)^2}{2\sigma_s^2}\right)$</li>
+</ol>
+<p>快门函数的选择影响运动模糊特性，可以从数据中学习或为艺术效果而设计。</p>
+<h3 id="712">7.1.2 离散时间与连续时间建模</h3>
+<p>离散时间表示和连续时间表示之间的选择涉及表达能力、内存效率和优化复杂性之间的基本权衡。</p>
+<p><strong>离散时间表示：</strong>
+对于 $N$ 个时间步的序列 ${\tau_i}_{i=1}^N$，我们可以将辐射场表示为：
+$$\mathcal{F}_{\text{discrete}} = {f_{\theta_i}: \mathbb{R}^3 \times \mathbb{S}^2 \rightarrow \mathbb{R}^4}_{i=1}^N$$
+每个 $f_{\theta_i}$ 是时间 $\tau_i$ 的完整神经辐射场。时间演变通过参数集序列 ${\theta_i}$ 捕获。</p>
+<p>优点：</p>
+<ul>
+<li>在采样时间点完美重建</li>
+<li>在离散点没有时间混叠</li>
+<li>每帧独立优化</li>
+<li>可以处理任意时间不连续性</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>内存复杂度：$O(N \cdot |\theta|)$</li>
+<li>没有插值就无法生成中间帧</li>
+<li>帧之间可能存在时间不连续性</li>
+<li>静态场景元素的冗余学习</li>
+</ul>
+<p><strong>离散场之间的插值：</strong></p>
+<p>对于中间时间 $\tau \in [\tau_i, \tau_{i+1}]$，我们需要插值策略：</p>
+<ol>
+<li>
+<p><strong>参数插值</strong>：
+$$\theta(\tau) = (1-\alpha)\theta_i + \alpha\theta_{i+1}, \quad \alpha = \frac{\tau - \tau_i}{\tau_{i+1} - \tau_i}$$
+由于神经网络参数空间的非凸性，这存在问题。</p>
+</li>
+<li>
+<p><strong>输出插值</strong>：
+$$f(\mathbf{x}, \mathbf{d}, \tau) = (1-\alpha)f_{\theta_i}(\mathbf{x}, \mathbf{d}) + \alpha f_{\theta_{i+1}}(\mathbf{x}, \mathbf{d})$$
+更稳定但可能产生重影伪影。</p>
+</li>
+<li>
+<p><strong>潜在插值</strong>：
+    学习共享的编码器-解码器架构，其中只有潜在代码随时间变化。</p>
+</li>
+</ol>
+<p><strong>连续时间表示：</strong>
+一个将时间作为输入的单一网络：
+$$f_\theta: \mathbb{R}^3 \times \mathbb{S}^2 \times \mathbb{R} \rightarrow \mathbb{R}^4$$
+时间维度通常使用位置编码：
+$$\gamma(\tau) = [\sin(2^0\pi\tau), \cos(2^0\pi\tau), ..., \sin(2^{L-1}\pi\tau), \cos(2^{L-1}\pi\tau)]$$
+<strong>位置编码的频率分析：</strong></p>
+<p>$L$ 的选择决定了可表示的最大时间频率：
+$$f_{\text{max}} = 2^{L-1} \text{ cycles per unit time}$$
+对于持续时间为 $T$ 的序列，这转化为 $2^{L-1}T$ 个可分辨的时间特征。</p>
+<p>优点：</p>
+<ul>
+<li>内存复杂度：$O(|\theta|)$（与序列长度无关）</li>
+<li>自然时间插值</li>
+<li>平滑运动轨迹</li>
+<li>紧凑表示</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>有限的时间分辨率（受网络容量限制）</li>
+<li>高频运动可能出现时间混叠</li>
+<li>更难拟合快速变化或不连续性</li>
+<li>所有时间瞬间的全局耦合</li>
+</ul>
+<p><strong>混合方法：</strong></p>
+<ol>
+<li>
+<p><strong>时间条件超网络：</strong>
+$$f_\theta(\mathbf{x}, \mathbf{d}, \tau) = g_{\phi(\tau)}(\mathbf{x}, \mathbf{d})$$
+其中 $\phi: \mathbb{R} \rightarrow \mathbb{R}^{|\theta_g|}$ 为主网络 $g$ 生成参数。</p>
+</li>
+<li>
+<p><strong>专家混合：</strong>
+$$f(\mathbf{x}, \mathbf{d}, \tau) = \sum_{k=1}^K w_k(\tau) f_{\theta_k}(\mathbf{x}, \mathbf{d})$$
+其中 $w_k(\tau)$ 是时间相关的门控函数，且 $\sum_k w_k(\tau) = 1$。</p>
+</li>
+<li>
+<p><strong>分层时间建模：</strong>
+$$f(\mathbf{x}, \mathbf{d}, \tau) = f_{\text{coarse}}(\mathbf{x}, \mathbf{d}, \lfloor\tau\rfloor) + f_{\text{fine}}(\mathbf{x}, \mathbf{d}, \tau)$$
+粗略网络处理低频变化，精细网络捕获细节。</p>
+</li>
+</ol>
+<p><strong>内存-计算权衡：</strong></p>
+<p>设 $M$ 为内存预算，$C$ 为每次查询的计算量，$Q$ 为重建质量：</p>
+<ul>
+<li>离散：$M = O(N|\theta|)$，$C = O(|\theta|)$，$Q = $ 在 ${\tau_i}$ 处完美</li>
+<li>连续：$M = O(|\theta|)$，$C = O(|\theta|)$，$Q = $ 受网络容量限制</li>
+<li>混合：$M = O(K|\theta|)$，$C = O(K|\theta|)$，$Q = $ 自适应</li>
+</ul>
+<p>最佳选择取决于：</p>
+<ul>
+<li>序列长度 $N$</li>
+<li>运动复杂性</li>
+<li>可用内存</li>
+<li>实时要求</li>
+</ul>
+<h3 id="713">7.1.3 时间基函数</h3>
+<p>为了平衡表达能力和效率，我们可以使用基函数分解时变场：
+$$\sigma(\mathbf{x}, \tau) = \sum_{k=1}^K \sigma_k(\mathbf{x}) \cdot \phi_k(\tau)$$</p>
+<p>$$\mathbf{c}(\mathbf{x}, \mathbf{d}, \tau) = \sum_{k=1}^K \mathbf{c}_k(\mathbf{x}, \mathbf{d}) \cdot \phi_k(\tau)$$
+这种可分离表示将问题简化为学习 $K$ 个空间场和时间基函数。</p>
+<p><strong>数学基础：</strong></p>
+<p>该分解可以看作是张量分解。设 $\mathcal{T} \in \mathbb{R}^{X \times Y \times Z \times T}$ 为 4D 辐射张量。我们近似：
+$$\mathcal{T} \approx \sum_{k=1}^K \mathbf{S}_k \otimes \boldsymbol{\phi}_k$$
+其中 $\mathbf{S}_k \in \mathbb{R}^{X \times Y \times Z}$ 是空间分量，$\boldsymbol{\phi}_k \in \mathbb{R}^T$ 是时间分量。</p>
+<p><strong>常见基函数选择：</strong></p>
+<ol>
+<li>
+<p><strong>傅里叶基</strong>（用于周期性运动）：
+$$\phi_k(\tau) = \begin{cases}
+    \sin(2\pi k\tau/T) &amp; k \text{ 为奇数} \
+    \cos(2\pi k\tau/T) &amp; k \text{ 为偶数}
+    \end{cases}$$
+属性：</p>
+<ul>
+<li>全局支持（影响整个时间线）</li>
+<li>正交基：$\langle\phi_i, \phi_j\rangle = \delta_{ij}$</li>
+<li>适用于循环运动</li>
+<li>通过 FFT 进行频谱解释</li>
+<li>帕塞瓦尔定理：$|\mathbf{f}|^2 = \sum_k |c_k|^2$</li>
+</ul>
+<p><strong>截断误差分析：</strong>
+对于有界变差 $V(f) &lt; \infty$ 的函数，截断误差：
+$$|f - f_K| \leq \frac{V(f)}{\pi K}$$</p>
+</li>
+<li>
+<p><strong>B样条基</strong>（用于局部控制）：
+$$\phi_k(\tau) = B_n\left(\frac{\tau - \tau_k}{\Delta\tau}\right)$$
+其中 $B_n$ 是 $n$ 阶 B样条核，递归定义为：
+$$B_0(t) = \begin{cases} 1 &amp; |t| &lt; 0.5 \ 0 &amp; \text{否则} \end{cases}$$
+    $$B_n(t) = \int_{-0.5}^{0.5} B_{n-1}(t-s) ds$$
+属性：</p>
+<ul>
+<li>紧支集：$\phi_k(\tau) = 0$ 对于 $|\tau - \tau_k| &gt; n\Delta\tau/2$</li>
+<li>$C^{n-1}$ 连续性</li>
+<li>单位分解：$\sum_k \phi_k(\tau) = 1$</li>
+<li>局部编辑能力</li>
+<li>通过 Cox-de Boor 公式高效评估</li>
+</ul>
+</li>
+<li>
+<p><strong>小波基</strong>（多分辨率）：
+$$\phi_{j,k}(\tau) = 2^{j/2}\psi(2^j\tau - k)$$
+其中 $\psi$ 是母小波（例如，Daubechies，Meyer）。</p>
+<p>属性：</p>
+<ul>
+<li>多分辨率分析</li>
+<li>在时间和频率上都局部化</li>
+<li>瞬态特征的高效压缩</li>
+<li>快速小波变换：$O(T)$</li>
+</ul>
+</li>
+<li>
+<p><strong>学习基</strong>（数据驱动）：
+$$\phi_k(\tau) = \text{softmax}(\text{MLP}_k(\gamma(\tau)))_k$$
+属性：</p>
+<ul>
+<li>适应数据分布</li>
+<li>可以捕获复杂的时间模式</li>
+<li>需要正则化以实现平滑性：
+$$\mathcal{L}_{\text{smooth}} = \sum_k \int \left|\frac{d^2\phi_k}{d\tau^2}\right|^2 d\tau$$
+<strong>最佳基选择：</strong></li>
+</ul>
+</li>
+</ol>
+<p>选择取决于预期的运动特性：</p>
+<ul>
+<li>周期性场景 → 傅里叶基</li>
+<li>局部变化 → B样条或小波</li>
+<li>多尺度动态 → 小波</li>
+<li>复杂、非周期性 → 学习基</li>
+</ul>
+<p><strong>基截断分析：</strong></p>
+<p>截断参数 $K$ 控制时间带宽。根据采样定理：
+$$K \geq 2 \cdot f_{\text{max}} \cdot T$$
+其中 $f_{\text{max}}$ 是最大运动频率，$T$ 是序列持续时间。</p>
+<p><strong>压缩比：</strong>
+$$\text{CR} = \frac{\text{原始大小}}{\text{压缩大小}} = \frac{XYZ \cdot T}{K(XYZ + T)}$$
+对于 $T \gg K$，我们实现了大约 $T/K$ 的压缩。</p>
+<p><strong>自适应基选择：</strong></p>
+<p>我们可以根据重建误差自适应地选择 $K$：
+$$K^* = \arg\min_K \left{|f - f_K|^2 + \lambda K\right}$$
+其中 $\lambda$ 控制稀疏性-准确性权衡。</p>
+<h3 id="714">7.1.4 时间变化的频率分析</h3>
+<p>理解动态场景的频率内容对于避免混叠和确保足够的时间分辨率至关重要。</p>
+<p><strong>奈奎斯特-香农采样定理：</strong>
+无混叠重建的基本要求：
+$$f_{\text{sample}} \geq 2 f_{\text{max}}$$
+其中 $f_{\text{max}}$ 是场景变化的最大频率。</p>
+<p><strong>时间频率谱：</strong></p>
+<p>对于时变辐射场 $f(\mathbf{x}, \tau)$，在每个空间位置的时间傅里叶变换：
+$$\hat{f}(\mathbf{x}, \omega) = \int_{-\infty}^{\infty} f(\mathbf{x}, \tau) e^{-i\omega\tau} d\tau$$
+功率谱密度：
+$$S(\mathbf{x}, \omega) = |\hat{f}(\mathbf{x}, \omega)|^2$$
+揭示了每个点的运动频率内容。</p>
+<p><strong>运动特定分析：</strong></p>
+<ol>
+<li>
+<p><strong>周期性运动</strong>（例如，旋转物体）：
+    对于角频率为 $\omega$ 的运动：
+$$\mathbf{x}(\tau) = \mathbf{R}(\omega\tau)\mathbf{x}_0$$
+辐射场变为：
+$$f(\mathbf{x}, \tau) = f_0(\mathbf{R}^T(\omega\tau)\mathbf{x})$$
+频率内容：在 $\omega/2\pi$ Hz 处有单个尖峰</p>
+<p>每周期最小采样数：
+$$N_{\text{min}} = \frac{4\pi}{\omega \Delta\tau} \geq 4$$</p>
+</li>
+<li>
+<p><strong>线性运动</strong>（恒定速度 $\mathbf{v}$）：
+$$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}\tau$$
+时空梯度：
+$$\frac{\partial f}{\partial \tau} = -\mathbf{v} \cdot \nabla f$$
+频率内容取决于空间频率：
+$$\omega_{\text{max}} = |\mathbf{v}| \cdot k_{\text{max}}$$
+其中 $k_{\text{max}} = 2\pi/\lambda_{\text{min}}$ 是最大空间频率。</p>
+</li>
+<li>
+<p><strong>加速运动</strong>：
+$$\mathbf{x}(\tau) = \mathbf{x}_0 + \mathbf{v}_0\tau + \frac{1}{2}\mathbf{a}\tau^2$$
+瞬时频率（通过驻相近似）：
+$$\omega(\tau) = (\mathbf{v}_0 + \mathbf{a}\tau) \cdot \mathbf{k}$$
+类似啁啾的行为需要时频分析。</p>
+</li>
+<li>
+<p><strong>可变形运动</strong>：
+    对于一般变形 $\mathbf{W}(\mathbf{x}, \tau)$：
+$$\omega_{\text{local}}(\mathbf{x}) = \left|\frac{\partial \mathbf{W}}{\partial \tau}\right| \cdot |\nabla f|$$
+<strong>混叠分析：</strong></p>
+</li>
+</ol>
+<p>当 $f_{\text{motion}} &gt; f_{\text{Nyquist}} = f_{\text{sample}}/2$ 时发生混叠。</p>
+<p><strong>混叠频率映射：</strong>
+$$f_{\text{alias}} = |f_{\text{true}} - n \cdot f_{\text{sample}}|$$
+其中 $n = \text{round}(f_{\text{true}}/f_{\text{sample}})$。</p>
+<p><strong>预混叠滤波器设计：</strong></p>
+<p>为防止混叠，在采样前应用低通滤波器：
+$$H(\omega) = \begin{cases}
+1 &amp; |\omega| &lt; \omega_c \
+\cos^2\left(\frac{\pi(|\omega| - \omega_c)}{2(\omega_s - \omega_c)}\right) &amp; \omega_c \leq |\omega| \leq \omega_s \
+0 &amp; |\omega| &gt; \omega_s
+\end{cases}$$
+其中 $\omega_c = 0.8 \cdot \pi f_{\text{sample}}$ 且 $\omega_s = \pi f_{\text{sample}}$。</p>
+<p><strong>实用采样策略：</strong></p>
+<p>给定捕获率 $f_{\text{capture}}$，可表示的运动带宽为：
+$$f_{\text{motion}} &lt; \frac{f_{\text{capture}}}{2}$$
+对于具有位置编码级别 $L$ 的神经表示：
+$$f_{\text{neural}} \leq 2^{L-1}$$
+有效时间分辨率为：
+$$f_{\text{effective}} = \min(f_{\text{motion}}, f_{\text{neural}})$$
+<strong>抗混叠策略：</strong></p>
+<ol>
+<li>
+<p><strong>时间超采样</strong>：
+$$f'(\tau) = \frac{1}{K}\sum_{k=0}^{K-1} f\left(\tau + \frac{k}{K}\Delta\tau\right)$$</p>
+</li>
+<li>
+<p><strong>运动自适应采样</strong>：
+$$\Delta\tau_{\text{local}} = \frac{C}{|\partial \mathbf{W}/\partial \tau|_{\text{max}}}$$
+其中 $C$ 是用户定义的常数。</p>
+</li>
+<li>
+<p><strong>频域滤波</strong>：
+    在重建前在傅里叶域应用带限。</p>
+</li>
+</ol>
+<p><strong>时间分辨率要求：</strong>
+好的，这是您要求的中文翻译，并已将数学公式转换为 LaTeX 格式：</p>
+<p>| 运动类型 | 典型频率 | 所需帧率 |</p>
+<table>
+<thead>
+<tr>
+<th>运动类型</th>
+<th>典型频率</th>
+<th>所需帧率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>人类行走</td>
+<td>1-2 Hz</td>
+<td>4-8</td>
+</tr>
+<tr>
+<td>跑步</td>
+<td>3-4 Hz</td>
+<td>8-16</td>
+</tr>
+<tr>
+<td>手势</td>
+<td>5-10 Hz</td>
+<td>20-40</td>
+</tr>
+<tr>
+<td>快速运动</td>
+<td>10-20 Hz</td>
+<td>40-80</td>
+</tr>
+<tr>
+<td>振动</td>
+<td>20-100 Hz</td>
+<td>80-400</td>
+</tr>
+</tbody>
+</table>
+<h2 id="72">7.2 变形场建模</h2>
+<p>我们不直接学习时变辐射场，而是将问题分解为学习一个静态的规范表示和一个时变变形场。这种方法利用了许多动态场景表现出可以通过形变捕获的强时空相关性的洞察。</p>
+<h3 id="721">7.2.1 前向变形场</h3>
+<p>核心思想是建模一个变形场，它将点从规范（参考）空间映射到每个时刻的观测空间：
+$$\mathbf{x}_{\text{obs}} = \mathbf{W}(\mathbf{x}_{\text{can}}, \tau)$$
+其中：</p>
+<ul>
+<li>$\mathbf{x}_{\text{can}} \in \mathbb{R}^3$: 规范空间中的点</li>
+<li>$\mathbf{x}_{\text{obs}} \in \mathbb{R}^3$: 在时间 $\tau$ 对应的观测空间中的点</li>
+<li>$\mathbf{W}: \mathbb{R}^3 \times \mathbb{R} \rightarrow \mathbb{R}^3$: 变形场</li>
+</ul>
+<p><strong>带变形的体渲染：</strong></p>
+<p>关键挑战是正确地转换体渲染积分。从以下公式开始：
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt$$
+我们代入形变后的坐标，并且必须考虑变量的变化：
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t)\sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau))\mathbf{c}_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau), \mathbf{d}_{\text{can}}) \left|\det J_{\mathbf{W}^{-1}}\right| dt$$
+其中：</p>
+<ul>
+<li>$J_{\mathbf{W}^{-1}} = \frac{\partial \mathbf{W}^{-1}}{\partial \mathbf{x}}$ 是逆变形的雅可比矩阵</li>
+<li>$\mathbf{d}_{\text{can}}$ 是变换后的视角方向</li>
+</ul>
+<p><strong>密度变换：</strong>
+密度根据以下公式变换：
+$$\sigma_{\text{obs}}(\mathbf{x}, \tau) = \sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{x}, \tau)) \left|\det J_{\mathbf{W}^{-1}}(\mathbf{x}, \tau)\right|$$
+这确保了质量守恒：在任何区域上积分密度都会在规范空间和观测空间中给出相同的总质量。</p>
+<h3 id="722">7.2.2 体积保持约束</h3>
+<p>许多物理变形在局部保持体积（不可压缩性），这为正则化提供了强大的约束。</p>
+<p><strong>不可压缩条件：</strong>
+对于体积保持变形：
+$$\det(J_{\mathbf{W}}) = 1$$
+其中 $J_{\mathbf{W}} = \frac{\partial \mathbf{W}}{\partial \mathbf{x}_{\text{can}}}$ 是变形梯度。</p>
+<p><strong>速度场公式：</strong>
+将速度场定义为变形的时间导数：
+$$\mathbf{v}(\mathbf{x}, \tau) = \frac{\partial \mathbf{W}(\mathbf{x}, \tau)}{\partial \tau}$$
+欧拉形式的不可压缩约束：
+$$\nabla \cdot \mathbf{v} = 0$$
+<strong>实际实施：</strong></p>
+<ol>
+<li>
+<p><strong>软约束</strong>（惩罚方法）：
+$$\mathcal{L}_{\text{volume}} = \lambda \int_{\Omega} (\det(J_{\mathbf{W}}) - 1)^2 d\mathbf{x}$$</p>
+</li>
+<li>
+<p><strong>投影方法</strong>：
+   将速度分解为不可压缩分量和势分量：
+$$\mathbf{v} = \mathbf{v}_{\text{incomp}} + \nabla \phi$$
+然后求解泊松方程：
+$$\nabla^2 \phi = \nabla \cdot \mathbf{v}_{\text{initial}}$$
+并投影：$\mathbf{v}_{\text{incomp}} = \mathbf{v}_{\text{initial}} - \nabla \phi$</p>
+</li>
+<li>
+<p><strong>流函数</strong>（2D）或<strong>矢量势</strong>（3D）：
+   对于 2D：$\mathbf{v} = \nabla^\perp \psi = (\frac{\partial \psi}{\partial y}, -\frac{\partial \psi}{\partial x})$</p>
+</li>
+</ol>
+<p>自动满足 $\nabla \cdot \mathbf{v} = 0$</p>
+<p><strong>近似体积保持：</strong>
+对于小变形，将约束线性化：
+$$\det(J_{\mathbf{W}}) \approx 1 + \text{tr}(J_{\mathbf{W}} - I) = 1 + \nabla \cdot (\mathbf{W} - \mathbf{x})$$
+导致更简单的约束：
+$$\nabla \cdot \mathbf{u} = 0$$
+其中 $\mathbf{u} = \mathbf{W} - \mathbf{x}$ 是位移场。</p>
+<h3 id="723">7.2.3 正则化策略</h3>
+<p>变形场具有许多自由度，需要仔细正则化以确保物理上合理和稳定的解决方案。</p>
+<ol>
+<li>
+<p><strong>空间平滑度正则化：</strong>
+惩罚高频空间变化：
+$$\mathcal{L}_{\text{smooth}} = \int_{\Omega} \int_{\mathcal{T}} |\nabla^2 \mathbf{W}(\mathbf{x}, \tau)|_F^2 d\mathbf{x} d\tau$$
+替代的一阶平滑度：
+$$\mathcal{L}_{\text{grad}} = \int_{\Omega} \int_{\mathcal{T}} |\nabla \mathbf{W} - I|_F^2 d\mathbf{x} d\tau$$</p>
+</li>
+<li>
+<p><strong>刚性正则化：</strong>
+鼓励局部刚性变换（旋转 + 平移）：
+$$\mathcal{L}_{\text{rigid}} = \int_{\Omega} |J_{\mathbf{W}}^T J_{\mathbf{W}} - I|_F^2 d\mathbf{x}$$
+当 $J_{\mathbf{W}}$ 是旋转矩阵时，此项为零。为了计算效率，使用极分解：
+$$J_{\mathbf{W}} = \mathbf{R}\mathbf{S}$$
+其中 $\mathbf{R}$ 是旋转，$\mathbf{S}$ 是对称矩阵。然后惩罚：
+$$\mathcal{L}_{\text{rigid}} = |\mathbf{S} - I|_F^2$$</p>
+</li>
+<li>
+<p><strong>时间相干性：</strong>
+确保随时间平滑运动：
+$$\mathcal{L}_{\text{temporal}} = \int_{\Omega} \int_{\mathcal{T}} \left|\frac{\partial^2 \mathbf{W}}{\partial \tau^2}\right|^2 d\mathbf{x} d\tau$$
+对于离散时间步长：
+$$\mathcal{L}_{\text{temporal}} = \sum_{i} |\mathbf{W}(\mathbf{x}, \tau_{i+1}) - 2\mathbf{W}(\mathbf{x}, \tau_i) + \mathbf{W}(\mathbf{x}, \tau_{i-1})|^2$$</p>
+</li>
+<li>
+<p><strong>弹性势能：</strong>
+基于连续介质力学，惩罚变形能量：
+$$\mathcal{L}_{\text{elastic}} = \int_{\Omega} \frac{\lambda}{2}(\text{tr}(\mathbf{E}))^2 + \mu \text{tr}(\mathbf{E}^2) d\mathbf{x}$$
+其中 $\mathbf{E} = \frac{1}{2}(J_{\mathbf{W}}^T J_{\mathbf{W}} - I)$ 是格林应变张量，$\lambda, \mu$ 是拉梅参数。</p>
+</li>
+<li>
+<p><strong>尽可能刚性（ARAP）：</strong>
+$$\mathcal{L}_{\text{ARAP}} = \sum_{i} \sum_{j \in \mathcal{N}(i)} w_{ij} |(\mathbf{W}(\mathbf{x}_i) - \mathbf{W}(\mathbf{x}_j)) - \mathbf{R}_i(\mathbf{x}_i - \mathbf{x}_j)|^2$$
+其中 $\mathbf{R}_i$ 是点 $i$ 处的最佳旋转。</p>
+</li>
+</ol>
+<p><strong>组合正则化：</strong>
+$$\mathcal{L}_{\text{reg}} = \lambda_1 \mathcal{L}_{\text{smooth}} + \lambda_2 \mathcal{L}_{\text{rigid}} + \lambda_3 \mathcal{L}_{\text{temporal}} + \lambda_4 \mathcal{L}_{\text{volume}}$$
+权重 $\lambda_i$ 控制相对重要性，并取决于场景类型：</p>
+<ul>
+<li>流体场景：高 $\lambda_1$，低 $\lambda_2$</li>
+<li>关节对象：高 $\lambda_2$，中等 $\lambda_3$</li>
+<li>软体：平衡权重</li>
+</ul>
+<h3 id="724">7.2.4 双射映射保证</h3>
+<p>确保变形场是可逆的（双射）对于稳定的优化和物理上有意义的结果至关重要。</p>
+<ol>
+<li><strong>残差公式：</strong>
+将变形参数化为恒等式加上小位移：
+$$\mathbf{W}(\mathbf{x}, \tau) = \mathbf{x} + \epsilon \cdot \mathbf{u}(\mathbf{x}, \tau)$$
+<strong>可逆性条件：</strong>
+根据巴拿赫不动点定理，如果：
+$$|\nabla \mathbf{u}|_{\text{op}} &lt; \frac{1}{\epsilon}$$
+那么 $\mathbf{W}$ 是一个微分同胚（光滑双射）。</li>
+</ol>
+<p><strong>证明草图：</strong>
+逆满足：$\mathbf{y} = \mathbf{W}^{-1}(\mathbf{y}) + \epsilon \mathbf{u}(\mathbf{W}^{-1}(\mathbf{y}))$</p>
+<p>定义算子 $T(\mathbf{x}) = \mathbf{y} - \epsilon \mathbf{u}(\mathbf{x})$。如果 $\epsilon|\nabla \mathbf{u}|_{\text{op}} &lt; 1$，则 $T$ 是一个收缩映射，保证存在唯一不动点。</p>
+<ol start="2">
+<li><strong>神经 ODE 公式：</strong>
+通过连续流建模变形：
+$$\frac{d\mathbf{x}}{d\tau} = \mathbf{v}(\mathbf{x}, \tau), \quad \mathbf{x}(0) = \mathbf{x}_0$$
+<strong>优点：</strong></li>
+</ol>
+<ul>
+<li>可逆性由 ODE 理论保证（如果 $\mathbf{v}$ 是 Lipschitz 连续的）</li>
+<li>逆通过向后积分计算：$\frac{d\mathbf{x}}{d\tau} = -\mathbf{v}(\mathbf{x}, -\tau)$</li>
+<li>自然的时间连续性</li>
+</ul>
+<p><strong>实现：</strong>
+$$\mathbf{W}(\mathbf{x}_0, \tau) = \mathbf{x}_0 + \int_0^\tau \mathbf{v}(\mathbf{x}(s), s) ds$$
+使用数值 ODE 求解器（例如，龙格-库塔法）和自适应步长。</p>
+<ol start="3">
+<li>
+<p><strong>微分同胚配准：</strong>
+通过正则化速度场确保光滑双射：
+$$\mathcal{L}_{\text{diffeo}} = \int_0^T \int_{\Omega} |\mathbf{L}\mathbf{v}(\mathbf{x}, t)|^2 d\mathbf{x} dt$$
+其中 $\mathbf{L}$ 是微分算子（例如，$\mathbf{L} = \alpha\nabla^2 + \beta I$）。</p>
+</li>
+<li>
+<p><strong>障碍方法：</strong>
+添加一个惩罚项，当雅可比行列式趋近于零时，该惩罚项趋近于无穷大：
+$$\mathcal{L}_{\text{barrier}} = \int_{\Omega} \phi(\det(J_{\mathbf{W}})) d\mathbf{x}$$
+其中 $\phi(s) = -\log(s)$ 对于 $s &gt; 0$ 或 $\phi(s) = \frac{1}{s} - 1$ 对于 $s &gt; 0$。</p>
+</li>
+</ol>
+<p><strong>实用指南：</strong></p>
+<ul>
+<li>初始化接近恒等式：$\mathbf{W}(\mathbf{x}, 0) = \mathbf{x}$</li>
+<li>训练期间监控 $\min_{\mathbf{x}} \det(J_{\mathbf{W}})$</li>
+<li>使用渐进优化：从强正则化开始，逐渐放松</li>
+<li>对于神经网络，使用谱归一化来控制 Lipschitz 常数</li>
+</ul>
+<h2 id="73">7.3 光流和场景流约束</h2>
+<h3 id="731-3d">7.3.1 3D 场景流定义</h3>
+<p>场景流 $\mathbf{s}: \mathbb{R}^3 \times \mathbb{R} \rightarrow \mathbb{R}^3$ 描述 3D 运动场：
+$$\mathbf{s}(\mathbf{x}, \tau) = \frac{\partial \mathbf{W}(\mathbf{x}, \tau)}{\partial \tau}$$</p>
+<h3 id="732-2d">7.3.2 从体渲染中获取 2D 光流</h3>
+<p>图像空间中的 2D 光流可以通过渲染方程从场景流中导出：
+$$\mathbf{u}_{\text{2D}}(\mathbf{p}) = \frac{\int_{t_n}^{t_f} T(t)\sigma(\mathbf{r}(t)) w(\mathbf{r}(t)) \Pi(\mathbf{s}(\mathbf{r}(t))) dt}{\int_{t_n}^{t_f} T(t)\sigma(\mathbf{r}(t)) w(\mathbf{r}(t)) dt}$$
+其中：</p>
+<ul>
+<li>$\Pi$ 是从 3D 到 2D 的投影算子</li>
+<li>$w(\mathbf{x}) = \frac{\partial C}{\partial \mathbf{x}}$ 是贡献权重</li>
+</ul>
+<h3 id="733">7.3.3 流一致性方程</h3>
+<p><strong>亮度恒定：</strong>
+$$\frac{\partial I}{\partial \tau} + \nabla I \cdot \mathbf{u}_{\text{2D}} = 0$$
+<strong>体渲染一致性：</strong>
+$$\frac{\partial C(\mathbf{r}, \tau)}{\partial \tau} + \int_{t_n}^{t_f} T(t)\sigma(\mathbf{r}(t), \tau) \nabla_{\mathbf{x}} \mathbf{c} \cdot \mathbf{s} dt = 0$$</p>
+<h3 id="734">7.3.4 多视角流约束</h3>
+<p>对于具有中心 ${\mathbf{o}_i}$ 和方向 ${\mathbf{d}_i}$ 的多个相机：</p>
+<p><strong>流的对极约束：</strong>
+$$(\mathbf{u}_{\text{2D}}^{(i)} - \mathbf{u}_{\text{2D}}^{(j)})^T \mathbf{F}_{ij} \mathbf{p} = 0$$
+其中 $\mathbf{F}_{ij}$ 是视图 $i$ 和 $j$ 之间的基本矩阵。</p>
+<p><strong>深度-流一致性：</strong>
+$$z_i \mathbf{u}_{\text{2D}}^{(i)} = \mathbf{K}_i \mathbf{R}_i \mathbf{s} + \frac{\partial z_i}{\partial \tau} \mathbf{K}_i \mathbf{R}_i \mathbf{d}_i$$</p>
+<h2 id="74">7.4 基于形变的运动表示</h2>
+<h3 id="741">7.4.1 时空形变函数</h3>
+<p>通用形变函数：
+$$\Psi: \mathbb{R}^3 \times \mathbb{R} \rightarrow \mathbb{R}^3 \times \mathbb{R}$$
+$$(\mathbf{x}', \tau') = \Psi(\mathbf{x}, \tau)$$
+<strong>可分离形变：</strong>
+$$\Psi(\mathbf{x}, \tau) = (\mathbf{W}(\mathbf{x}, \tau), \tau)$$
+<strong>不可分离形变：</strong>
+$$\Psi(\mathbf{x}, \tau) = (\mathbf{W}(\mathbf{x}, \tau), T(\tau))$$</p>
+<h3 id="742">7.4.2 分层运动分解</h3>
+<p>$$\mathbf{W}(\mathbf{x}, \tau) = \mathbf{W}_{\text{global}}(\tau) \circ \mathbf{W}_{\text{local}}(\mathbf{x}, \tau)$$
+其中：</p>
+<ul>
+<li>$\mathbf{W}_{\text{global}}$: 刚体运动（6 自由度）</li>
+<li>$\mathbf{W}_{\text{local}}$: 非刚性变形</li>
+</ul>
+<p><strong>全局运动的李群表示：</strong>
+$$\mathbf{W}_{\text{global}}(\tau) = \exp(\sum_{i=1}^{6} \theta_i(\tau) \mathbf{G}_i)$$
+其中 ${\mathbf{G}_i}$ 是 SE(3) 的生成元。</p>
+<h3 id="743">7.4.3 时间插值方案</h3>
+<p><strong>线性插值：</strong>
+$$\mathbf{W}(\mathbf{x}, \tau) = (1-\alpha)\mathbf{W}(\mathbf{x}, \tau_i) + \alpha\mathbf{W}(\mathbf{x}, \tau_{i+1})$$
+<strong>球面线性插值（用于旋转）：</strong>
+$$\mathbf{R}(\tau) = \mathbf{R}_i (\mathbf{R}_i^T \mathbf{R}_{i+1})^{\alpha}$$
+<strong>三次 Hermite 样条：</strong>
+$$\mathbf{W}(\mathbf{x}, \tau) = \sum_{j=0}^{3} h_j(\alpha) \mathbf{c}_j(\mathbf{x})$$
+其中 $h_j$ 是 Hermite 基函数。</p>
+<h3 id="744">7.4.4 逆形变计算</h3>
+<p><strong>不动点迭代：</strong>
+$$\mathbf{x}_{n+1} = \mathbf{x}_0 - \mathbf{W}(\mathbf{x}_n, \tau) + \mathbf{x}_{\text{target}}$$
+收敛保证当：
+$$|\nabla_{\mathbf{x}} \mathbf{W}|_{\text{op}} &lt; 1$$
+<strong>神经逆网络：</strong>
+$$\mathbf{W}^{-1} = f_{\phi}(\mathbf{x}, \tau)$$
+具有循环一致性损失：
+$$\mathcal{L}_{\text{cycle}} = |\mathbf{W}(\mathbf{W}^{-1}(\mathbf{x}, \tau), \tau) - \mathbf{x}|^2$$</p>
+<h2 id="75">7.5 规范空间方法</h2>
+<h3 id="751">7.5.1 规范空间定义</h3>
+<p>规范空间表示场景的参考配置：
+$$\mathcal{C} = {(\sigma_{\text{can}}(\mathbf{x}), \mathbf{c}_{\text{can}}(\mathbf{x}, \mathbf{d})) : \mathbf{x} \in \Omega_{\text{can}}}$$
+常见选择：</p>
+<ul>
+<li><strong>静止姿态</strong>：对于关节对象</li>
+<li><strong>平均形状</strong>：$\mathbf{x}_{\text{can}} = \frac{1}{|\mathcal{T}|}\int_{\mathcal{T}} \mathbf{W}^{-1}(\mathbf{x}, \tau) d\tau$</li>
+<li><strong>学习的规范空间</strong>：与变形联合优化</li>
+</ul>
+<h3 id="752">7.5.2 变形到观测空间</h3>
+<p>规范空间中的渲染方程：
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T_{\text{can}}(t')\sigma_{\text{can}}(\mathbf{r}_{\text{can}}(t'))\mathbf{c}_{\text{can}}(\mathbf{r}_{\text{can}}(t'), \mathbf{d}_{\text{can}}) \left|\frac{dt'}{dt}\right| dt$$
+其中：</p>
+<ul>
+<li>$t' = t'(t, \tau)$ 是形变后的射线参数</li>
+<li>$\mathbf{r}_{\text{can}}(t') = \mathbf{W}^{-1}(\mathbf{r}(t), \tau)$</li>
+<li>$\mathbf{d}_{\text{can}} = \frac{d\mathbf{r}_{\text{can}}}{dt'} / |\frac{d\mathbf{r}_{\text{can}}}{dt'}|$</li>
+</ul>
+<h3 id="753">7.5.3 模板学习策略</h3>
+<p><strong>联合优化：</strong>
+$$\min_{\theta, \phi} \sum_{i,j} |C_{ij} - \hat{C}_{ij}(\theta, \phi)|^2 + \lambda \mathcal{R}(\phi)$$
+其中：</p>
+<ul>
+<li>$\theta$: 规范辐射场参数</li>
+<li>$\phi$: 变形场参数</li>
+<li>$\mathcal{R}$: 正则化项</li>
+</ul>
+<p><strong>渐进训练：</strong></p>
+<ol>
+<li>在 $\tau_0$ 处用静态重建初始化</li>
+<li>逐渐添加时间样本</li>
+<li>联合细化规范空间和变形</li>
+</ol>
+<h3 id="754">7.5.4 处理拓扑变化</h3>
+<p>对于拓扑变化的场景（例如，流体），我们扩展规范空间：
+$$\sigma_{\text{can}}(\mathbf{x}) = \sigma_{\text{base}}(\mathbf{x}) + \sum_{k} \alpha_k(\tau) \sigma_{\text{residual}}^{(k)}(\mathbf{x})$$
+其中 $\alpha_k(\tau) \in [0,1]$ 控制组件的出现/消失。</p>
+<h3 id="755">7.5.5 规范空间中的正则化</h3>
+<p><strong>空间平滑度：</strong>
+$$\mathcal{L}_{\text{can-smooth}} = \int_{\Omega_{\text{can}}} |\nabla \sigma_{\text{can}}|^2 + |\nabla \mathbf{c}_{\text{can}}|^2 d\mathbf{x}$$
+<strong>稀疏性先验：</strong>
+$$\mathcal{L}_{\text{sparse}} = \int_{\Omega_{\text{can}}} \log(1 + \sigma_{\text{can}}^2/\epsilon^2) d\mathbf{x}$$
+<strong>变形正则化：</strong>
+$$\mathcal{L}_{\text{def-reg}} = \int_{\mathcal{T}} \int_{\Omega} |\mathbf{W}(\mathbf{x}, \tau) - \mathbf{x}|^2 \rho(\mathbf{x}) d\mathbf{x} d\tau$$
+其中 $\rho(\mathbf{x})$ 权重区域（例如，刚性部分更高）。</p>
+<h2 id="_3">本章小结</h2>
+<p>动态神经辐射场通过将时间作为附加维度来扩展静态公式。关键的数学框架包括：</p>
+<ol>
+<li>
+<p><strong>时间扩展体渲染方程：</strong>
+$$C(\mathbf{r}, \tau) = \int_{t_n}^{t_f} T(t, \tau)\sigma(\mathbf{r}(t), \tau)\mathbf{c}(\mathbf{r}(t), \mathbf{d}, \tau) dt$$</p>
+</li>
+<li>
+<p><strong>变形场公式：</strong>
+$$\mathbf{x}_{\text{obs}} = \mathbf{W}(\mathbf{x}_{\text{can}}, \tau)$$
+具有体积保持：$\det(J_{\mathbf{W}}) = 1$</p>
+</li>
+<li>
+<p><strong>场景流一致性：</strong>
+$$\mathbf{s}(\mathbf{x}, \tau) = \frac{\partial \mathbf{W}(\mathbf{x}, \tau)}{\partial \tau}$$</p>
+</li>
+<li>
+<p><strong>规范空间渲染：</strong>
+$$C(\mathbf{r}, \tau) = \int T_{\text{can}}\sigma_{\text{can}}(\mathbf{W}^{-1}(\mathbf{r}(t), \tau))\mathbf{c}_{\text{can}} \left|\det J_{\mathbf{W}^{-1}}\right| dt$$</p>
+</li>
+<li>
+<p><strong>正则化框架：</strong>
+   - 空间平滑度：$\mathcal{L}_{\text{smooth}}$
+   - 时间相干性：$\mathcal{L}_{\text{temporal}}$
+   - 刚性约束：$\mathcal{L}_{\text{rigid}}$</p>
+</li>
+</ol>
+<p>这些公式提供了一种建模动态场景的原则性方法，同时保持了体渲染框架的优雅。</p>
+<h2 id="_4">练习题</h2>
+<h3 id="_5">基础题</h3>
+<p><strong>习题 7.1</strong>: 时间采样分析
+考虑一个以频率 $f = 2$ Hz 旋转的物体。如果我们以 30 FPS 采样，是否满足 Nyquist 条件？如果物体同时包含 5 Hz 的振动，需要什么采样率？</p>
+<p><em>提示</em>: Nyquist 频率 $f_s \geq 2f_{\max}$</p>
+<details>
+<summary>答案</summary>
+<p>对于 2 Hz 旋转：</p>
+<ul>
+<li>Nyquist 要求: $f_s \geq 2 \times 2 = 4$ Hz</li>
+<li>30 FPS 采样率满足条件 (30 &gt; 4)</li>
+</ul>
+<p>对于 5 Hz 振动：</p>
+<ul>
+<li>Nyquist 要求: $f_s \geq 2 \times 5 = 10$ Hz  </li>
+<li>需要至少 10 FPS</li>
+</ul>
+<p>组合运动：$f_{\max} = 5$ Hz，需要至少 10 FPS 采样率。</p>
+</details>
+<p><strong>习题 7.2</strong>: 体积保持约束
+给定 2D 变形场 $\mathbf{W}(x,y) = (x + 0.1\sin(y), y + 0.1\cos(x))$，验证这是否满足体积保持约束。
+<em>提示</em>: 计算 Jacobian 行列式</p>
+<details>
+<summary>答案</summary>
+<p>Jacobian 矩阵：
+$$J = \begin{bmatrix}
+\frac{\partial W_x}{\partial x} &amp; \frac{\partial W_x}{\partial y} \
+\frac{\partial W_y}{\partial x} &amp; \frac{\partial W_y}{\partial y}
+\end{bmatrix} = \begin{bmatrix}
+1 &amp; 0.1\cos(y) \
+-0.1\sin(x) &amp; 1
+\end{bmatrix}$$
+行列式：
+$$\det(J) = 1 \times 1 - (0.1\cos(y))(-0.1\sin(x)) = 1 + 0.01\sin(x)\cos(y)$$
+由于 $\det(J) \neq 1$，不满足体积保持约束。最大偏差为 0.01。</p>
+</details>
+<p><strong>习题 7.3</strong>: 光流计算
+给定场景流 $\mathbf{s}(x,y,z) = (0, 0, -v)$ (沿 z 轴的匀速运动) 和相机内参矩阵 $\mathbf{K} = \text{diag}(f, f, 1)$，推导 2D 光流。</p>
+<p><em>提示</em>: 使用投影关系 $u = fx/z$, $v = fy/z$</p>
+<details>
+<summary>答案</summary>
+<p>3D 点投影：$(u, v) = (fx/z, fy/z)$</p>
+<p>时间导数：
+$$\frac{du}{dt} = f \frac{d}{dt}\left(\frac{x}{z}\right) = f \frac{\dot{x}z - x\dot{z}}{z^2}$$
+代入 $\dot{x} = 0$, $\dot{z} = -v$：
+$$\frac{du}{dt} = f \frac{xv}{z^2} = \frac{uv}{z}$$
+类似地：
+$$\frac{dv}{dt} = \frac{vv}{z}$$
+2D 光流：$\mathbf{u}_{2D} = \frac{v}{z}(u, v)$ - 径向扩张模式。</p>
+</details>
+<h3 id="_6">挑战题</h3>
+<p><strong>习题 7.4</strong>: 变形场设计
+设计一个变形场 $\mathbf{W}(\mathbf{x}, \tau)$ 来表示心跳运动，满足：</p>
+<ol>
+<li>周期为 $T = 1$ 秒</li>
+<li>体积在 $\pm 10\%$ 范围内变化</li>
+<li>运动主要沿径向</li>
+</ol>
+<p><em>提示</em>: 考虑球坐标系和时变缩放</p>
+<details>
+<summary>答案</summary>
+<p>球坐标表示：$\mathbf{x} = (r, \theta, \phi)$</p>
+<p>径向缩放变形：
+$$\mathbf{W}(r, \theta, \phi, \tau) = s(\tau) \cdot r \cdot \hat{\mathbf{r}}$$
+其中缩放因子：
+$$s(\tau) = 1 + 0.1\sin(2\pi \tau/T)$$
+笛卡尔坐标：
+$$\mathbf{W}(\mathbf{x}, \tau) = s(\tau) \cdot \mathbf{x}$$
+体积变化：
+$$\det(J_{\mathbf{W}}) = s(\tau)^3 \approx 1 + 0.3\sin(2\pi\tau/T)$$
+满足 $\pm 10\%$ 体积变化（一阶近似）。</p>
+</details>
+<p><strong>习题 7.5</strong>: 正则化分析
+证明对于小变形 $\mathbf{W}(\mathbf{x}) = \mathbf{x} + \epsilon \mathbf{u}(\mathbf{x})$，如果 $|\nabla \mathbf{u}|_{op} &lt; 1/\epsilon$，则变形是可逆的。</p>
+<p><em>提示</em>: 使用 Banach 不动点定理</p>
+<details>
+<summary>答案</summary>
+<p>求逆映射需要解：$\mathbf{y} = \mathbf{x} + \epsilon \mathbf{u}(\mathbf{x})$</p>
+<p>定义算子：$T(\mathbf{x}) = \mathbf{y} - \epsilon \mathbf{u}(\mathbf{x})$</p>
+<p>对于两点 $\mathbf{x}_1, \mathbf{x}_2$：
+$$|T(\mathbf{x}_1) - T(\mathbf{x}_2)| = \epsilon|\mathbf{u}(\mathbf{x}_1) - \mathbf{u}(\mathbf{x}_2)|$$
+由中值定理：
+$$|\mathbf{u}(\mathbf{x}_1) - \mathbf{u}(\mathbf{x}_2)| \leq |\nabla \mathbf{u}|_{op} |\mathbf{x}_1 - \mathbf{x}_2|$$
+因此：
+$$|T(\mathbf{x}_1) - T(\mathbf{x}_2)| \leq \epsilon |\nabla \mathbf{u}|_{op} |\mathbf{x}_1 - \mathbf{x}_2|$$
+当 $\epsilon |\nabla \mathbf{u}|_{op} &lt; 1$ 时，$T$ 是压缩映射，由 Banach 定理存在唯一不动点，即逆映射存在。</p>
+</details>
+<p><strong>习题 7.6</strong>: 多视图一致性
+推导两个视图之间的场景流一致性约束。给定两个相机的投影矩阵 $\mathbf{P}_1, \mathbf{P}_2$，以及 3D 场景流 $\mathbf{s}$。</p>
+<p><em>提示</em>: 利用极线几何和流的投影关系</p>
+<details>
+<summary>答案</summary>
+<p>3D 点 $\mathbf{X}$ 在两个视图的投影：</p>
+<ul>
+<li>视图 1: $\mathbf{x}_1 = \mathbf{P}_1 \mathbf{X}$</li>
+<li>视图 2: $\mathbf{x}_2 = \mathbf{P}_2 \mathbf{X}$</li>
+</ul>
+<p>场景流后：$\mathbf{X}' = \mathbf{X} + \mathbf{s}$</p>
+<p>投影变化：</p>
+<ul>
+<li>$\mathbf{x}'_1 = \mathbf{P}_1(\mathbf{X} + \mathbf{s})$</li>
+<li>$\mathbf{x}'_2 = \mathbf{P}_2(\mathbf{X} + \mathbf{s})$</li>
+</ul>
+<p>2D 流：</p>
+<ul>
+<li>$\mathbf{u}_1 = \mathbf{x}'_1 - \mathbf{x}_1 = \mathbf{P}_1 \mathbf{s}$</li>
+<li>$\mathbf{u}_2 = \mathbf{x}'_2 - \mathbf{x}_2 = \mathbf{P}_2 \mathbf{s}$</li>
+</ul>
+<p>消除 $\mathbf{s}$：如果 $\mathbf{P}_1^+$ 是 $\mathbf{P}_1$ 的伪逆，则：
+$$\mathbf{u}_2 = \mathbf{P}_2 \mathbf{P}_1^+ \mathbf{u}_1$$
+这建立了两视图光流的线性关系。</p>
+</details>
+<p><strong>习题 7.7</strong>: 时间插值优化
+给定离散时间点 ${t_i}$ 的变形场样本 ${\mathbf{W}_i}$，设计一个保持 $C^2$ 连续性的插值方案，并分析计算复杂度。</p>
+<p><em>提示</em>: 考虑三次样条插值</p>
+<details>
+<summary>答案</summary>
+<p>三次 Hermite 样条插值：</p>
+<p>对于 $t \in [t_i, t_{i+1}]$，令 $s = (t - t_i)/(t_{i+1} - t_i)$：
+$$\mathbf{W}(t) = h_{00}(s)\mathbf{W}_i + h_{10}(s)\mathbf{m}_i\Delta t + h_{01}(s)\mathbf{W}_{i+1} + h_{11}(s)\mathbf{m}_{i+1}\Delta t$$
+其中 Hermite 基函数：</p>
+<ul>
+<li>$h_{00}(s) = 2s^3 - 3s^2 + 1$</li>
+<li>$h_{10}(s) = s^3 - 2s^2 + s$</li>
+<li>$h_{01}(s) = -2s^3 + 3s^2$</li>
+<li>$h_{11}(s) = s^3 - s^2$</li>
+</ul>
+<p>切线 $\mathbf{m}_i$ 通过解三对角系统获得（保证 $C^2$ 连续）：
+$$\mathbf{m}_{i-1} + 4\mathbf{m}_i + \mathbf{m}_{i+1} = \frac{3}{\Delta t}(\mathbf{W}_{i+1} - \mathbf{W}_{i-1})$$
+复杂度：</p>
+<ul>
+<li>预计算：$O(n)$ 解三对角系统</li>
+<li>查询：$O(\log n)$ 二分查找 + $O(1)$ 插值</li>
+<li>空间：$O(n)$ 存储切线</li>
+</ul>
+</details>
+<p><strong>习题 7.8</strong>: 拓扑变化建模
+设计一个数学框架来处理场景中物体的出现和消失（例如：倒水时水的体积变化）。要求保持时间连续性。</p>
+<p><em>提示</em>: 考虑使用软掩码和连续变化的密度场</p>
+<details>
+<summary>答案</summary>
+<p>时变密度场分解：
+$$\sigma(\mathbf{x}, t) = \sigma_{\text{static}}(\mathbf{x}) + \sum_k \alpha_k(t) \sigma_k(\mathbf{x})$$
+软出现/消失函数：
+$$\alpha_k(t) = \begin{cases}
+0 &amp; t &lt; t_k^{\text{start}} \
+\frac{1}{2}(1 - \cos(\pi \frac{t - t_k^{\text{start}}}{\Delta t})) &amp; t \in [t_k^{\text{start}}, t_k^{\text{start}} + \Delta t] \
+1 &amp; t \in [t_k^{\text{start}} + \Delta t, t_k^{\text{end}}] \
+\frac{1}{2}(1 + \cos(\pi \frac{t - t_k^{\text{end}}}{\Delta t})) &amp; t \in [t_k^{\text{end}}, t_k^{\text{end}} + \Delta t] \
+0 &amp; t &gt; t_k^{\text{end}} + \Delta t
+\end{cases}$$
+体积守恒（对于流体）：
+$$\int_{\Omega} \sigma(\mathbf{x}, t) d\mathbf{x} = V_0 + \int_0^t Q(\tau) d\tau$$
+其中 $Q(t)$ 是流入/流出率。</p>
+<p>渲染方程保持不变，自然处理拓扑变化：
+$$C(\mathbf{r}, t) = \int T(s,t) \sigma(\mathbf{r}(s), t) \mathbf{c}(\mathbf{r}(s), \mathbf{d}, t) ds$$</p>
+</details>
+<h2 id="gotchas">常见陷阱与错误 (Gotchas)</h2>
+<h3 id="1">1. 时间混叠问题</h3>
+<p><strong>问题</strong>: 快速运动导致时间欠采样，产生伪影</p>
+<pre class="codehilite"><code>症状：闪烁、运动模糊、鬼影
+原因：违反 Nyquist 采样定理
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>增加时间采样密度</li>
+<li>使用运动模糊建模</li>
+<li>时间超分辨率技术</li>
+</ul>
+<h3 id="2">2. 非双射变形</h3>
+<p><strong>问题</strong>: 变形场产生自相交或折叠</p>
+<pre class="codehilite"><code>症状：渲染伪影、优化不收敛
+检测：det(J) &lt; 0 或 det(J) &gt;&gt; 1
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>限制变形幅度：$|\mathbf{W} - \mathbf{x}| &lt; \epsilon$</li>
+<li>使用残差参数化</li>
+<li>添加 Jacobian 正则化</li>
+</ul>
+<h3 id="3">3. 规范空间歧义</h3>
+<p><strong>问题</strong>: 多个规范空间-变形对产生相同观察</p>
+<pre class="codehilite"><code>例子：膨胀的小球 vs 静止的大球
+影响：优化陷入局部最优
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>强先验约束（如最小变形）</li>
+<li>多阶段优化策略</li>
+<li>利用多视图约束</li>
+</ul>
+<h3 id="4">4. 计算复杂度爆炸</h3>
+<p><strong>问题</strong>: 4D 表示导致内存和计算需求剧增</p>
+<pre class="codehilite"><code>静态 NeRF: O(XYZ)
+动态 NeRF: O(XYZT)
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>分解表示（如 K-Planes）</li>
+<li>自适应采样</li>
+<li>增量式训练</li>
+</ul>
+<h3 id="5">5. 时间插值伪影</h3>
+<p><strong>问题</strong>: 离散时间采样之间的插值不自然</p>
+<pre class="codehilite"><code>线性插值：运动不流畅
+高阶插值：可能过拟合
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>物理约束的插值</li>
+<li>学习式时间编码</li>
+<li>运动先验正则化</li>
+</ul>
+<h3 id="6-">6. 光流-几何不一致</h3>
+<p><strong>问题</strong>: 2D 光流与 3D 场景流投影不匹配</p>
+<pre class="codehilite"><code>原因：遮挡、透明度变化
+表现：优化震荡
+</code></pre>
+
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li>遮挡感知的流计算</li>
+<li>鲁棒损失函数</li>
+<li>分层优化策略</li>
+</ul>
+<h2 id="_7">最佳实践检查清单</h2>
+<h3 id="_8">设计阶段</h3>
+<ul>
+<li>[ ] <strong>时间建模选择</strong></li>
+<li>[ ] 分析场景运动特性（周期性？局部性？）</li>
+<li>[ ] 估算最大运动频率</li>
+<li>
+<p>[ ] 选择合适的时间表示（连续/离散/混合）</p>
+</li>
+<li>
+<p>[ ] <strong>变形场设计</strong></p>
+</li>
+<li>[ ] 确定是否需要拓扑变化支持</li>
+<li>[ ] 选择参数化方式（前向/后向/双向）</li>
+<li>
+<p>[ ] 设计正则化策略</p>
+</li>
+<li>
+<p>[ ] <strong>内存预算规划</strong></p>
+</li>
+<li>[ ] 估算 4D 表示的内存需求</li>
+<li>[ ] 考虑分解或压缩方案</li>
+<li>[ ] 规划增量训练策略</li>
+</ul>
+<h3 id="_9">实现阶段</h3>
+<ul>
+<li>[ ] <strong>数值稳定性</strong></li>
+<li>[ ] 检查 Jacobian 计算的数值稳定性</li>
+<li>[ ] 实现梯度裁剪</li>
+<li>
+<p>[ ] 添加 epsilon 防止除零</p>
+</li>
+<li>
+<p>[ ] <strong>采样策略</strong></p>
+</li>
+<li>[ ] 实现自适应时间采样</li>
+<li>[ ] 平衡空间和时间分辨率</li>
+<li>
+<p>[ ] 考虑重要性采样</p>
+</li>
+<li>
+<p>[ ] <strong>优化流程</strong></p>
+</li>
+<li>[ ] 从粗到细的训练策略</li>
+<li>[ ] 交替优化规范空间和变形</li>
+<li>[ ] 监控各项损失的平衡</li>
+</ul>
+<h3 id="_10">验证阶段</h3>
+<ul>
+<li>[ ] <strong>质量指标</strong></li>
+<li>[ ] 时间一致性度量</li>
+<li>[ ] 运动平滑度评估</li>
+<li>
+<p>[ ] 多视图一致性检查</p>
+</li>
+<li>
+<p>[ ] <strong>性能分析</strong></p>
+</li>
+<li>[ ] 渲染时间 vs 质量权衡</li>
+<li>[ ] 内存使用监控</li>
+<li>
+<p>[ ] 训练收敛速度</p>
+</li>
+<li>
+<p>[ ] <strong>鲁棒性测试</strong></p>
+</li>
+<li>[ ] 快速运动场景</li>
+<li>[ ] 大变形情况</li>
+<li>[ ] 稀疏视图条件</li>
+</ul>
+<h3 id="_11">调试技巧</h3>
+<ul>
+<li>[ ] <strong>可视化工具</strong></li>
+<li>[ ] 变形场可视化（箭头图/网格）</li>
+<li>[ ] Jacobian 热力图</li>
+<li>
+<p>[ ] 时间切片对比</p>
+</li>
+<li>
+<p>[ ] <strong>诊断输出</strong></p>
+</li>
+<li>[ ] 逐帧光流检查</li>
+<li>[ ] 规范空间稳定性</li>
+<li>
+<p>[ ] 正则化项贡献分析</p>
+</li>
+<li>
+<p>[ ] <strong>消融实验</strong></p>
+</li>
+<li>[ ] 移除时间维度验证静态情况</li>
+<li>[ ] 固定变形场测试规范空间</li>
+<li>[ ] 简化场景逐步增加复杂度</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter6.html" class="nav-link prev">← 第6章：神经辐射场基础（NeRF）</a><a href="./chapter8.html" class="nav-link next">第8章：4D神经表示与频域方法 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

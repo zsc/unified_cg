@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第10章：3D高斯溅射</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class="active"><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="103d">第10章：3D高斯溅射</h1>
+<p>3D高斯溅射（3D Gaussian Splatting）代表了神经渲染领域的一个重要突破，它将经典的高斯混合模型与现代可微渲染技术相结合，实现了高质量的实时新视图合成。本章将从统一体积渲染方程的角度深入探讨3D高斯溅射的数学基础，建立其与前述渲染技术的联系，并分析其在计算效率上的优势。我们将看到，通过巧妙地利用高斯函数的数学性质，3D高斯溅射在保持表达能力的同时，实现了比隐式神经表示快几个数量级的渲染速度。</p>
+<h2 id="_1">学习目标</h2>
+<p>完成本章后，您将能够：</p>
+<ol>
+<li><strong>推导3D高斯溅射的体积渲染方程形式</strong>，理解其与统一框架的关系</li>
+<li><strong>分析各向异性高斯核的数学性质</strong>，掌握协方差矩阵的参数化方法</li>
+<li><strong>理解可微光栅化的数学原理</strong>，推导梯度的解析形式</li>
+<li><strong>设计自适应密度控制算法</strong>，分析其收敛性质</li>
+<li><strong>评估实时渲染的计算复杂度</strong>，理解并行化策略</li>
+</ol>
+<h2 id="101">10.1 场景的高斯混合模型</h2>
+<h3 id="1011">10.1.1 从离散点到连续表示</h3>
+<p>考虑一个3D场景由N个带属性的点组成。在第3章中，我们将点云表示为δ函数的集合：</p>
+<p>$$\rho(\mathbf{x}) = \sum_{i=1}^{N} \alpha_i \delta(\mathbf{x} - \mathbf{x}_i)$$
+其中$\alpha_i$是第i个点的不透明度，$\mathbf{x}_i$是其位置。然而，δ函数表示存在若干限制：</p>
+<ul>
+<li><strong>不连续性</strong>：δ函数在空间中产生不连续的密度场</li>
+<li><strong>采样困难</strong>：需要精确命中点位置才能获得非零值</li>
+<li><strong>缺乏空间支撑</strong>：每个点的影响范围为零测度</li>
+</ul>
+<p>3D高斯溅射通过用连续的高斯函数替换δ函数来解决这些问题：
+$$\rho(\mathbf{x}) = \sum_{i=1}^{N} \alpha_i G_i(\mathbf{x})$$
+其中$G_i(\mathbf{x})$是中心在$\mathbf{x}_i$的3D高斯函数。这种表示的优势包括：</p>
+<ul>
+<li><strong>平滑性</strong>：$C^\infty$连续，便于梯度计算</li>
+<li><strong>有限支撑</strong>：虽然理论上无限，但实际影响范围有限</li>
+<li><strong>解析性质</strong>：高斯函数具有丰富的数学性质</li>
+</ul>
+<p><strong>从点云到体积的过渡</strong>：考虑点云的核密度估计（KDE）：
+$$\hat{\rho}(\mathbf{x}) = \frac{1}{N} \sum_{i=1}^{N} K_h(\mathbf{x} - \mathbf{x}_i)$$
+其中$K_h$是带宽为$h$的核函数。当选择高斯核时：
+$$K_h(\mathbf{x}) = \frac{1}{(2\pi h^2)^{3/2}} \exp\left(-\frac{|\mathbf{x}|^2}{2h^2}\right)$$
+3D高斯溅射可视为各向异性KDE的推广，其中每个点具有独立的带宽矩阵。</p>
+<p><strong>数学基础：从狄拉克测度到高斯测度</strong></p>
+<p>从测度论角度，δ函数定义了点质量测度：
+$$\mu_{\delta} = \sum_{i=1}^{N} \alpha_i \delta_{\mathbf{x}_i}$$
+其中$\delta_{\mathbf{x}_i}$是集中在$\mathbf{x}_i$的狄拉克测度。对任意可测集$A$：
+$$\mu_{\delta}(A) = \sum_{i: \mathbf{x}_i \in A} \alpha_i$$
+高斯溅射将其推广为绝对连续测度：
+$$\mu_{G} = \sum_{i=1}^{N} \alpha_i \mu_{G_i}$$
+其中$\mu_{G_i}$是高斯测度，具有密度：
+$$\frac{d\mu_{G_i}}{d\lambda}(\mathbf{x}) = G_i(\mathbf{x})$$
+这里$\lambda$是Lebesgue测度。</p>
+<p><strong>逼近理论视角</strong></p>
+<p>考虑函数空间$L^2(\mathbb{R}^3)$，高斯函数族构成了一个逼近系统。对于紧支撑的连续函数$f$，存在高斯混合：
+$$f_N(\mathbf{x}) = \sum_{i=1}^{N} c_i G_{\sigma_i}(\mathbf{x} - \mathbf{x}_i)$$
+使得$|f - f_N|_{L^2} \to 0$当$N \to \infty$且$\max_i \sigma_i \to 0$。</p>
+<p><strong>Stone-Weierstrass定理的应用</strong>：高斯函数的线性组合在紧集上稠密，这保证了足够多的高斯可以逼近任意连续场景表示。</p>
+<p><strong>优化理论联系</strong></p>
+<p>从变分角度，3D高斯溅射解决如下优化问题：
+$$\min_{{\mathbf{x}_i, \mathbf{\Sigma}_i, \alpha_i, \mathbf{c}_i}} \sum_{j} |I_j - \mathcal{R}(\rho, \mathbf{c}; \mathbf{P}_j)|^2 + \mathcal{R}_{reg}$$
+其中：</p>
+<ul>
+<li>$I_j$是观测图像</li>
+<li>$\mathcal{R}$是渲染算子</li>
+<li>$\mathbf{P}_j$是相机参数</li>
+<li>$\mathcal{R}_{reg}$是正则化项</li>
+</ul>
+<p>这个非凸优化问题的关键在于高斯参数化使得局部梯度计算变得高效且稳定。</p>
+<h3 id="1012">10.1.2 高斯基函数的数学性质</h3>
+<p>3D高斯函数定义为：
+$$G_i(\mathbf{x}) = \frac{1}{(2\pi)^{3/2}|\mathbf{\Sigma}_i|^{1/2}} \exp\left(-\frac{1}{2}(\mathbf{x} - \mathbf{x}_i)^T \mathbf{\Sigma}_i^{-1} (\mathbf{x} - \mathbf{x}_i)\right)$$
+其中$\mathbf{\Sigma}_i$是3×3协方差矩阵，决定了高斯的形状和方向。</p>
+<p><strong>关键性质</strong>：</p>
+<ol>
+<li><strong>归一化</strong>：$\int_{\mathbb{R}^3} G_i(\mathbf{x}) d\mathbf{x} = 1$</li>
+</ol>
+<p>证明：使用变量替换$\mathbf{z} = \mathbf{\Sigma}_i^{-1/2}(\mathbf{x} - \mathbf{x}_i)$</p>
+<ol start="2">
+<li>
+<p><strong>仿射变换下的协变性</strong>：若$\mathbf{y} = \mathbf{A}\mathbf{x} + \mathbf{b}$，则：
+$$G'(\mathbf{y}) = \frac{1}{|\det(\mathbf{A})|} G(\mathbf{A}^{-1}(\mathbf{y} - \mathbf{b}))$$
+新高斯的参数：$\mathbf{\mu}' = \mathbf{A}\mathbf{\mu} + \mathbf{b}$，$\mathbf{\Sigma}' = \mathbf{A}\mathbf{\Sigma}\mathbf{A}^T$</p>
+</li>
+<li>
+<p><strong>卷积性质</strong>：两个高斯的卷积仍是高斯：
+$$G_1 * G_2 = G_{12}, \quad \mathbf{\Sigma}_{12} = \mathbf{\Sigma}_1 + \mathbf{\Sigma}_2$$
+均值：$\mathbf{\mu}_{12} = \mathbf{\mu}_1 + \mathbf{\mu}_2$</p>
+</li>
+<li>
+<p><strong>傅里叶变换</strong>：高斯的傅里叶变换仍是高斯：
+$$\mathcal{F}{G(\mathbf{x}; \mathbf{0}, \mathbf{\Sigma})} = \exp\left(-\frac{1}{2}\mathbf{k}^T\mathbf{\Sigma}\mathbf{k}\right)$$</p>
+</li>
+<li>
+<p><strong>矩生成函数</strong>：
+$$M(\mathbf{t}) = \mathbb{E}[e^{\mathbf{t}^T\mathbf{x}}] = \exp\left(\mathbf{t}^T\mathbf{\mu} + \frac{1}{2}\mathbf{t}^T\mathbf{\Sigma}\mathbf{t}\right)$$</p>
+</li>
+<li>
+<p><strong>条件分布</strong>：高斯的条件分布仍是高斯</p>
+</li>
+</ol>
+<p>若$\mathbf{x} = [\mathbf{x}_1^T, \mathbf{x}_2^T]^T \sim \mathcal{N}(\mathbf{\mu}, \mathbf{\Sigma})$，则：
+$$\mathbf{x}_1|\mathbf{x}_2 \sim \mathcal{N}(\mathbf{\mu}_{1|2}, \mathbf{\Sigma}_{1|2})$$
+其中$\mathbf{\mu}_{1|2} = \mathbf{\mu}_1 + \mathbf{\Sigma}_{12}\mathbf{\Sigma}_{22}^{-1}(\mathbf{x}_2 - \mathbf{\mu}_2)$</p>
+<ol start="7">
+<li><strong>信息形式</strong>：使用精度矩阵$\mathbf{\Lambda} = \mathbf{\Sigma}^{-1}$：
+$$G(\mathbf{x}) \propto \exp\left(-\frac{1}{2}\mathbf{x}^T\mathbf{\Lambda}\mathbf{x} + \mathbf{\eta}^T\mathbf{x}\right)$$
+其中$\mathbf{\eta} = \mathbf{\Lambda}\mathbf{\mu}$是信息向量</li>
+</ol>
+<p><strong>数值考虑</strong>：</p>
+<ul>
+<li>当$|\mathbf{x} - \mathbf{\mu}| &gt; 3\sqrt{\lambda_{max}(\mathbf{\Sigma})}$时，高斯值小于$0.01 \times$峰值</li>
+<li>可以安全地将高斯截断在$3\sigma$范围内，误差$&lt; 0.3\%$</li>
+</ul>
+<p><strong>高级性质</strong>：</p>
+<ol start="8">
+<li>
+<p><strong>Hermite多项式展开</strong>：高斯函数可以通过Hermite多项式展开：
+$$\mathbf{x}^{\boldsymbol{\alpha}} G(\mathbf{x}) = \sum_{\boldsymbol{\beta}} c_{\boldsymbol{\alpha}\boldsymbol{\beta}} H_{\boldsymbol{\beta}}(\mathbf{\Sigma}^{-1/2}\mathbf{x}) G(\mathbf{x})$$
+其中$H_{\boldsymbol{\beta}}$是多维Hermite多项式，$\boldsymbol{\alpha}, \boldsymbol{\beta}$是多重指标。</p>
+</li>
+<li>
+<p><strong>Wick定理</strong>：高斯随机变量的高阶矩可以通过二阶矩表示：
+$$\mathbb{E}[x_{i_1}x_{i_2}...x_{i_{2n}}] = \sum_{\text{pairings}} \prod_{\text{pairs}} \mathbb{E}[x_{i_k}x_{i_l}]$$
+奇数阶矩为零（对于零均值高斯）。</p>
+</li>
+<li>
+<p><strong>Isserlis定理</strong>：对于多维高斯积分：
+$$\int_{\mathbb{R}^n} x_{i_1}...x_{i_k} \exp\left(-\frac{1}{2}\mathbf{x}^T\mathbf{A}\mathbf{x}\right) d\mathbf{x} = \begin{cases}
+    0 &amp; \text{if } k \text{ is odd} \
+    \frac{(2\pi)^{n/2}}{|\mathbf{A}|^{1/2}} \sum_{\text{pairings}} \prod (\mathbf{A}^{-1})_{i_j i_k} &amp; \text{if } k \text{ is even}
+    \end{cases}$$</p>
+</li>
+<li>
+<p><strong>Cameron-Martin定理</strong>：描述高斯测度在平移下的绝对连续性。对于无限维情况特别重要。</p>
+</li>
+<li>
+<p><strong>热核联系</strong>：高斯函数是热方程的基本解：
+$$\frac{\partial u}{\partial t} = \frac{1}{2}\Delta u$$
+解为$u(\mathbf{x}, t) = (G_{\sqrt{t}} * u_0)(\mathbf{x})$，其中$G_{\sqrt{t}}$是方差为$t\mathbf{I}$的高斯。</p>
+</li>
+</ol>
+<p><strong>计算技巧</strong>：</p>
+<ol>
+<li>
+<p><strong>对数域计算</strong>：为避免数值下溢，在对数域计算：
+$$\log G(\mathbf{x}) = -\frac{3}{2}\log(2\pi) - \frac{1}{2}\log|\mathbf{\Sigma}| - \frac{1}{2}\mathbf{d}^T\mathbf{\Sigma}^{-1}\mathbf{d}$$</p>
+</li>
+<li>
+<p><strong>Cholesky分解加速</strong>：设$\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T$，则：
+$$\mathbf{d}^T\mathbf{\Sigma}^{-1}\mathbf{d} = |\mathbf{L}^{-1}\mathbf{d}|^2$$
+避免显式计算逆矩阵。</p>
+</li>
+<li>
+<p><strong>批量计算优化</strong>：对多个点同时计算，利用SIMD指令和矩阵运算库。</p>
+</li>
+</ol>
+<h3 id="1013">10.1.3 高斯混合模型的概率解释</h3>
+<p>从概率论角度，场景可视为一个高斯混合模型（GMM）：
+$$p(\mathbf{x}) = \sum_{i=1}^{N} \pi_i \mathcal{N}(\mathbf{x}; \mathbf{\mu}_i, \mathbf{\Sigma}_i)$$
+其中$\pi_i$是混合权重，满足$\sum_i \pi_i = 1$。在渲染中，我们将$\pi_i$与不透明度$\alpha_i$关联。</p>
+<p><strong>从概率到渲染的映射</strong>：</p>
+<ul>
+<li><strong>混合权重</strong>：$\pi_i \propto \alpha_i$（未归一化）</li>
+<li><strong>密度函数</strong>：$\rho(\mathbf{x}) = \sum_i \alpha_i \mathcal{N}(\mathbf{x}; \mathbf{\mu}_i, \mathbf{\Sigma}_i)$</li>
+<li><strong>颜色分布</strong>：每个高斯关联颜色$\mathbf{c}_i$</li>
+</ul>
+<p><strong>期望最大化（EM）视角</strong>：
+给定观测图像集${I_j}$，可以通过EM算法优化GMM参数：</p>
+<ol>
+<li>
+<p><strong>E步</strong>：计算后验概率
+$$\gamma_{ji} = \frac{\pi_i \mathcal{N}(\mathbf{x}_j; \mathbf{\mu}_i, \mathbf{\Sigma}_i)}{\sum_k \pi_k \mathcal{N}(\mathbf{x}_j; \mathbf{\mu}_k, \mathbf{\Sigma}_k)}$$</p>
+</li>
+<li>
+<p><strong>M步</strong>：更新参数
+$$\mathbf{\mu}_i = \frac{\sum_j \gamma_{ji} \mathbf{x}_j}{\sum_j \gamma_{ji}}, \quad \mathbf{\Sigma}_i = \frac{\sum_j \gamma_{ji} (\mathbf{x}_j - \mathbf{\mu}_i)(\mathbf{x}_j - \mathbf{\mu}_i)^T}{\sum_j \gamma_{ji}}$$
+但在实际的3D高斯溅射中，我们采用梯度下降直接优化渲染损失。</p>
+</li>
+</ol>
+<p><strong>信息论解释</strong>：
+高斯混合模型的熵：
+$$H[p] = -\int p(\mathbf{x}) \log p(\mathbf{x}) d\mathbf{x}$$
+对于单个高斯：$H[\mathcal{N}(\mathbf{\mu}, \mathbf{\Sigma})] = \frac{3}{2}\log(2\pi e) + \frac{1}{2}\log|\mathbf{\Sigma}|$</p>
+<p>GMM的熵没有解析形式，但可以通过上下界估计：
+$$\max_i H[\mathcal{N}(\mathbf{\mu}_i, \mathbf{\Sigma}_i)] \leq H[p] \leq \sum_i \pi_i H[\mathcal{N}(\mathbf{\mu}_i, \mathbf{\Sigma}_i)] - \sum_i \pi_i \log \pi_i$$</p>
+<h3 id="1014">10.1.4 与统一体积渲染方程的联系</h3>
+<p>回顾第3章的统一体积渲染方程：
+$$L(\mathbf{r}) = \int_0^{\infty} T(t) \sigma(t) c(t) dt$$
+其中$T(t) = \exp\left(-\int_0^t \sigma(s) ds\right)$是透射率。</p>
+<p>对于高斯混合表示，密度场变为：
+$$\sigma(\mathbf{r}(t)) = \sum_{i=1}^{N} \alpha_i G_i(\mathbf{r}(t))$$
+代入体积渲染方程：
+$$L(\mathbf{r}) = \int_0^{\infty} \exp\left(-\int_0^t \sum_{j=1}^{N} \alpha_j G_j(\mathbf{r}(s)) ds\right) \sum_{i=1}^{N} \alpha_i G_i(\mathbf{r}(t)) \mathbf{c}_i dt$$
+这个积分一般没有解析解，但通过适当的近似，我们可以得到高效的计算方法。</p>
+<p><strong>离散化近似</strong>：
+将射线离散化为$M$个采样点：
+$$L(\mathbf{r}) \approx \sum_{k=1}^{M} T_k \sigma_k c_k \Delta t$$
+其中：</p>
+<ul>
+<li>$\sigma_k = \sum_{i=1}^{N} \alpha_i G_i(\mathbf{r}(t_k))$</li>
+<li>$T_k = \exp\left(-\sum_{j=1}^{k-1} \sigma_j \Delta t\right)$</li>
+<li>$c_k = \frac{\sum_{i=1}^{N} \alpha_i G_i(\mathbf{r}(t_k)) \mathbf{c}_i}{\sigma_k}$</li>
+</ul>
+<p><strong>局部线性化近似</strong>：
+在每个高斯的支撑域内，假设射线近似为直线：
+$$\mathbf{r}(t) \approx \mathbf{r}_0 + t\mathbf{d}$$
+这使得我们可以将沿射线的积分转化为对高斯的求和。</p>
+<p><strong>多分辨率表示</strong>：
+为了加速计算，可以构建高斯的层次结构：
+$$\sigma_{coarse}(\mathbf{x}) = \sum_{j} \beta_j G_j^{coarse}(\mathbf{x})$$
+其中粗糍级别的高斯是精细级别的聚合。</p>
+<p><strong>与NeRF的对比</strong>：</p>
+<ul>
+<li>NeRF：$\sigma(\mathbf{x}) = MLP(\gamma(\mathbf{x}))$（隐式表示）</li>
+<li>3D GS：$\sigma(\mathbf{x}) = \sum_i \alpha_i G_i(\mathbf{x})$（显式表示）</li>
+</ul>
+<p>显式表示的优势：</p>
+<ul>
+<li>可以预计算和索引高斯</li>
+<li>避免了MLP的重复计算</li>
+<li>更容易并行化</li>
+</ul>
+<p><strong>高斯溅射的特殊形式</strong>：</p>
+<p>在实际实现中，3D高斯溅射采用了一种特殊的近似形式。不是沿射线积分，而是：</p>
+<ol>
+<li><strong>投影到2D</strong>：将3D高斯投影为2D高斯</li>
+<li><strong>深度排序</strong>：按深度对高斯排序</li>
+<li><strong>α-blending</strong>：使用标准的透明度合成</li>
+</ol>
+<p>这等价于假设每个高斯是一个薄片，而不是体积分布。</p>
+<p><strong>数学推导：从体积到表面</strong></p>
+<p>考虑沿射线方向的高斯分布。如果高斯在深度方向上非常窄（$\sigma_z \to 0$），则：
+$$\int_{-\infty}^{\infty} G(\mathbf{r}(t)) dt \approx G_{2D}(\mathbf{r}_{\perp}) \cdot \sqrt{2\pi\sigma_z^2}$$
+其中$\mathbf{r}_{\perp}$是射线在高斯中心处的横向位置。</p>
+<p>当我们让$\alpha_i' = \alpha_i \sqrt{2\pi\sigma_{z,i}^2}$时，体积渲染简化为表面渲染。</p>
+<p><strong>误差分析</strong>：</p>
+<p>薄片近似的误差主要来自：</p>
+<ol>
+<li><strong>深度方向的重叠</strong>：当高斯在深度方向重叠时</li>
+<li><strong>透视畸变</strong>：远离高斯中心的区域</li>
+<li><strong>离散化误差</strong>：有限的采样密度</li>
+</ol>
+<p>误差界：
+$$|L_{exact} - L_{approx}| \leq C \cdot \max_i(\sigma_{z,i}/d_i) \cdot \sum_i \alpha_i$$
+其中$d_i$是高斯到相机的距离，$C$是常数。</p>
+<p><strong>统一框架的意义</strong>：</p>
+<p>3D高斯溅射展示了如何在统一体积渲染框架内，通过特定的近似和优化，实现高效的实时渲染。这种方法的成功证明了：</p>
+<ol>
+<li><strong>理论与实践的平衡</strong>：不必完全遵循理论模型，合理的近似可以带来巨大的性能提升</li>
+<li><strong>表示的重要性</strong>：选择合适的基函数（高斯）可以简化计算</li>
+<li><strong>硬件友好性</strong>：设计算法时考虑GPU架构的特点</li>
+</ol>
+<h2 id="102">10.2 各向异性核与协方差</h2>
+<h3 id="1021-3d">10.2.1 3D高斯的参数化</h3>
+<p>每个3D高斯由以下参数完全确定：</p>
+<ul>
+<li>位置：$\mathbf{\mu}_i \in \mathbb{R}^3$</li>
+<li>协方差矩阵：$\mathbf{\Sigma}_i \in \mathbb{R}^{3 \times 3}$（对称正定）</li>
+<li>不透明度：$\alpha_i \in [0, 1]$</li>
+<li>颜色：$\mathbf{c}_i$（可以是RGB或球谐系数）</li>
+</ul>
+<p>协方差矩阵必须满足对称正定条件：
+$$\mathbf{\Sigma}_i = \mathbf{\Sigma}_i^T, \quad \mathbf{x}^T\mathbf{\Sigma}_i\mathbf{x} &gt; 0, \forall \mathbf{x} \neq \mathbf{0}$$
+<strong>参数计数</strong>：</p>
+<ul>
+<li>位置：3个参数</li>
+<li>协方差：6个独立参数（对称矩阵）</li>
+<li>不透明度：1个参数</li>
+<li>颜色：3个（RGB）或更多（球谐系数）</li>
+</ul>
+<p>总计：每个高斯至少13个参数</p>
+<p><strong>颜色的视角依赖性</strong>：
+使用球谐函数表示颜色：
+$$\mathbf{c}(\mathbf{d}) = \sum_{l=0}^{L} \sum_{m=-l}^{l} c_{lm} Y_l^m(\mathbf{d})$$
+其中$\mathbf{d}$是视角方向，$Y_l^m$是球谐基函数。</p>
+<p>常用阶数：</p>
+<ul>
+<li>$L=0$：常数颜色（1个系数）</li>
+<li>$L=1$：线性变化（4个系数）</li>
+<li>$L=2$：二次变化（9个系数）</li>
+<li>$L=3$：三次变化（16个系数）</li>
+</ul>
+<p><strong>球谐函数的显式形式</strong>：</p>
+<p>前几阶球谐函数：</p>
+<ul>
+<li>$Y_0^0 = \frac{1}{2\sqrt{\pi}}$</li>
+<li>$Y_1^{-1} = \sqrt{\frac{3}{4\pi}} \frac{y}{r}$, $Y_1^0 = \sqrt{\frac{3}{4\pi}} \frac{z}{r}$, $Y_1^1 = \sqrt{\frac{3}{4\pi}} \frac{x}{r}$</li>
+<li>$Y_2^0 = \sqrt{\frac{5}{16\pi}} (3\cos^2\theta - 1)$</li>
+</ul>
+<p>其中$(r, \theta, \phi)$是球坐标。</p>
+<p><strong>球谐系数的旋转变换</strong>：</p>
+<p>当视角方向旋转时，球谐系数按照Wigner D矩阵变换：
+$$c'_{lm} = \sum_{m'} D^l_{mm'}(\mathbf{R}) c_{lm'}$$
+其中$\mathbf{R}$是旋转矩阵。</p>
+<p><strong>参数空间的流形结构</strong>：</p>
+<p>协方差矩阵的参数空间形成一个6维流形$\mathcal{M} = {\mathbf{\Sigma} \in \mathbb{R}^{3 \times 3} : \mathbf{\Sigma} = \mathbf{\Sigma}^T, \mathbf{\Sigma} \succ 0}$。</p>
+<p>这个流形具有：</p>
+<ul>
+<li><strong>黎曼度量</strong>：$ds^2 = \text{tr}(\mathbf{\Sigma}^{-1}d\mathbf{\Sigma}\mathbf{\Sigma}^{-1}d\mathbf{\Sigma})$</li>
+<li><strong>自然梯度</strong>：$\nabla_{\mathbf{\Sigma}} f = \mathbf{\Sigma} \frac{\partial f}{\partial \mathbf{\Sigma}} \mathbf{\Sigma}$</li>
+<li><strong>测地线</strong>：连接两个协方差矩阵的最短路径</li>
+</ul>
+<p><strong>信息几何视角</strong>：</p>
+<p>协方差矩阵的Fisher信息矩阵：
+$$I_{ij} = \mathbb{E}\left[\frac{\partial \log p(\mathbf{x}; \mathbf{\Sigma})}{\partial \Sigma_{ij}} \frac{\partial \log p(\mathbf{x}; \mathbf{\Sigma})}{\partial \Sigma_{kl}}\right]$$
+对于高斯分布：
+$$I(\mathbf{\Sigma})_{ij,kl} = \frac{1}{2}\text{tr}(\mathbf{\Sigma}^{-1}E_{ij}\mathbf{\Sigma}^{-1}E_{kl})$$
+其中$E_{ij}$是基本矩阵。</p>
+<h3 id="1022">10.2.2 协方差矩阵的几何意义</h3>
+<p>协方差矩阵的特征分解揭示了高斯的几何结构：
+$$\mathbf{\Sigma} = \mathbf{V}\mathbf{\Lambda}\mathbf{V}^T$$
+其中：</p>
+<ul>
+<li>$\mathbf{V} = [\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3]$：特征向量矩阵（正交）</li>
+<li>$\mathbf{\Lambda} = \text{diag}(\lambda_1, \lambda_2, \lambda_3)$：特征值对角矩阵</li>
+</ul>
+<p>几何解释：</p>
+<ul>
+<li>特征向量$\mathbf{v}_i$定义了椭球的主轴方向</li>
+<li>特征值$\lambda_i$决定了沿各主轴的方差</li>
+<li>等概率密度面是椭球：$(\mathbf{x} - \mathbf{\mu})^T\mathbf{\Sigma}^{-1}(\mathbf{x} - \mathbf{\mu}) = c$</li>
+</ul>
+<p><strong>椭球半轴长度</strong>：
+对于给定的置信水平$p$，椭球半轴长度为：
+$$a_i = \sqrt{\lambda_i \chi^2_3(p)}$$
+其中$\chi^2_3(p)$是自由度为3的卡方分布的$p$分位数。</p>
+<p>常用值：</p>
+<ul>
+<li>$p = 0.68$：$\chi^2_3(0.68) \approx 3.51$ （1-$\sigma$椭球）</li>
+<li>$p = 0.95$：$\chi^2_3(0.95) \approx 7.81$ （2-$\sigma$椭球）</li>
+<li>$p = 0.997$：$\chi^2_3(0.997) \approx 14.16$ （3-$\sigma$椭球）</li>
+</ul>
+<p><strong>体积与表面积</strong>：</p>
+<ul>
+<li>椭球体积：$V = \frac{4}{3}\pi \sqrt{\det(\mathbf{\Sigma})} \cdot (\chi^2_3(p))^{3/2}$</li>
+<li>有效半径：$r_{eff} = (\det(\mathbf{\Sigma}))^{1/6}$</li>
+</ul>
+<p><strong>各向异性度量</strong>：
+定义各向异性指标：
+$$\text{anisotropy} = 1 - \frac{\lambda_{min}}{\lambda_{max}}$$
+值域：</p>
+<ul>
+<li>0：完全各向同性（球形）</li>
+<li>接近1：高度各向异性（细长椭球）</li>
+</ul>
+<p><strong>条件数与数值稳定性</strong>：
+$$\kappa(\mathbf{\Sigma}) = \frac{\lambda_{max}}{\lambda_{min}}$$
+当$\kappa$很大时，矩阵接近奇异，可能导致数值问题。</p>
+<p><strong>其他各向异性度量</strong>：</p>
+<ol>
+<li>
+<p><strong>分数各向异性（FA）</strong>：
+$$FA = \sqrt{\frac{3}{2}} \frac{\sqrt{(\lambda_1 - \bar{\lambda})^2 + (\lambda_2 - \bar{\lambda})^2 + (\lambda_3 - \bar{\lambda})^2}}{\sqrt{\lambda_1^2 + \lambda_2^2 + \lambda_3^2}}$$
+其中$\bar{\lambda} = (\lambda_1 + \lambda_2 + \lambda_3)/3$。</p>
+</li>
+<li>
+<p><strong>形状指数</strong>：
+   - 线性指数：$C_l = \frac{\lambda_1 - \lambda_2}{\lambda_1}$
+   - 平面指数：$C_p = \frac{2(\lambda_2 - \lambda_3)}{\lambda_1}$
+   - 球形指数：$C_s = \frac{3\lambda_3}{\lambda_1}$</p>
+</li>
+<li>
+<p><strong>体积比</strong>：
+$$VR = \frac{\lambda_1 \lambda_2 \lambda_3}{(\lambda_1 + \lambda_2 + \lambda_3)^3/27}$$
+这测量了椭球与具有相同迹的球体体积之比。</p>
+</li>
+</ol>
+<p><strong>椭球的表面积</strong>：</p>
+<p>使用椭圆积分：
+$$S = 4\pi \left[\frac{(abc)^{1.6} + (a^{1.6}b^{1.6} + a^{1.6}c^{1.6} + b^{1.6}c^{1.6})}{3}\right]^{1/1.6}$$
+其中$a = \sqrt{\lambda_1}$, $b = \sqrt{\lambda_2}$, $c = \sqrt{\lambda_3}$。</p>
+<p><strong>椭球的惯性张量</strong>：</p>
+<p>对于均匀密度的椭球：
+$$\mathbf{I} = \frac{m}{5} \begin{bmatrix}
+\lambda_2 + \lambda_3 &amp; 0 &amp; 0 \
+0 &amp; \lambda_1 + \lambda_3 &amp; 0 \
+0 &amp; 0 &amp; \lambda_1 + \lambda_2
+\end{bmatrix}$$
+这在动力学模拟中可能有用。</p>
+<p><strong>几何不变量</strong>：</p>
+<p>协方差矩阵的三个基本不变量：</p>
+<ol>
+<li>迹：$\text{tr}(\mathbf{\Sigma}) = \lambda_1 + \lambda_2 + \lambda_3$</li>
+<li>行列式：$\det(\mathbf{\Sigma}) = \lambda_1 \lambda_2 \lambda_3$</li>
+<li>Frobenius范数：$|\mathbf{\Sigma}|_F = \sqrt{\lambda_1^2 + \lambda_2^2 + \lambda_3^2}$</li>
+</ol>
+<p>这些不变量在旋转变换下保持不变。</p>
+<h3 id="1023">10.2.3 旋转与缩放的分解</h3>
+<p>为了保证正定性并简化优化，我们采用如下参数化：
+$$\mathbf{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^T\mathbf{R}^T$$
+其中：</p>
+<ul>
+<li>$\mathbf{R} \in SO(3)$：旋转矩阵</li>
+<li>$\mathbf{S} = \text{diag}(s_1, s_2, s_3)$：缩放矩阵，$s_i &gt; 0$</li>
+</ul>
+<p>这种参数化的优点：</p>
+<ol>
+<li><strong>自动保证正定性</strong>：只要$s_i &gt; 0$</li>
+<li><strong>直观的几何意义</strong>：旋转+缩放</li>
+<li><strong>参数数量合理</strong>：3（旋转）+ 3（缩放）= 6个自由度</li>
+</ol>
+<p>旋转矩阵可用四元数$\mathbf{q} = (q_w, q_x, q_y, q_z)$表示：
+$$\mathbf{R}(\mathbf{q}) = \begin{bmatrix}
+1-2(q_y^2+q_z^2) &amp; 2(q_x q_y - q_w q_z) &amp; 2(q_x q_z + q_w q_y) \
+2(q_x q_y + q_w q_z) &amp; 1-2(q_x^2+q_z^2) &amp; 2(q_y q_z - q_w q_x) \
+2(q_x q_z - q_w q_y) &amp; 2(q_y q_z + q_w q_x) &amp; 1-2(q_x^2+q_y^2)
+\end{bmatrix}$$
+<strong>四元数的优势</strong>：</p>
+<ul>
+<li>避免万向锁</li>
+<li>插值平滑（SLERP）</li>
+<li>只需归一化约束：$|\mathbf{q}| = 1$</li>
+<li>存储4个参数，优化时可使用3个自由度</li>
+</ul>
+<p><strong>从四元数到旋转矩阵的梯度</strong>：
+$$\frac{\partial \mathbf{R}}{\partial q_w} = 2\begin{bmatrix}
+0 &amp; -q_z &amp; q_y \
+q_z &amp; 0 &amp; -q_x \
+-q_y &amp; q_x &amp; 0
+\end{bmatrix}$$
+类似地可以计算$\frac{\partial \mathbf{R}}{\partial q_x}$, $\frac{\partial \mathbf{R}}{\partial q_y}$, $\frac{\partial \mathbf{R}}{\partial q_z}$。</p>
+<p><strong>参数化的等价性</strong>：
+注意到$(\mathbf{R}, \mathbf{S})$和$(-\mathbf{R}, \mathbf{S})$产生相同的$\mathbf{\Sigma}$。这在优化时可能导致不唯一性。</p>
+<p><strong>替代参数化方案</strong>：</p>
+<ol>
+<li><strong>欧拉角</strong>：简单但存在万向锁</li>
+<li><strong>轴角表示</strong>：$\mathbf{R} = \exp([\mathbf{\omega}]_\times)$</li>
+<li><strong>Cayley变换</strong>：$\mathbf{R} = (\mathbf{I} - \mathbf{K})(\mathbf{I} + \mathbf{K})^{-1}$</li>
+</ol>
+<p><strong>四元数的完整梯度计算</strong>：</p>
+<p>对于给定的损失函数$\mathcal{L}$，梯度传播：
+$$\frac{\partial \mathcal{L}}{\partial q_i} = \text{tr}\left(\frac{\partial \mathcal{L}}{\partial \mathbf{\Sigma}} \frac{\partial \mathbf{\Sigma}}{\partial q_i}\right)$$
+其中：
+$$\frac{\partial \mathbf{\Sigma}}{\partial q_i} = \frac{\partial \mathbf{R}}{\partial q_i} \mathbf{S}\mathbf{S}^T\mathbf{R}^T + \mathbf{R}\mathbf{S}\mathbf{S}^T \frac{\partial \mathbf{R}^T}{\partial q_i}$$
+<strong>四元数的归一化约束处理</strong>：</p>
+<ol>
+<li>
+<p><strong>投影方法</strong>：在每次更新后重新归一化
+$$\mathbf{q}_{new} = \frac{\mathbf{q}}{|\mathbf{q}|}$$</p>
+</li>
+<li>
+<p><strong>拉格朗日乘数法</strong>：添加约束项
+$$\mathcal{L}_{aug} = \mathcal{L} + \lambda(|\mathbf{q}|^2 - 1)$$</p>
+</li>
+<li>
+<p><strong>流形优化</strong>：在$S^3$球面上直接优化
+$$\mathbf{q}_{new} = \exp_{\mathbf{q}}(\eta \cdot \text{grad}_{\mathbf{q}} \mathcal{L})$$
+其中$\exp_{\mathbf{q}}$是指数映射。</p>
+</li>
+</ol>
+<p><strong>轴角表示的详细推导</strong>：</p>
+<p>给定旋转轴$\mathbf{n}$（单位向量）和角度$\theta$：
+$$\mathbf{R} = \mathbf{I} + \sin\theta [\mathbf{n}]_\times + (1-\cos\theta)[\mathbf{n}]_\times^2$$
+其中$[\mathbf{n}]_\times$是反对称矩阵：
+$$[\mathbf{n}]_\times = \begin{bmatrix}
+0 &amp; -n_z &amp; n_y \
+n_z &amp; 0 &amp; -n_x \
+-n_y &amp; n_x &amp; 0
+\end{bmatrix}$$
+<strong>缩放参数的约束</strong>：</p>
+<p>为保证数值稳定性，通常限制：
+$$s_{min} \leq s_i \leq s_{max}$$
+典型值：$s_{min} = 10^{-3}$, $s_{max} = 10^{3}$。</p>
+<p><strong>参数化的几何解释</strong>：</p>
+<p>$\mathbf{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^T\mathbf{R}^T$可以理解为：</p>
+<ol>
+<li>从各向同性单位球开始</li>
+<li>沿坐标轴缩放$(s_1, s_2, s_3)$</li>
+<li>使用$\mathbf{R}$旋转到最终方向</li>
+</ol>
+<p>这种分解与特征分解的关系：</p>
+<ul>
+<li>$\mathbf{V} = \mathbf{R}$（特征向量矩阵）</li>
+<li>$\lambda_i = s_i^2$（特征值）</li>
+</ul>
+<h3 id="1024">10.2.4 保证正定性的参数化技巧</h3>
+<p>在优化过程中，我们需要确保协方差矩阵始终保持正定。常用技巧：</p>
+<ol>
+<li><strong>对数尺度参数化</strong>：
+$$s_i = \exp(\tilde{s}_i)$$
+优化$\tilde{s}_i \in \mathbb{R}$而非$s_i$</li>
+</ol>
+<p>梯度传播：$\frac{\partial \mathcal{L}}{\partial \tilde{s}_i} = \frac{\partial \mathcal{L}}{\partial s_i} \cdot s_i$</p>
+<ol start="2">
+<li><strong>Cholesky分解</strong>：
+$$\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T$$
+其中$\mathbf{L}$是下三角矩阵，对角元素为正</li>
+</ol>
+<p>参数化：
+$$\mathbf{L} = \begin{bmatrix}
+   \exp(l_{11}) &amp; 0 &amp; 0 \
+   l_{21} &amp; \exp(l_{22}) &amp; 0 \
+   l_{31} &amp; l_{32} &amp; \exp(l_{33})
+   \end{bmatrix}$$</p>
+<ol start="3">
+<li>
+<p><strong>正则化</strong>：添加小的对角项
+$$\mathbf{\Sigma}_{reg} = \mathbf{\Sigma} + \epsilon\mathbf{I}$$
+典型值：$\epsilon = 10^{-4}$到$10^{-6}$</p>
+</li>
+<li>
+<p><strong>投影到正定锥</strong>：
+   若$\mathbf{\Sigma}$变得非正定，投影到最近的正定矩阵：
+$$\mathbf{\Sigma}_{proj} = \arg\min_{\mathbf{\Sigma}' \succ 0} |\mathbf{\Sigma}' - \mathbf{\Sigma}|_F$$
+解法：特征分解后将负特征值替换为$\epsilon$</p>
+</li>
+</ol>
+<p><strong>数值稳定性考虑</strong>：</p>
+<ul>
+<li>避免过小的特征值（$\lambda_i &gt; \epsilon$）</li>
+<li>条件数控制：$\kappa(\mathbf{\Sigma}) = \lambda_{max}/\lambda_{min} &lt; \kappa_{max}$</li>
+<li>梯度裁剪防止数值爆炸</li>
+</ul>
+<p><strong>梯度裁剪策略</strong>：
+$$\nabla_{clipped} = \begin{cases}
+\nabla &amp; \text{if } |\nabla| \leq \tau \
+\tau \frac{\nabla}{|\nabla|} &amp; \text{otherwise}
+\end{cases}$$
+其中$\tau$是裁剪阈值，典型值为1.0到5.0。</p>
+<p><strong>自适应步长</strong>：
+根据条件数调整学习率：
+$$\eta_{adaptive} = \frac{\eta_{base}}{1 + \beta \cdot (\kappa - \kappa_{target})}$$
+其中$\kappa_{target} \approx 100$是目标条件数。</p>
+<p><strong>正定锥的几何结构</strong>：</p>
+<p>正定矩阵集合$\mathcal{S}^{++}_n$形成一个凸锥：</p>
+<ol>
+<li><strong>凸性</strong>：$\alpha \mathbf{A} + (1-\alpha)\mathbf{B} \in \mathcal{S}^{++}_n$，$\forall \alpha \in [0,1]$</li>
+<li><strong>开集</strong>：边界由半正定矩阵构成</li>
+<li><strong>连通性</strong>：任意两个正定矩阵可通过连续路径连接</li>
+</ol>
+<p><strong>正定矩阵的对数映射</strong>：</p>
+<p>定义矩阵对数：
+$$\log(\mathbf{\Sigma}) = \mathbf{V} \log(\mathbf{\Lambda}) \mathbf{V}^T$$
+其中$\log(\mathbf{\Lambda}) = \text{diag}(\log\lambda_1, \log\lambda_2, \log\lambda_3)$。</p>
+<p>这提供了一个双射：$\mathcal{S}^{++}_n \leftrightarrow \mathcal{S}_n$（对称矩阵空间）。</p>
+<p><strong>基于流形的优化</strong>：</p>
+<p>在正定矩阵流形上的自然梯度：
+$$\text{grad}_{\mathbf{\Sigma}} f = \mathbf{\Sigma} \nabla_{\mathbf{\Sigma}} f \mathbf{\Sigma}$$
+更新规则：
+$$\mathbf{\Sigma}_{new} = \mathbf{\Sigma}^{1/2} \exp\left(-\eta \mathbf{\Sigma}^{-1/2} \nabla_{\mathbf{\Sigma}} f \mathbf{\Sigma}^{-1/2}\right) \mathbf{\Sigma}^{1/2}$$
+这保证了更新后的矩阵仍然正定。</p>
+<p><strong>实用的分解策略</strong>：</p>
+<ol>
+<li>
+<p><strong>特征值截断</strong>：
+$$\lambda'_i = \max(\lambda_i, \epsilon)$$</p>
+</li>
+<li>
+<p><strong>条件数限制</strong>：
+$$\lambda'_i = \lambda_{min} + (\lambda_i - \lambda_{min}) \cdot \min\left(1, \frac{\kappa_{max} - 1}{\lambda_{max}/\lambda_{min} - 1}\right)$$</p>
+</li>
+<li>
+<p><strong>平滑过渡</strong>：
+$$\mathbf{\Sigma}_{smooth} = (1-\alpha)\mathbf{\Sigma}_{old} + \alpha\mathbf{\Sigma}_{new}$$
+其中$\alpha \in (0,1]$控制更新速度。</p>
+</li>
+</ol>
+<p><strong>监控指标</strong>：</p>
+<p>在优化过程中监控：</p>
+<ol>
+<li>最小特征值：$\lambda_{min}(\mathbf{\Sigma})$</li>
+<li>条件数：$\kappa(\mathbf{\Sigma})$</li>
+<li>Frobenius范数：$|\mathbf{\Sigma}|_F$</li>
+<li>行列式：$\det(\mathbf{\Sigma})$</li>
+</ol>
+<p>这些指标可以帮助识别数值问题。</p>
+<h2 id="103">10.3 可微光栅化</h2>
+<h3 id="1031-3d2d">10.3.1 从3D到2D的投影</h3>
+<p>给定相机参数（内参$\mathbf{K}$，外参$[\mathbf{R}_c|\mathbf{t}_c]$），3D高斯投影到图像平面的过程包括：</p>
+<ol>
+<li>
+<p><strong>世界坐标到相机坐标</strong>：
+$$\mathbf{x}_c = \mathbf{R}_c(\mathbf{x}_w - \mathbf{t}_c)$$</p>
+</li>
+<li>
+<p><strong>透视投影</strong>：
+$$\mathbf{x}_{ndc} = \begin{bmatrix} x_c/z_c \ y_c/z_c \ 1 \end{bmatrix}$$</p>
+</li>
+<li>
+<p><strong>归一化设备坐标到像素坐标</strong>：
+$$\mathbf{x}_{pixel} = \mathbf{K}\mathbf{x}_{ndc}$$
+关键问题：3D高斯投影后还是高斯吗？</p>
+</li>
+</ol>
+<p><strong>内参矩阵的结构</strong>：
+$$\mathbf{K} = \begin{bmatrix}
+f_x &amp; 0 &amp; c_x \
+0 &amp; f_y &amp; c_y \
+0 &amp; 0 &amp; 1
+\end{bmatrix}$$
+其中$(f_x, f_y)$是焦距，$(c_x, c_y)$是主点。</p>
+<p><strong>完整的投影变换</strong>：
+$$\begin{bmatrix} u \ v \ 1 \end{bmatrix} = \frac{1}{z_c} \mathbf{K} \mathbf{R}_c (\mathbf{x}_w - \mathbf{t}_c)$$
+注意到这个变换包含了非线性的除法操作（$1/z_c$），因此不是仿射变换。</p>
+<h3 id="1032">10.3.2 高斯的仿射变换性质</h3>
+<p><strong>定理</strong>：3D高斯在仿射变换下保持高斯性。</p>
+<p>证明：设3D高斯$G(\mathbf{x}; \mathbf{\mu}, \mathbf{\Sigma})$，仿射变换$\mathbf{y} = \mathbf{A}\mathbf{x} + \mathbf{b}$，则：
+$$G'(\mathbf{y}) = G(\mathbf{y}; \mathbf{A}\mathbf{\mu} + \mathbf{b}, \mathbf{A}\mathbf{\Sigma}\mathbf{A}^T)$$
+但透视投影不是仿射变换！为了保持高斯性，我们采用局部仿射近似。</p>
+<p><strong>局部仿射近似</strong>：在高斯中心$\mathbf{\mu}$处，用雅可比矩阵近似投影：
+$$\mathbf{J} = \frac{\partial \mathbf{x}_{2D}}{\partial \mathbf{x}_{3D}}\bigg|_{\mathbf{x}=\mathbf{\mu}}$$
+对于透视投影：
+$$\mathbf{J} = \begin{bmatrix}
+f_x/z &amp; 0 &amp; -f_x x/z^2 \
+0 &amp; f_y/z &amp; -f_y y/z^2
+\end{bmatrix}$$
+其中$(f_x, f_y)$是焦距，$(x, y, z)$是相机坐标。</p>
+<p>投影后的2D协方差：
+$$\mathbf{\Sigma}_{2D} = \mathbf{J}\mathbf{\Sigma}_{3D}\mathbf{J}^T$$
+<strong>近似误差分析</strong>：
+局部仿射近似的误差为$\mathcal{O}(|\mathbf{x} - \mathbf{\mu}|^2)$。对于典型的高斯（$3\sigma$范围），相对误差通常小于5%。</p>
+<p><strong>投影雅可比的详细推导</strong>：
+设相机坐标为$\mathbf{x}_c = [x, y, z]^T$，投影后的像素坐标为：
+$$u = f_x \frac{x}{z} + c_x, \quad v = f_y \frac{y}{z} + c_y$$
+计算偏导数：
+$$\frac{\partial u}{\partial x} = \frac{f_x}{z}, \quad \frac{\partial u}{\partial y} = 0, \quad \frac{\partial u}{\partial z} = -\frac{f_x x}{z^2}$$
+$$\frac{\partial v}{\partial x} = 0, \quad \frac{\partial v}{\partial y} = \frac{f_y}{z}, \quad \frac{\partial v}{\partial z} = -\frac{f_y y}{z^2}$$
+考虑到世界到相机的变换，完整的雅可比为：
+$$\mathbf{J}_{full} = \mathbf{J} \cdot \mathbf{R}_c$$
+<strong>2D高斯的有效计算</strong>：
+给定2D协方差$\mathbf{\Sigma}_{2D}$，其逆矩阵为：
+$$\mathbf{\Sigma}_{2D}^{-1} = \frac{1}{\det(\mathbf{\Sigma}_{2D})} \begin{bmatrix}
+\sigma_{22} &amp; -\sigma_{12} \
+-\sigma_{12} &amp; \sigma_{11}
+\end{bmatrix}$$
+其中$\det(\mathbf{\Sigma}_{2D}) = \sigma_{11}\sigma_{22} - \sigma_{12}^2$。</p>
+<h3 id="1033-blending">10.3.3 α-blending与排序</h3>
+<p>给定像素处的多个高斯贡献，最终颜色通过α-blending计算：
+$$C = \sum_{i=1}^{N} c_i \alpha_i \prod_{j=1}^{i-1} (1 - \alpha_j)$$
+其中排序按深度从前到后。这等价于：
+$$C = \sum_{i=1}^{N} c_i \alpha_i T_i, \quad T_i = \prod_{j=1}^{i-1} (1 - \alpha_j)$$
+每个高斯在像素$(u,v)$处的贡献：
+$$\alpha_i(u,v) = \alpha_i^{base} \cdot G_{2D}(u,v; \mathbf{\mu}_{2D,i}, \mathbf{\Sigma}_{2D,i})$$
+<strong>深度排序算法</strong>：</p>
+<ol>
+<li><strong>快速排序</strong>：$\mathcal{O}(N \log N)$，但在GPU上效率不高</li>
+<li><strong>基数排序</strong>：$\mathcal{O}(N)$，GPU友好，适合固定精度深度</li>
+<li><strong>层次深度缓冲</strong>：将深度范围划分为桶，在桶内排序</li>
+</ol>
+<p><strong>透明度累积的数值稳定性</strong>：
+由于连续乘积$(1-\alpha_j)$，当$N$很大时可能出现数值下溢。解决方案：</p>
+<ol>
+<li><strong>提前终止</strong>：当$T_i &lt; \epsilon$时停止累积</li>
+<li>
+<p><strong>对数空间计算</strong>：
+$$\log T_i = \sum_{j=1}^{i-1} \log(1 - \alpha_j)$$
+<strong>像素级别的高斯筛选</strong>：
+为了减少计算量，只处理对像素有显著贡献的高斯：</p>
+</li>
+<li>
+<p><strong>边界框测试</strong>：计算2D高斯的边界框</p>
+</li>
+<li><strong>阈值测试</strong>：$\alpha_i \cdot G_{2D}(u,v) &gt; \tau_{min}$</li>
+<li><strong>视锥体剪裁</strong>：在投影前剔除不可见的高斯</li>
+</ol>
+<h3 id="1034">10.3.4 梯度计算与反向传播</h3>
+<p>为了优化高斯参数，我们需要计算损失函数对所有参数的梯度。设损失函数$\mathcal{L} = |C_{rendered} - C_{gt}|^2$。</p>
+<p><strong>链式法则</strong>：
+$$\frac{\partial \mathcal{L}}{\partial \theta} = \frac{\partial \mathcal{L}}{\partial C} \cdot \frac{\partial C}{\partial \alpha} \cdot \frac{\partial \alpha}{\partial G_{2D}} \cdot \frac{\partial G_{2D}}{\partial \mathbf{\Sigma}_{2D}} \cdot \frac{\partial \mathbf{\Sigma}_{2D}}{\partial \theta}$$
+其中$\theta$可以是位置$\mathbf{\mu}$、旋转$\mathbf{q}$、缩放$\mathbf{s}$等参数。</p>
+<p><strong>关键梯度</strong>：</p>
+<ol>
+<li>
+<p><strong>颜色对不透明度</strong>：
+$$\frac{\partial C}{\partial \alpha_i} = c_i T_i - \sum_{j=i+1}^{N} c_j \alpha_j T_j / (1-\alpha_i)$$</p>
+</li>
+<li>
+<p><strong>2D高斯对协方差</strong>：
+$$\frac{\partial G_{2D}}{\partial \mathbf{\Sigma}_{2D}} = \frac{1}{2}G_{2D} \left[\mathbf{\Sigma}_{2D}^{-1}(\mathbf{x}-\mathbf{\mu})(\mathbf{x}-\mathbf{\mu})^T\mathbf{\Sigma}_{2D}^{-1} - \mathbf{\Sigma}_{2D}^{-1}\right]$$</p>
+</li>
+<li>
+<p><strong>2D协方差对3D参数</strong>：通过雅可比矩阵的导数计算</p>
+</li>
+</ol>
+<p><strong>数值稳定性</strong>：</p>
+<ul>
+<li>使用对数空间计算避免下溢</li>
+<li>梯度裁剪防止爆炸</li>
+<li>自适应学习率调整</li>
+</ul>
+<p><strong>完整的梯度计算流程</strong>：</p>
+<ol>
+<li>
+<p><strong>损失对颜色的梯度</strong>：
+$$\frac{\partial \mathcal{L}}{\partial C} = 2(C_{rendered} - C_{gt})$$</p>
+</li>
+<li>
+<p><strong>颜色对高斯属性的梯度</strong>：
+   - 对基础不透明度：$\frac{\partial C}{\partial \alpha_i^{base}} = G_{2D}(u,v) \cdot T_i \cdot (c_i - C_{behind})$
+   - 对颜色：$\frac{\partial C}{\partial c_i} = \alpha_i T_i$
+   - 对位置：$\frac{\partial C}{\partial \mathbf{\mu}_i} = \alpha_i T_i (c_i - C_{behind}) \cdot \frac{\partial G_{2D}}{\partial \mathbf{\mu}_{2D}} \cdot \mathbf{J}$</p>
+</li>
+</ol>
+<p>其中$C_{behind} = \frac{\sum_{j=i+1}^{N} c_j \alpha_j T_j}{T_{i+1}}$是i之后所有高斯的加权颜色。</p>
+<ol start="3">
+<li>
+<p><strong>坐标变换的梯度传播</strong>：
+$$\frac{\partial \mathbf{\mu}_{2D}}{\partial \mathbf{\mu}_{3D}} = \mathbf{J}$$
+   $$\frac{\partial \mathbf{\Sigma}_{2D}}{\partial \mathbf{\Sigma}_{3D}} = \mathbf{J} \otimes \mathbf{J}$$
+其中$\otimes$表示Kronecker积。</p>
+</li>
+<li>
+<p><strong>参数化的梯度</strong>：
+   - 对旋转四元数：$\frac{\partial \mathbf{\Sigma}}{\partial q_k} = \frac{\partial \mathbf{R}}{\partial q_k} \mathbf{S}\mathbf{S}^T\mathbf{R}^T + \mathbf{R}\mathbf{S}\mathbf{S}^T\frac{\partial \mathbf{R}^T}{\partial q_k}$
+   - 对缩放：$\frac{\partial \mathbf{\Sigma}}{\partial s_k} = 2\mathbf{R}\text{diag}(0,...,s_k,...,0)\mathbf{R}^T$</p>
+</li>
+</ol>
+<p><strong>优化策略</strong>：</p>
+<ol>
+<li><strong>Adam优化器</strong>：适应性学习率，动量项</li>
+<li><strong>学习率调度</strong>：
+   - 位置：$\eta_{\mu} = 1.6 \times 10^{-4}$
+   - 旋转：$\eta_q = 1.0 \times 10^{-3}$
+   - 缩放：$\eta_s = 5.0 \times 10^{-3}$
+   - 不透明度：$\eta_\alpha = 5.0 \times 10^{-2}$</li>
+<li><strong>梯度裁剪阈值</strong>：通常设置为1.0到5.0</li>
+</ol>
+<h2 id="104">10.4 自适应密度控制</h2>
+<h3 id="1041">10.4.1 高斯的分裂与克隆</h3>
+<p>在优化过程中，固定数量的高斯可能无法充分表示复杂场景。自适应密度控制通过动态调整高斯数量来提高重建质量。</p>
+<p><strong>分裂策略</strong>：当高斯满足以下条件时进行分裂：</p>
+<ol>
+<li><strong>梯度阈值</strong>：$|\nabla_{\mathbf{\mu}} \mathcal{L}| &gt; \tau_{grad}$</li>
+<li><strong>尺寸阈值</strong>：$\max(s_1, s_2, s_3) &gt; \tau_{size}$</li>
+</ol>
+<p>分裂操作：
+$$\begin{aligned}
+\mathbf{\mu}_{new,1} &amp;= \mathbf{\mu} + \epsilon \mathbf{v}_1 \
+\mathbf{\mu}_{new,2} &amp;= \mathbf{\mu} - \epsilon \mathbf{v}_1 \
+\mathbf{s}_{new} &amp;= \mathbf{s} / \phi
+\end{aligned}$$
+其中$\mathbf{v}_1$是最大特征值对应的特征向量，$\phi &gt; 1$是缩放因子。</p>
+<p><strong>克隆策略</strong>：对于梯度大但尺寸小的高斯，进行克隆：
+$$\mathbf{\mu}_{clone} = \mathbf{\mu} + \epsilon \cdot \text{randn}(3)$$</p>
+<h3 id="1042">10.4.2 修剪策略</h3>
+<p>为了控制内存使用和计算成本，需要移除贡献小的高斯：</p>
+<ol>
+<li><strong>不透明度阈值</strong>：$\alpha &lt; \tau_{\alpha}$</li>
+<li><strong>视锥体剔除</strong>：高斯完全在视锥体外</li>
+<li><strong>屏幕空间贡献</strong>：投影面积 &lt; $\tau_{area}$</li>
+</ol>
+<p><strong>贡献度量</strong>：
+$$\text{contribution}_i = \alpha_i \cdot \text{area}_{2D,i} \cdot \exp(-d_i^2/2\sigma_d^2)$$
+其中$d_i$是到相机的距离，$\sigma_d$控制距离衰减。</p>
+<h3 id="1043">10.4.3 密度的自适应调整</h3>
+<p><strong>目标函数</strong>：平衡重建质量和高斯数量：
+$$\mathcal{L}_{total} = \mathcal{L}_{render} + \lambda_{sparse} |\boldsymbol{\alpha}|_1 + \lambda_{compact} \sum_i \text{vol}(\mathbf{\Sigma}_i)$$
+其中：</p>
+<ul>
+<li>$\mathcal{L}_{render}$：渲染损失（L1或L2）</li>
+<li>$|\boldsymbol{\alpha}|_1$：稀疏性正则化</li>
+<li>$\text{vol}(\mathbf{\Sigma}_i) = \sqrt{\det(\mathbf{\Sigma}_i)}$：体积正则化</li>
+</ul>
+<p><strong>自适应调整算法</strong>：</p>
+<pre class="codehilite"><code>每K次迭代：
+1. 计算所有高斯的贡献度
+2. 分裂高梯度大尺寸的高斯
+3. 克隆高梯度小尺寸的高斯
+4. 修剪低贡献的高斯
+5. 更新正则化权重
+</code></pre>
+
+<h3 id="1044">10.4.4 收敛性分析</h3>
+<p><strong>定理</strong>：在适当的条件下，自适应密度控制算法收敛到局部最优。</p>
+<p><strong>假设</strong>：</p>
+<ol>
+<li>损失函数$\mathcal{L}$是Lipschitz连续的</li>
+<li>分裂/克隆操作保持有界性</li>
+<li>学习率满足Robbins-Monro条件</li>
+</ol>
+<p><strong>收敛速率</strong>：设$N_t$是第$t$次迭代的高斯数量，则：
+$$\mathbb{E}[\mathcal{L}_t - \mathcal{L}^<em>] \leq \mathcal{O}\left(\frac{\log N_t}{\sqrt{t}}\right)$$
+</em><em>实践考虑</em>*：</p>
+<ul>
+<li>初始化影响收敛速度</li>
+<li>自适应操作的频率影响稳定性</li>
+<li>正则化权重需要动态调整</li>
+</ul>
+<p><strong>数值实验表明</strong>：</p>
+<ul>
+<li>典型场景需要$10^4 - 10^6$个高斯</li>
+<li>收敛通常在$10^4 - 10^5$次迭代内</li>
+<li>自适应策略比固定数量提升20-50%质量</li>
+</ul>
+<h2 id="105">10.5 实时考虑</h2>
+<h3 id="1051">10.5.1 计算复杂度分析</h3>
+<p>3D高斯溅射的渲染复杂度取决于多个因素：</p>
+<p><strong>前向渲染复杂度</strong>：</p>
+<ul>
+<li>投影变换：$\mathcal{O}(N)$</li>
+<li>深度排序：$\mathcal{O}(N \log N)$或$\mathcal{O}(N)$（基数排序）</li>
+<li>光栅化：$\mathcal{O}(N \cdot P)$，其中$P$是每个高斯覆盖的平均像素数</li>
+</ul>
+<p>总复杂度：$\mathcal{O}(N \log N + N \cdot P)$</p>
+<p><strong>内存复杂度</strong>：</p>
+<ul>
+<li>高斯参数存储：$\mathcal{O}(N)$</li>
+<li>排序缓冲区：$\mathcal{O}(N)$</li>
+<li>帧缓冲区：$\mathcal{O}(W \times H)$</li>
+</ul>
+<p><strong>与其他方法比较</strong>：
+| 方法 | 时间复杂度 | 内存复杂度 |</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>时间复杂度</th>
+<th>内存复杂度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NeRF</td>
+<td>$\mathcal{O}(W \times H \times S)$</td>
+<td>$\mathcal{O}(M)$</td>
+</tr>
+<tr>
+<td>3D GS</td>
+<td>$\mathcal{O}(N \log N + N \cdot P)$</td>
+<td>$\mathcal{O}(N)$</td>
+</tr>
+<tr>
+<td>Mesh</td>
+<td>$\mathcal{O}(T)$</td>
+<td>$\mathcal{O}(V + T)$</td>
+</tr>
+</tbody>
+</table>
+<p>其中$S$是采样点数，$M$是网络参数数，$T$是三角形数，$V$是顶点数。</p>
+<h3 id="1052">10.5.2 并行化策略</h3>
+<p><strong>GPU并行化</strong>：</p>
+<ol>
+<li>
+<p><strong>高斯投影并行</strong>：
+   <code>并行对每个高斯：
+     计算相机坐标
+     计算2D投影参数
+     计算边界框</code></p>
+</li>
+<li>
+<p><strong>分块光栅化</strong>：
+   <code>将图像分成tiles（如16×16）
+   并行对每个tile：
+     收集相交的高斯
+     局部深度排序
+     α-blending</code></p>
+</li>
+<li>
+<p><strong>排序优化</strong>：
+   - 使用GPU基数排序
+   - 分层深度缓冲
+   - 近似排序（对远处物体）</p>
+</li>
+</ol>
+<p><strong>SIMD优化</strong>：</p>
+<ul>
+<li>向量化高斯计算</li>
+<li>批量矩阵运算</li>
+<li>融合操作减少内存访问</li>
+</ul>
+<h3 id="1053">10.5.3 内存带宽优化</h3>
+<p>内存带宽是主要瓶颈，优化策略：</p>
+<ol>
+<li>
+<p><strong>数据布局</strong>：
+   - Structure of Arrays (SoA) vs Array of Structures (AoS)
+   - 对齐访问模式
+   - 紧凑表示（如压缩球谐系数）</p>
+</li>
+<li>
+<p><strong>缓存优化</strong>：
+   - 空间局部性：分块处理
+   - 时间局部性：融合kernel
+   - 纹理缓存利用</p>
+</li>
+<li>
+<p><strong>带宽计算</strong>：
+   <code>每帧带宽 = N × (参数读取 + 投影写入) + 
+              像素数 × (深度测试 + 颜色累积)</code></p>
+</li>
+</ol>
+<p>典型值：$10^6$个高斯，1080p分辨率</p>
+<ul>
+<li>参数读取：~200MB</li>
+<li>中间结果：~100MB</li>
+<li>帧缓冲：~8MB
+   总计：~300MB/帧 → 9GB/s @ 30fps</li>
+</ul>
+<h3 id="1054">10.5.4 与传统光栅化的比较</h3>
+<p><strong>优势</strong>：</p>
+<ol>
+<li><strong>连续表示</strong>：无需拓扑信息</li>
+<li><strong>软边界</strong>：自然的抗锯齿</li>
+<li><strong>透明度</strong>：原生支持</li>
+<li><strong>可微性</strong>：易于优化</li>
+</ol>
+<p><strong>劣势</strong>：</p>
+<ol>
+<li><strong>排序开销</strong>：需要深度排序</li>
+<li><strong>过度绘制</strong>：重叠高斯</li>
+<li><strong>内存占用</strong>：每个高斯多个参数</li>
+</ol>
+<p><strong>混合方案</strong>：</p>
+<ul>
+<li>近处使用高斯溅射（细节）</li>
+<li>远处使用传统网格（效率）</li>
+<li>LOD系统动态切换</li>
+</ul>
+<p><strong>性能指标</strong>（典型硬件）：</p>
+<ul>
+<li>渲染速度：100-200 FPS @ 1080p</li>
+<li>训练速度：5-30分钟（取决于场景）</li>
+<li>内存使用：200MB-2GB（场景相关）</li>
+</ul>
+<p><strong>优化建议</strong>：</p>
+<ol>
+<li>使用视锥体剔除减少处理的高斯数</li>
+<li>实现层次化数据结构（八叉树）</li>
+<li>动态调整质量参数</li>
+<li>利用时间连贯性（运动场景）</li>
+</ol>
+<h2 id="_2">本章小结</h2>
+<p>3D高斯溅射通过将场景表示为高斯混合模型，成功地在表达能力和计算效率之间取得了平衡。关键创新包括：</p>
+<ol>
+<li><strong>统一体积渲染视角</strong>：3D高斯溅射可以视为体积渲染方程的一种特殊实现，其中密度场由高斯混合表示</li>
+<li><strong>各向异性表示</strong>：通过协方差矩阵的巧妙参数化，实现了灵活的形状表示同时保证数值稳定性</li>
+<li><strong>可微光栅化</strong>：利用高斯的数学性质，实现了高效的梯度计算和端到端优化</li>
+<li><strong>自适应密度控制</strong>：动态调整高斯数量，自动适应场景复杂度</li>
+<li><strong>实时性能</strong>：通过并行化和优化，达到了实时渲染速度</li>
+</ol>
+<p>重要公式回顾：</p>
+<ul>
+<li>高斯混合密度场：$\sigma(\mathbf{x}) = \sum_{i=1}^{N} \alpha_i G_i(\mathbf{x})$</li>
+<li>协方差参数化：$\mathbf{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^T\mathbf{R}^T$</li>
+<li>2D投影：$\mathbf{\Sigma}_{2D} = \mathbf{J}\mathbf{\Sigma}_{3D}\mathbf{J}^T$</li>
+<li>α-blending：$C = \sum_{i=1}^{N} c_i \alpha_i \prod_{j=1}^{i-1} (1 - \alpha_j)$</li>
+</ul>
+<h2 id="_3">练习题</h2>
+<h3 id="_4">基础题</h3>
+<p><strong>练习10.1</strong>：证明3D高斯函数在仿射变换下保持高斯性。具体地，若$\mathbf{y} = \mathbf{A}\mathbf{x} + \mathbf{b}$，证明变换后的函数仍是高斯。</p>
+<p><em>提示</em>：使用变量替换和雅可比行列式。</p>
+<details>
+<summary>答案</summary>
+<p>设原始高斯为：
+$$G(\mathbf{x}) = \frac{1}{(2\pi)^{3/2}|\mathbf{\Sigma}|^{1/2}} \exp\left(-\frac{1}{2}(\mathbf{x} - \mathbf{\mu})^T \mathbf{\Sigma}^{-1} (\mathbf{x} - \mathbf{\mu})\right)$$
+进行变换$\mathbf{y} = \mathbf{A}\mathbf{x} + \mathbf{b}$，则$\mathbf{x} = \mathbf{A}^{-1}(\mathbf{y} - \mathbf{b})$。</p>
+<p>雅可比行列式：$|\frac{\partial \mathbf{x}}{\partial \mathbf{y}}| = |\mathbf{A}^{-1}| = \frac{1}{|\mathbf{A}|}$</p>
+<p>代入得：
+$$G'(\mathbf{y}) = \frac{1}{|\mathbf{A}|} G(\mathbf{A}^{-1}(\mathbf{y} - \mathbf{b}))$$
+展开指数项：
+$$(\mathbf{A}^{-1}(\mathbf{y} - \mathbf{b}) - \mathbf{\mu})^T \mathbf{\Sigma}^{-1} (\mathbf{A}^{-1}(\mathbf{y} - \mathbf{b}) - \mathbf{\mu})$$
+$$= (\mathbf{y} - (\mathbf{A}\mathbf{\mu} + \mathbf{b}))^T (\mathbf{A}^{-1})^T \mathbf{\Sigma}^{-1} \mathbf{A}^{-1} (\mathbf{y} - (\mathbf{A}\mathbf{\mu} + \mathbf{b}))$$
+因此$G'(\mathbf{y})$是均值为$\mathbf{A}\mathbf{\mu} + \mathbf{b}$，协方差为$\mathbf{A}\mathbf{\Sigma}\mathbf{A}^T$的高斯。</p>
+</details>
+<p><strong>练习10.2</strong>：推导2D高斯在像素$(u,v)$处的值对3D位置$\mathbf{\mu}$的梯度。</p>
+<p><em>提示</em>：使用链式法则，考虑投影变换的雅可比矩阵。</p>
+<details>
+<summary>答案</summary>
+<p>设2D高斯为：
+$$G_{2D}(u,v) = \exp\left(-\frac{1}{2}\mathbf{d}^T\mathbf{\Sigma}_{2D}^{-1}\mathbf{d}\right)$$
+其中$\mathbf{d} = [u,v]^T - \mathbf{\mu}_{2D}$。</p>
+<p>梯度计算：
+$$\frac{\partial G_{2D}}{\partial \mathbf{\mu}} = \frac{\partial G_{2D}}{\partial \mathbf{\mu}_{2D}} \cdot \frac{\partial \mathbf{\mu}_{2D}}{\partial \mathbf{\mu}}$$
+第一项：
+$$\frac{\partial G_{2D}}{\partial \mathbf{\mu}_{2D}} = G_{2D} \cdot \mathbf{\Sigma}_{2D}^{-1}\mathbf{d}$$
+第二项是投影的雅可比矩阵$\mathbf{J}$的转置。</p>
+<p>最终：
+$$\frac{\partial G_{2D}}{\partial \mathbf{\mu}} = G_{2D} \cdot \mathbf{J}^T \mathbf{\Sigma}_{2D}^{-1}\mathbf{d}$$</p>
+</details>
+<p><strong>练习10.3</strong>：给定N个高斯，推导α-blending公式中透射率$T_i$的递推关系。</p>
+<p><em>提示</em>：考虑$T_{i+1}$与$T_i$的关系。</p>
+<details>
+<summary>答案</summary>
+<p>透射率定义为：
+$$T_i = \prod_{j=1}^{i-1} (1 - \alpha_j)$$
+递推关系：</p>
+<ul>
+<li>初始：$T_1 = 1$（没有前面的高斯）</li>
+<li>递推：$T_{i+1} = T_i \cdot (1 - \alpha_i)$</li>
+</ul>
+<p>这个递推关系允许高效的顺序计算，避免重复乘积。</p>
+<p>验证：
+$$T_{i+1} = \prod_{j=1}^{i} (1 - \alpha_j) = \prod_{j=1}^{i-1} (1 - \alpha_j) \cdot (1 - \alpha_i) = T_i \cdot (1 - \alpha_i)$$</p>
+</details>
+<h3 id="_5">挑战题</h3>
+<p><strong>练习10.4</strong>：分析3D高斯溅射中深度排序的必要性。考虑如果不进行深度排序，而是使用无序α-blending，会产生什么误差？给出误差的数学界限。</p>
+<p><em>提示</em>：考虑两个高斯的情况，比较正确排序和错误排序的结果差异。</p>
+<details>
+<summary>答案</summary>
+<p>考虑两个高斯，正确顺序（1在前，2在后）：
+$$C_{correct} = c_1\alpha_1 + c_2\alpha_2(1-\alpha_1)$$
+错误顺序：
+$$C_{wrong} = c_2\alpha_2 + c_1\alpha_1(1-\alpha_2)$$
+误差：
+$$|C_{correct} - C_{wrong}| = |\alpha_1\alpha_2||c_1 - c_2|$$
+对于N个高斯的一般情况，最坏情况误差界限：
+$$\mathcal{E}_{max} \leq \sum_{i&lt;j} \alpha_i\alpha_j|c_i - c_j|$$
+当所有$\alpha_i$都很小时，误差近似为$\mathcal{O}(\alpha^2)$，这解释了为什么半透明物体的排序更重要。</p>
+</details>
+<p><strong>练习10.5</strong>：设计一个自适应采样策略，在保持渲染质量的同时减少需要处理的高斯数量。给出理论分析和复杂度界限。</p>
+<p><em>提示</em>：考虑基于视角的重要性采样和层次化数据结构。</p>
+<details>
+<summary>答案</summary>
+<p>自适应采样策略：</p>
+<ol>
+<li>
+<p><strong>重要性度量</strong>：
+$$I_i = \alpha_i \cdot \frac{\text{area}_{2D,i}}{d_i^2} \cdot \cos\theta_i$$
+其中$d_i$是距离，$\theta_i$是视角。</p>
+</li>
+<li>
+<p><strong>层次化结构</strong>：使用八叉树，每个节点存储：
+   - 边界框
+   - 子高斯的聚合属性
+   - 重要性上界</p>
+</li>
+<li>
+<p><strong>剔除算法</strong>：
+   <code>function cull(node, threshold):
+     if node.importance_bound &lt; threshold:
+       return []
+     if node.is_leaf:
+       return filter(node.gaussians, I &gt; threshold)
+     else:
+       return concat([cull(child, threshold) for child in node.children])</code></p>
+</li>
+</ol>
+<p>复杂度分析：</p>
+<ul>
+<li>构建：$\mathcal{O}(N \log N)$</li>
+<li>查询：$\mathcal{O}(K \log N)$，其中K是输出数量</li>
+</ul>
+<p>误差界限：设剔除阈值为$\tau$，则渲染误差：
+$$\mathcal{E} \leq \tau \cdot \text{pixel_count}$$</p>
+</details>
+<p><strong>练习10.6</strong>：推导3D高斯溅射的信息论解释。将场景编码为高斯混合模型，分析其率失真性能。</p>
+<p><em>提示</em>：使用KL散度衡量重建误差，考虑高斯数量与精度的权衡。</p>
+<details>
+<summary>答案</summary>
+<p>将场景视为概率分布$p(\mathbf{x})$，高斯混合近似为$q(\mathbf{x})$。</p>
+<p>KL散度：
+$$D_{KL}(p||q) = \int p(\mathbf{x}) \log \frac{p(\mathbf{x})}{q(\mathbf{x})} d\mathbf{x}$$
+率失真函数：
+$$R(D) = \min_{q: D_{KL}(p||q) \leq D} I(X;Y)$$
+其中$I(X;Y)$是互信息，表示编码率。</p>
+<p>对于N个高斯的混合模型：</p>
+<ul>
+<li>编码率：$R = N \cdot (d_{pos} + d_{cov} + d_{color})$ bits</li>
+<li>失真：$D \approx \mathcal{O}(1/N^{2/d})$（d维空间）</li>
+</ul>
+<p>最优分配：使用Lloyd算法的变体，最小化：
+$$\mathcal{L} = D_{KL}(p||q) + \lambda R$$</p>
+<p>这给出了高斯数量与重建质量的理论权衡。</p>
+</details>
+<h2 id="gotchas">常见陷阱与错误 (Gotchas)</h2>
+<ol>
+<li>
+<p><strong>数值不稳定</strong>
+   - 问题：协方差矩阵可能变成非正定
+   - 解决：使用稳定的参数化（如Cholesky分解）
+   - 调试：检查特征值，添加正则化项</p>
+</li>
+<li>
+<p><strong>排序错误</strong>
+   - 问题：深度排序不正确导致渲染artifacts
+   - 解决：使用稳定排序算法，处理深度相等情况
+   - 调试：可视化深度图，检查排序一致性</p>
+</li>
+<li>
+<p><strong>梯度爆炸</strong>
+   - 问题：小高斯的梯度可能非常大
+   - 解决：梯度裁剪，自适应学习率
+   - 调试：监控梯度范数，使用梯度累积</p>
+</li>
+<li>
+<p><strong>内存溢出</strong>
+   - 问题：自适应分裂导致高斯数量爆炸
+   - 解决：设置数量上限，aggressive修剪
+   - 调试：跟踪高斯数量变化，profile内存使用</p>
+</li>
+<li>
+<p><strong>性能瓶颈</strong>
+   - 问题：排序成为主要瓶颈
+   - 解决：使用GPU友好的排序算法，考虑近似方法
+   - 调试：性能profiling，识别热点</p>
+</li>
+</ol>
+<h2 id="_6">最佳实践检查清单</h2>
+<h3 id="_7">实现设计</h3>
+<ul>
+<li>[ ] 选择合适的协方差参数化方式</li>
+<li>[ ] 实现数值稳定的投影变换</li>
+<li>[ ] 设计高效的数据结构（SoA vs AoS）</li>
+<li>[ ] 考虑GPU内存访问模式</li>
+</ul>
+<h3 id="_8">优化策略</h3>
+<ul>
+<li>[ ] 实现视锥体剔除</li>
+<li>[ ] 使用层次化数据结构</li>
+<li>[ ] 批量处理减少kernel调用</li>
+<li>[ ] 利用shared memory和texture cache</li>
+</ul>
+<h3 id="_9">质量控制</h3>
+<ul>
+<li>[ ] 监控高斯数量和分布</li>
+<li>[ ] 检查协方差矩阵条件数</li>
+<li>[ ] 验证梯度计算正确性</li>
+<li>[ ] 测试不同场景的泛化性</li>
+</ul>
+<h3 id="_10">调试技巧</h3>
+<ul>
+<li>[ ] 可视化单个高斯的贡献</li>
+<li>[ ] 检查深度排序结果</li>
+<li>[ ] 分析梯度流</li>
+<li>[ ] Profile性能瓶颈</li>
+</ul>
+<h3 id="_11">扩展考虑</h3>
+<ul>
+<li>[ ] 支持动态场景</li>
+<li>[ ] 集成环境光照</li>
+<li>[ ] 处理大规模场景</li>
+<li>[ ] 与其他表示混合使用</li>
+</ul>
+</details>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter9.html" class="nav-link prev">← 第9章：显式神经表示</a><a href="./chapter11.html" class="nav-link next">第11章：逆向渲染的数学基础 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

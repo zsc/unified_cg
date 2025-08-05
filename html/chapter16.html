@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第16章：相干理论</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class="active"><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="16">第16章：相干理论</h1>
+<p>本章介绍了光学相干性的基本概念，弥合了确定性波动光学与光场统计描述之间的鸿沟。我们建立了描述部分相干性的数学框架，确立了控制相干性如何在光学系统中转换和在空间中传播的关键定理。这些概念对于理解涉及真实光源的干涉和衍射的高级渲染效果至关重要。</p>
+<h2 id="161">16.1 时间相干性与光谱</h2>
+<p>时间相干性描述了光波自身在不同时间延迟下的相关性。对于标量光场 $E(t)$，我们定义时间相干函数：</p>
+<p>$$
+\Gamma(\tau) = \langle E^*(t)E(t+\tau) \rangle
+$$</p>
+<p>其中 $\langle \cdot \rangle$ 表示时间平均，而 $*$ 表示复共轭。</p>
+<p>对于平稳随机过程，这可以更明确地写为：</p>
+<p>$$
+\Gamma(\tau) = \lim_{T\to\infty} \frac{1}{T} \int_{-T/2}^{T/2} E^*(t)E(t+\tau) dt
+$$</p>
+<p>物理解释很简单：$\Gamma(\tau)$ 衡量了光场与其自身时间延迟版本之间的相似程度。对于 $\tau = 0$，我们有 $\Gamma(0) = \langle |E(t)|^2 \rangle$，这是时间平均强度。</p>
+<h3 id="_1">统计基础</h3>
+<p>光场 $E(t)$ 被视为一个复值随机过程。对于遍历过程，时间平均等于系综平均：</p>
+<p>$$
+\Gamma(\tau) = E[E^*(t)E(t+\tau)]
+$$</p>
+<p>其中 $E[\cdot]$ 表示期望值。自相关函数满足：</p>
+<p>$$
+\Gamma(-\tau) = \Gamma^*(\tau)
+$$</p>
+<p>（厄米对称性）</p>
+<p>这源于平稳性：$\langle E^<em>(t)E(t-\tau) \rangle = \langle E^</em>(t+\tau)E(t) \rangle = \langle E(t)E^<em>(t+\tau) \rangle^</em>$。</p>
+<h3 id="_2">与干涉测量的联系</h3>
+<p>在路径差为 $\Delta = c\tau$ 的迈克尔逊干涉仪中，输出处的强度为：</p>
+<p>$$
+I_{out} = I_1 + I_2 + 2\text{Re}[\sqrt{I_1I_2}\gamma(\tau)\exp(i\omega_0\tau)]
+$$</p>
+<p>其中 $I_1, I_2$ 是来自两个臂的强度，$\gamma(\tau) = \Gamma(\tau)/\Gamma(0)$ 是归一化相干函数。条纹可见度直接衡量 $| \gamma(\tau) |$：</p>
+<p>$$
+V(\tau) = \frac{2\sqrt{I_1I_2}|\gamma(\tau)|}{I_1 + I_2}
+$$</p>
+<p>对于平衡臂 ($I_1 = I_2$)，我们有 $V(\tau) = |\gamma(\tau)|$，这提供了一种直接测量时间相干性的实验方法。</p>
+<h3 id="1611">16.1.1 相干时间与相干长度</h3>
+<p>归一化时间相干度为：</p>
+<p>$$
+\gamma(\tau) = \frac{\Gamma(\tau)}{\Gamma(0)}
+$$</p>
+<p>这个复值函数满足几个重要性质：</p>
+<ul>
+<li>$\gamma(0) = 1$ (零延迟时完美自相关)</li>
+<li>$|\gamma(\tau)| \le 1$ (施瓦茨不等式)</li>
+<li>$\gamma(-\tau) = \gamma^*(\tau)$ (厄米对称性)</li>
+<li>对于有限带宽光源，当 $\tau \to \infty$ 时，$\gamma(\tau) \to 0$</li>
+</ul>
+<p>相干时间 $\tau_c$ 可以通过几种等效方式定义：</p>
+<ol>
+<li><strong>$1/e$ 定义</strong>：$|\gamma(\tau)| = 1/e$ 时的时间</li>
+<li><strong>FWHM 定义</strong>：$|\gamma(\tau)|^2$ 的半高全宽</li>
+<li><strong>积分定义</strong>：$\tau_c = \int_0^\infty |\gamma(\tau)|^2 d\tau$</li>
+</ol>
+<p>积分定义是最基本的，因为它表示光场保持相关性的有效持续时间。相干长度则为：</p>
+<p>$$
+l_c = c \cdot \tau_c
+$$</p>
+<p>其中 $c$ 是介质中的光速（对于折射率 $n$， $c = c_0/n$）。</p>
+<h3 id="1612">16.1.2 光谱宽度关系</h3>
+<p>根据维纳-辛钦定理（详见第16.3节），时间相干函数是功率谱密度 $S(\omega)$ 的傅里叶变换：</p>
+<p>$$
+\Gamma(\tau) = \int_{-\infty}^\infty S(\omega)e^{i\omega\tau} d\omega
+$$</p>
+<p>$$
+S(\omega) = \frac{1}{2\pi} \int_{-\infty}^\infty \Gamma(\tau)e^{-i\omega\tau} d\tau
+$$</p>
+<p>这种傅里叶变换关系意味着一个基本的不确定性原理：</p>
+<p>$$
+\Delta\omega \cdot \Delta\tau \ge K
+$$</p>
+<p>其中 $K$ 是一个量级为一的常数，取决于宽度的定义方式。</p>
+<h4 id="_3">不确定性原理的推导</h4>
+<p>从傅里叶变换的施瓦茨不等式开始：</p>
+<p>$$
+\int|f(t)|^2 dt \cdot \int|F(\omega)|^2 d\omega \ge \frac{1}{4\pi}\left|\int f(t) dt\right|^2
+$$</p>
+<p>将其应用于 $f(t) = t\Gamma(t)$ 并使用分部积分：</p>
+<p>$$
+\langle\tau^2\rangle\langle\omega^2\rangle \ge \frac{1}{4}
+$$</p>
+<p>其中 $\langle\tau^2\rangle = \frac{\int\tau^2|\gamma(\tau)|^2 d\tau}{\int|\gamma(\tau)|^2 d\tau}$ 且 $\langle\omega^2\rangle = \frac{\int(\omega-\omega_0)^2S(\omega) d\omega}{\int S(\omega) d\omega}$。</p>
+<p>这给出了最小不确定性乘积：</p>
+<p>$$
+\Delta\tau_{rms} \cdot \Delta\omega_{rms} \ge \frac{1}{2}
+$$</p>
+<p>对于其他定义：</p>
+<ul>
+<li>FWHM：$\Delta\tau_{FWHM} \cdot \Delta\omega_{FWHM} \ge 4\ln(2)/\pi \approx 0.88$</li>
+<li>$1/e$ 宽度：$\Delta\tau_{1/e} \cdot \Delta\omega_{1/e} \ge 1$</li>
+</ul>
+<p>对于特定的光谱形状：</p>
+<ol>
+<li><strong>高斯光谱：</strong>
+$$
+S(\omega) = S_0 \exp\left[-\frac{(\omega-\omega_0)^2}{2\sigma^2}\right]
+$$</li>
+</ol>
+<p>其中 $\sigma = 2\pi\Delta\nu/(2\sqrt{2\ln2})$ 对于 FWHM $\Delta\nu$，得到：</p>
+<p>$$
+\gamma(\tau) = \exp(i\omega_0\tau) \exp(-\sigma^2\tau^2/2)
+$$</p>
+<p>$$
+\tau_c = \int_0^\infty \exp(-\sigma^2\tau^2) d\tau = \frac{\sqrt{\pi}}{2\sigma} \approx 0.44/\Delta\nu
+$$</p>
+<ol start="2">
+<li><strong>洛伦兹光谱：</strong>
+$$
+S(\omega) = \frac{S_0\Gamma_0}{\pi[(\omega-\omega_0)^2 + \Gamma_0^2]}
+$$</li>
+</ol>
+<p>这给出：
+$$
+\gamma(\tau) = \exp(i\omega_0\tau) \exp(-\Gamma_0|\tau|)
+$$</p>
+<p>$$
+\tau_c = \frac{1}{2\Gamma_0} = \frac{1}{2\pi\Delta\nu}
+$$</p>
+<ol start="3">
+<li><strong>矩形光谱：</strong>
+$$
+S(\omega) = S_0 \quad \text{for } |\omega-\omega_0| &lt; \pi\Delta\nu, \quad 0 \quad \text{otherwise}
+$$</li>
+</ol>
+<p>$$
+\gamma(\tau) = \exp(i\omega_0\tau) \text{sinc}(\pi\Delta\nu\tau)
+$$</p>
+<p>$$
+\tau_c \approx 1/\Delta\nu
+$$</p>
+<p>高斯光谱给出最小的时间-带宽积，而矩形光谱在给定带宽下产生最长的相干时间。</p>
+<h3 id="1613">16.1.3 相干时间示例</h3>
+<p>不同的光源表现出截然不同的相干特性：</p>
+<ol>
+<li>
+<p><strong>稳频氦氖激光器（单模）：</strong>
+- $\Delta\nu \sim 1 \text{ kHz} - 1 \text{ MHz}$
+- $\tau_c \sim 10^{-3} - 1 \text{ s}$
+- $l_c \sim 300 \text{ km} - 300,000 \text{ km}$
+- 应用：干涉测量、全息术
+- 光谱轮廓：由于腔体动力学，接近洛伦兹线形</p>
+</li>
+<li>
+<p><strong>半导体激光二极管：</strong>
+- $\Delta\nu \sim 1-10 \text{ MHz}$ (单模)
+- $\tau_c \sim 10^{-7} - 10^{-8} \text{ s}$
+- $l_c \sim 30 - 300 \text{ m}$
+- 应用：光纤通信、CD/DVD 读取器
+- 温度依赖性：$\Delta\nu \propto T^{3/2}$ (载流子散射)</p>
+</li>
+<li>
+<p><strong>发光二极管 (LED)：</strong>
+- $\Delta\nu \sim 10 \text{ THz}$ ($\Delta\lambda \sim 30 \text{ nm}$ 对于可见光)
+- $\tau_c \sim 10^{-14} \text{ s}$
+- $l_c \sim 3 \text{ μm}$
+- 应用：显示技术、照明
+- 光谱形状：带边发射近似高斯形</p>
+</li>
+<li>
+<p><strong>过滤后的阳光（1 nm 滤光片）：</strong>
+- $\Delta\nu \sim 1 \text{ THz}$
+- $\tau_c \sim 10^{-12} \text{ s}$
+- $l_c \sim 0.3 \text{ mm}$
+- 自然照明参考
+- 黑体光谱：$S(\omega) \propto \omega^3/(\exp(\hbar\omega/k_BT) - 1)$</p>
+</li>
+<li>
+<p><strong>白光（未过滤）：</strong>
+- $\Delta\nu \sim 300 \text{ THz}$ (400-700 nm 范围)
+- $\tau_c \sim 10^{-15} \text{ s}$
+- $l_c \sim 0.3 \text{ μm}$
+- 对于大多数应用来说基本不相干
+- 相干函数：$\gamma(\tau) \approx \text{rect}(\tau/\tau_c)\exp(i\omega_c\tau)$</p>
+</li>
+<li>
+<p><strong>钠 D 线（低压灯）：</strong>
+- $\Delta\nu \sim 500 \text{ MHz}$ (多普勒展宽)
+- $\tau_c \sim 10^{-9} \text{ s}$
+- $l_c \sim 0.3 \text{ m}$
+- 经典原子光谱线
+- 精细结构：D₁ (589.6 nm) 和 D₂ (589.0 nm) 双线</p>
+</li>
+<li>
+<p><strong>同步辐射：</strong>
+- $\Delta\nu/\nu \sim 10^{-3}$ (典型波荡器)
+- $\tau_c \sim 10^{-12} \text{ s}$ 在 $\lambda = 1 \text{ nm}$
+- $l_c \sim 0.3 \text{ mm}$
+- 高方向性、部分相干光束</p>
+</li>
+<li>
+<p><strong>自由电子激光器 (FEL)：</strong>
+- $\Delta\nu/\nu \sim 10^{-4} - 10^{-3}$
+- $\tau_c \sim 10^{-11} - 10^{-12} \text{ s}$ (X 射线范围)
+- $l_c \sim 3-30 \text{ mm}$
+- SASE 过程产生部分时间相干性</p>
+</li>
+</ol>
+<h3 id="1614">16.1.4 相干时间的测量</h3>
+<p>相干时间可以通过几种方法测量：</p>
+<ol>
+<li><strong>迈克尔逊干涉测量：</strong>
+测量条纹可见度 $V$ 作为路径差 $\Delta$ 的函数：
+$$
+V(\Delta) = |\gamma(\Delta/c)|
+$$</li>
+</ol>
+<p>相干长度 $l_c$ 是 $V$ 下降到 $1/e$ 或 $1/2$ 的位置。</p>
+<p>对于准单色光：
+$$
+I(\Delta) = I_0[1 + V(\Delta)\cos(k_0\Delta + \phi)]
+$$</p>
+<p>可见度包络 $V(\Delta)$ 直接描绘了 $|\gamma(\tau)|$。关键考虑因素：</p>
+<ul>
+<li>机械稳定性：$\Delta$ 稳定到 $\lambda/20$</li>
+<li>等臂平衡：补偿色散</li>
+<li>探测器响应：必须能分辨条纹</li>
+</ul>
+<ol start="2">
+<li><strong>光谱分析：</strong>
+使用光谱仪直接测量功率谱 $S(\omega)$，然后计算：
+$$
+\tau_c = 2\pi/\Delta\omega_{eff}
+$$</li>
+</ol>
+<p>其中 $\Delta\omega_{eff}$ 是有效光谱宽度。</p>
+<p>有效宽度定义：</p>
+<ul>
+<li>RMS 宽度：$\Delta\omega_{rms} = \sqrt{\langle\omega^2\rangle - \langle\omega\rangle^2}$</li>
+<li>FWHM：半高全宽</li>
+<li>等效宽度：$\Delta\omega_{eq} = \int S(\omega)d\omega/S_{max}$</li>
+</ul>
+<p>分辨率要求：</p>
+<ul>
+<li>光谱仪分辨率 $\delta\omega \ll \Delta\omega$</li>
+<li>自由光谱范围 &gt; 全光谱宽度</li>
+</ul>
+<ol start="3">
+<li><strong>强度相关：</strong>
+对于热光，测量强度相关函数：
+$$
+g^{(2)}(\tau) = \frac{\langle I(t)I(t+\tau)\rangle}{\langle I(t)\rangle^2}
+$$</li>
+</ol>
+<p>与场相关性相关：
+$$
+g^{(2)}(\tau) = 1 + |\gamma(\tau)|^2
+$$</p>
+<p>这就是汉伯里-布朗-特维斯效应。实现：</p>
+<ul>
+<li>快速探测器：响应时间 $\ll \tau_c$</li>
+<li>相关器：数字或模拟</li>
+<li>光子计数：用于弱信号</li>
+</ul>
+<ol start="4">
+<li><strong>傅里叶变换光谱学：</strong>
+在大的 $\Delta$ 范围内扫描迈克尔逊干涉仪：
+$$
+I(\Delta) = \int S(\omega)[1 + \cos(\omega\Delta/c)]d\omega
+$$</li>
+</ol>
+<p>傅里叶变换给出 $S(\omega)$：
+$$
+S(\omega) \propto \mathcal{F}{I(\Delta) - I_\infty}
+$$</p>
+<p>优点：</p>
+<ul>
+<li>多路复用优势 (Fellgett)</li>
+<li>高集光能力 (Jacquinot)</li>
+<li>精确波长校准</li>
+</ul>
+<h2 id="162">16.2 空间相干性与杨氏实验</h2>
+<p>空间相干性描述了光场在同一时间不同空间点之间的相关性。杨氏双缝实验提供了理解空间相干性的经典框架。</p>
+<p>空间相干性的基本问题是：给定空间中的两个点 $P_1$ 和 $P_2$，这些点的光场相关性如何？这种相关性决定了当来自这两个点的光结合时是否能观察到干涉条纹。</p>
+<h3 id="_4">历史背景与现代应用</h3>
+<p>杨氏1801年的实验不仅证明了光的波动性，而且确立了相干性决定干涉可见度的原理。现代应用包括：</p>
+<ul>
+<li><strong>恒星干涉测量</strong>：使用基线相关性测量恒星直径</li>
+<li><strong>光学相干断层扫描</strong>：使用相干门控进行深度成像</li>
+<li><strong>光刻</strong>：图案转移中的部分相干效应</li>
+<li><strong>量子光学</strong>：EPR 相关性和贝尔不等式检验</li>
+</ul>
+<h3 id="1621">16.2.1 互强度与可见度</h3>
+<p>考虑由光源照射的两个点 $P_1$ 和 $P_2$。互强度为：</p>
+<p>$$
+J_{12} = \langle E^*(P_1,t)E(P_2,t) \rangle
+$$</p>
+<p>这个复数量包含相关性的幅度和相位信息。</p>
+<h4 id="_5">数学结构</h4>
+<p>互强度形成一个厄米矩阵：</p>
+<p>$$
+J = \begin{bmatrix} J_{11} &amp; J_{12} \ J_{21} &amp; J_{22} \end{bmatrix}
+$$</p>
+<p>具有以下性质：</p>
+<ul>
+<li>$J_{11}, J_{22} \ge 0$ (强度)</li>
+<li>$J_{21} = J_{12}^*$ (厄米性)</li>
+<li>$\det(J) \ge 0$ (半正定)</li>
+<li>$|J_{12}|^2 \le J_{11}J_{22}$ (施瓦茨不等式)</li>
+</ul>
+<h4 id="_6">杨氏双缝分析</h4>
+<p>在杨氏实验中，缝位于 $r_1$ 和 $r_2$ 处，观察点 $P$ 处的光场为：</p>
+<p>$$
+E(P,t) = K_1E(r_1,t-t_1) + K_2E(r_2,t-t_2)
+$$</p>
+<p>其中 $K_i$ 是传播因子，$t_i = |P-r_i|/c$ 是传播时间。</p>
+<p>强度变为：</p>
+<p>$$
+I(P) = |K_1|^2I_1 + |K_2|^2I_2 + 2\text{Re}[K_1^*K_2J_{12} \exp(ik\Delta)]
+$$</p>
+<p>其中 $\Delta = |P-r_2| - |P-r_1|$ 是路径差。</p>
+<p>对于等传播因子的近轴情况：</p>
+<p>$$
+I(P) = I_1 + I_2 + 2\sqrt{I_1I_2}|J_{12}|\cos(k\Delta + \phi_{12})
+$$</p>
+<p>其中 $\phi_{12} = \text{arg}(J_{12})$ 是互强度的相位。</p>
+<h4 id="_7">条纹可见度</h4>
+<p>强度在以下范围变化：</p>
+<ul>
+<li>$I_{max} = I_1 + I_2 + 2\sqrt{I_1I_2}|\gamma_{12}|$</li>
+<li>$I_{min} = I_1 + I_2 - 2\sqrt{I_1I_2}|\gamma_{12}|$</li>
+</ul>
+<p>可见度定义为：</p>
+<p>$$
+V = \frac{I_{max} - I_{min}}{I_{max} + I_{min}} = \frac{2\sqrt{I_1I_2}|\gamma_{12}|}{I_1 + I_2}
+$$</p>
+<p>特殊情况：</p>
+<ol>
+<li><strong>等强度</strong> ($I_1 = I_2 = I_0$)：$V = |\gamma_{12}|$</li>
+<li><strong>完全相干光</strong>：$|\gamma_{12}| = 1$, $V = \frac{2\sqrt{I_1I_2}}{I_1 + I_2} \le 1$</li>
+<li><strong>非相干光</strong>：$\gamma_{12} = 0$, $V = 0$ (无条纹)</li>
+</ol>
+<h3 id="1622">16.2.2 复相干度</h3>
+<p>复相干度定义为：</p>
+<p>$$
+\gamma_{12} = \frac{J_{12}}{\sqrt{J_{11}J_{22}}} = \frac{J_{12}}{\sqrt{I_1I_2}}
+$$</p>
+<h4 id="_8">数学性质</h4>
+<ol>
+<li>
+<p><strong>施瓦茨不等式</strong>：$|\gamma_{12}| \le 1$
+    证明：根据柯西-施瓦茨不等式，$|\langle E_1^*E_2\rangle|^2 \le \langle|E_1|^2\rangle\langle|E_2|^2\rangle$</p>
+</li>
+<li>
+<p><strong>厄米对称性</strong>：$\gamma_{12} = \gamma_{21}^<em>$
+    因为 $J_{12} = \langle E_1^</em>E_2\rangle = \langle E_2^<em>E_1\rangle^</em> = J_{21}^*$</p>
+</li>
+<li>
+<p><strong>自相干性</strong>：$\gamma_{11} = \gamma_{22} = 1$
+    每个点都与自身完美相干</p>
+</li>
+<li>
+<p><strong>相位信息</strong>：$\gamma_{12} = |\gamma_{12}|\exp(i\phi_{12})$
+    相位 $\phi_{12}$ 影响条纹位置，不影响可见度</p>
+</li>
+</ol>
+<h4 id="_9">物理解释</h4>
+<ul>
+<li><strong>$|\gamma_{12}| = 1$</strong>：完全相干 - 完美相关</li>
+<li><strong>$0 &lt; |\gamma_{12}| &lt; 1$</strong>：部分相干 - 条纹可见度降低</li>
+<li><strong>$|\gamma_{12}| = 0$</strong>：非相干 - 无相关性，无条纹</li>
+</ul>
+<h4 id="_10">与经典相关性的联系</h4>
+<p>相干度类似于统计学中的相关系数：</p>
+<p>$$
+\gamma_{12} = \frac{\text{Cov}(E_1,E_2)}{\sigma_1\sigma_2}
+$$</p>
+<p>其中 Cov 是协方差，$\sigma_i$ 是标准差。</p>
+<h3 id="1623">16.2.3 扩展光源</h3>
+<p>对于扩展光源，光源上的每个点独立贡献（对于非相干光源），总互强度是贡献的总和。</p>
+<h4 id="_11">一般公式</h4>
+<p>对于具有强度分布 $I_s(r_s)$ 的扩展非相干光源，观察点 $r_1, r_2$ 处的互强度为：</p>
+<p>$$
+J_{12} = \iiint I_s(r_s) K^*(r_1,r_s)K(r_2,r_s) d^3r_s
+$$</p>
+<p>其中 $K(r,r_s)$ 是从光源点 $r_s$ 到观察点 $r$ 的传播核。</p>
+<p>在菲涅尔近似中：
+$$
+K(r,r_s) = \left(\frac{\exp(ikR)}{R}\right) \times \exp\left[ik\frac{(r-r_s)^2}{2R}\right]
+$$</p>
+<p>其中 $R = |r_z - r_{s,z}|$ 是轴向距离。</p>
+<h4 id="_12">圆形光源分析</h4>
+<p>考虑一个直径为 $D$ 的均匀照明圆形非相干光源，距离观察平面 $z$。对于相距 $d$ 的两个观察点 $P_1$ 和 $P_2$：</p>
+<p>$$
+J_{12} = \iint_{source} I_s(\xi,\eta) \exp\left[ik\frac{(r_2-r_1)\cdot r_s}{z}\right] d\xi d\eta
+$$</p>
+<p>在近轴近似下，令 $r_2-r_1 = (d,0,0)$：</p>
+<p>$$
+\gamma_{12} = \frac{2}{\pi a^2} \iint_{|\rho|&lt;a} \exp\left(ik\frac{d\xi}{z}\right) d\xi d\eta \quad \text{where } a = D/2
+$$</p>
+<p>转换为极坐标并积分：</p>
+<p>$$
+|\gamma_{12}| = \left|\frac{2J_1(\pi Dd/\lambda z)}{\pi Dd/\lambda z}\right|
+$$</p>
+<p>其中 $J_1$ 是第一类一阶贝塞尔函数。</p>
+<h4 id="_13">详细推导</h4>
+<p>从光源平面中的极坐标 $(\rho,\theta)$ 开始：</p>
+<p>$$
+\gamma_{12} = \frac{1}{\pi a^2} \int_0^{2\pi} \int_0^a \exp\left(ik\frac{d\rho\cos(\theta)}{z}\right) \rho d\rho d\theta
+$$</p>
+<p>角度积分给出：
+$$
+\int_0^{2\pi} \exp\left(ik\frac{d\rho\cos(\theta)}{z}\right) d\theta = 2\pi J_0\left(\frac{kd\rho}{z}\right)
+$$</p>
+<p>其中 $J_0$ 是零阶贝塞尔函数。径向积分变为：</p>
+<p>$$
+\gamma_{12} = \frac{2}{a^2} \int_0^a J_0\left(\frac{kd\rho}{z}\right) \rho d\rho
+$$</p>
+<p>使用恒等式 $\int_0^x tJ_0(t)dt = xJ_1(x)$：</p>
+<p>$$
+\gamma_{12} = \frac{2J_1(kda/z)}{kda/z} = \frac{2J_1(\pi Dd/\lambda z)}{\pi Dd/\lambda z}
+$$</p>
+<p>这就是著名的相干艾里斑。</p>
+<p>好的，以下是逐字翻译为中文并转换数学公式为LaTeX的版本：</p>
+<h4 id="_14">相干半径</h4>
+<p>横向相干半径 $\rho_c$ 定义为 $|γ_{12}|$ 首次达到零的位置：</p>
+<p><strong>$\pi D d_{coh}/\lambda z = 3.832$</strong> (J₁ 的第一个零点)</p>
+<p><strong>$d_{coh} = \rho_c \approx 1.22\lambda z/D = 0.61\lambda z/a$</strong></p>
+<p>这与衍射中的艾里斑半径相同！</p>
+<h4 id="_15">其他光源几何形状</h4>
+<ol>
+<li><strong>矩形光源 ($L_x \times L_y$):</strong>
+<strong>$\gamma_{12} = \text{sinc}(\pi L_x \Delta x/\lambda z) \times \text{sinc}(\pi L_y \Delta y/\lambda z)$</strong></li>
+</ol>
+<p>相干长度：$\rho_x = \lambda z/L_x$, $\rho_y = \lambda z/L_y$</p>
+<ol start="2">
+<li><strong>双星 (两个点光源，间隔 $\theta$):</strong>
+<strong>$\gamma_{12} = [\exp(i\pi\theta d/\lambda) + \exp(-i\pi\theta d/\lambda)]/2 = \cos(\pi\theta d/\lambda)$</strong></li>
+</ol>
+<p>第一个零点在 $d = \lambda/(2\theta)$ - 迈克尔逊恒星干涉仪的基础</p>
+<ol start="3">
+<li><strong>高斯光源 (1/e 半径 $w_s$):</strong>
+<strong>$\gamma_{12} = \exp(-\pi^2 w_s^2 d^2/\lambda^2 z^2)$</strong></li>
+</ol>
+<p>相干半径 (1/e): $\rho_c = \lambda z/(\pi w_s)$</p>
+<h4 id="_16">角直径与相干性</h4>
+<p>对于张角为 $\theta_s = D/z$ 的光源：</p>
+<p><strong>$\rho_c \approx \lambda/\theta_s$</strong></p>
+<p>这个基本关系表明：</p>
+<ul>
+<li>较小的角光源 → 较大的相干区域</li>
+<li>恒星 (微角秒) 产生米级相干性</li>
+<li>太阳 ($\theta_s \approx 0.5^\circ$) 在 500 nm 处产生 $\rho_c \approx 0.07$ mm 的相干性</li>
+</ul>
+<h2 id="163-">16.3 互相关函数与维纳-辛钦定理</h2>
+<p>互相关函数提供了部分相干场完整的二阶统计描述。本节将建立连接时域相干性与频域光谱特性的数学框架。</p>
+<h3 id="1631">16.3.1 一般定义</h3>
+<p>对于标量场 $U(\mathbf{r},t)$，互相关函数为：</p>
+<p><strong>$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \langle U^*(\mathbf{r}_1,t)U(\mathbf{r}_2,t+\tau) \rangle$</strong></p>
+<p>这个四点函数 (两个空间，一个时间，一个系综) 捕获了所有二阶相干特性。</p>
+<h4 id="_17">互相关函数的性质</h4>
+<ol>
+<li>
+<p><strong>厄米对称性</strong>: $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \Gamma^*(\mathbf{r}_2,\mathbf{r}_1,-\tau)$</p>
+</li>
+<li>
+<p><strong>正半定性</strong>: 对于任意函数 $f_1(\mathbf{r})$, $f_2(\mathbf{r})$:
+    $\iint \iint f_1^*(\mathbf{r}_1)\Gamma(\mathbf{r}_1,\mathbf{r}_2,0)f_2(\mathbf{r}_2) d\mathbf{r}_1 d\mathbf{r}_2 \ge 0$</p>
+</li>
+<li>
+<p><strong>边界值</strong>:</p>
+<ul>
+<li>$\Gamma(\mathbf{r},\mathbf{r},0) = I(\mathbf{r})$ (强度)</li>
+<li>$|\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)| \le \sqrt{[\Gamma(\mathbf{r}_1,\mathbf{r}_1,0)\Gamma(\mathbf{r}_2,\mathbf{r}_2,0)]}$</li>
+</ul>
+</li>
+<li>
+<p><strong>平稳性</strong>: 对于平稳场：
+    $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)$ 仅依赖于 $\tau$，而不依赖于绝对时间</p>
+</li>
+</ol>
+<p>等时互相关函数 (互强度) 为：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = \Gamma(\mathbf{r}_1,\mathbf{r}_2,0) = \langle U^*(\mathbf{r}_1,t)U(\mathbf{r}_2,t) \rangle$</strong></p>
+<p>归一化互相关函数：</p>
+<p><strong>$\gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)/\sqrt{[\Gamma(\mathbf{r}_1,\mathbf{r}_1,0)\Gamma(\mathbf{r}_2,\mathbf{r}_2,0)]}$</strong></p>
+<h3 id="1632">16.3.2 交叉谱密度</h3>
+<p>交叉谱密度是互相关函数关于时间延迟的傅里叶变换：</p>
+<p><strong>$W(\mathbf{r}_1,\mathbf{r}_2,\omega) = \int_{-\infty}^\infty \Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)e^{-i\omega\tau} d\tau$</strong></p>
+<p><strong>$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = (1/2\pi) \int_{-\infty}^\infty W(\mathbf{r}_1,\mathbf{r}_2,\omega)e^{i\omega\tau} d\omega$</strong></p>
+<h4 id="_18">物理意义</h4>
+<p>$W(\mathbf{r}_1,\mathbf{r}_2,\omega)$ 表示在频率 $\omega$ 处，点 $\mathbf{r}_1$ 和 $\mathbf{r}_2$ 之间谱分量的相关性。它可以写成：</p>
+<p><strong>$W(\mathbf{r}_1,\mathbf{r}_2,\omega) = \langle \hat{U}^*(\mathbf{r}_1,\omega)\hat{U}(\mathbf{r}_2,\omega) \rangle$</strong></p>
+<p>其中 $\hat{U}(\mathbf{r},\omega)$ 是 $U(\mathbf{r},t)$ 的傅里叶变换。</p>
+<h4 id="_19">交叉谱密度的性质</h4>
+<ol>
+<li>
+<p><strong>厄米性</strong>: $W(\mathbf{r}_1,\mathbf{r}_2,\omega) = W^*(\mathbf{r}_2,\mathbf{r}_1,\omega)$</p>
+</li>
+<li>
+<p><strong>对角线非负</strong>: $W(\mathbf{r},\mathbf{r},\omega) \ge 0$ (功率谱)</p>
+</li>
+<li>
+<p><strong>谱相干度</strong>:
+    <strong>$\mu(\mathbf{r}_1,\mathbf{r}_2,\omega) = W(\mathbf{r}_1,\mathbf{r}_2,\omega)/\sqrt{[W(\mathbf{r}_1,\mathbf{r}_1,\omega)W(\mathbf{r}_2,\mathbf{r}_2,\omega)]}$</strong></p>
+<p>且 $|\mu(\mathbf{r}_1,\mathbf{r}_2,\omega)| \le 1$</p>
+</li>
+<li>
+<p><strong>总强度</strong>:
+    <strong>$I(\mathbf{r}) = (1/2\pi) \int_{-\infty}^\infty W(\mathbf{r},\mathbf{r},\omega) d\omega$</strong></p>
+</li>
+</ol>
+<h3 id="1633-">16.3.3 维纳-辛钦定理</h3>
+<p>维纳-辛钦定理建立了自相关与功率谱之间的基本联系。</p>
+<h4 id="_20">定理陈述</h4>
+<p>对于位置 $\mathbf{r}$ 处的平稳场：</p>
+<p><strong>$\Gamma(\mathbf{r},\mathbf{r},\tau) = \langle U^*(\mathbf{r},t)U(\mathbf{r},t+\tau) \rangle = \int_{-\infty}^\infty S(\mathbf{r},\omega)e^{i\omega\tau} d\omega$</strong></p>
+<p><strong>$S(\mathbf{r},\omega) = (1/2\pi) \int_{-\infty}^\infty \Gamma(\mathbf{r},\mathbf{r},\tau)e^{-i\omega\tau} d\tau$</strong></p>
+<p>其中 $S(\mathbf{r},\omega) = W(\mathbf{r},\mathbf{r},\omega)/(2\pi)$ 是功率谱密度。</p>
+<h4 id="_21">含义</h4>
+<ol>
+<li>
+<p><strong>能量守恒</strong>:
+    <strong>$I(\mathbf{r}) = \langle|U(\mathbf{r},t)|^2\rangle = \Gamma(\mathbf{r},\mathbf{r},0) = \int_{-\infty}^\infty S(\mathbf{r},\omega) d\omega$</strong></p>
+</li>
+<li>
+<p><strong>相干-带宽积</strong>:
+    该定理意味着 $\Delta\omega \cdot \tau_c \sim 2\pi$，一种不确定性原理的形式</p>
+</li>
+<li>
+<p><strong>白光极限</strong>:
+    对于 $S(\omega) = S_0$ (常数)，$\Gamma(\tau) = 2\pi S_0 \delta(\tau)$ - 完美非相干</p>
+</li>
+</ol>
+<h4 id="-">广义维纳-辛钦定理</h4>
+<p>对于非平稳场，我们使用维格纳分布：</p>
+<p><strong>$W_U(t,\omega) = \int U^*(t-\tau/2)U(t+\tau/2)e^{-i\omega\tau} d\tau$</strong></p>
+<p>系综平均给出：
+<strong>$\langle W_U(t,\omega) \rangle = \int \Gamma(t-\tau/2,t+\tau/2,\tau)e^{-i\omega\tau} d\tau$</strong></p>
+<h3 id="1634">16.3.4 准单色近似</h3>
+<p>许多实际光源的光谱宽度相对于中心频率较窄：$\Delta\omega/\omega_0 \ll 1$。</p>
+<h4 id="_22">数学公式</h4>
+<p>对于中心频率为 $\omega_0$ 的窄带光：</p>
+<p><strong>$U(\mathbf{r},t) = A(\mathbf{r},t)e^{-i\omega_0 t}$</strong></p>
+<p>其中 $A(\mathbf{r},t)$ 是一个缓慢变化的复振幅。</p>
+<p>互相关函数变为：</p>
+<p><strong>$\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau) = \langle A^*(\mathbf{r}_1,t)A(\mathbf{r}_2,t+\tau) \rangle e^{i\omega_0\tau}$</strong></p>
+<p><strong>$= J(\mathbf{r}_1,\mathbf{r}_2)e^{i\omega_0\tau}g(\tau)$</strong></p>
+<p>其中：</p>
+<ul>
+<li>$J(\mathbf{r}_1,\mathbf{r}_2) = \langle A^*(\mathbf{r}_1,t)A(\mathbf{r}_2,t) \rangle$ 是互强度</li>
+<li>$g(\tau)$ 是一个缓慢变化的包络，且 $g(0) = 1$</li>
+</ul>
+<h4 id="_23">有效条件</h4>
+<ol>
+<li><strong>光谱条件</strong>: $\Delta\omega/\omega_0 \ll 1$</li>
+<li><strong>时间条件</strong>: $A(t)$ 的变化时间尺度 $\gg 1/\omega_0$</li>
+<li><strong>传播条件</strong>: $\Delta k \cdot L \ll 2\pi$ ($L$ 是传播距离)</li>
+</ol>
+<h4 id="_24">交叉谱密度</h4>
+<p>在准单色近似下：</p>
+<p><strong>$W(\mathbf{r}_1,\mathbf{r}_2,\omega) \approx J(\mathbf{r}_1,\mathbf{r}_2)G(\omega-\omega_0)$</strong></p>
+<p>其中 $G(\omega)$ 是 $g(\tau)$ 的傅里叶变换，中心在 $\omega = 0$。</p>
+<h4 id="_25">应用</h4>
+<ol>
+<li><strong>干涉</strong>: 相位差 $k\Delta \approx k_0\Delta$ 使用中心波数</li>
+<li><strong>衍射</strong>: 单频计算即可</li>
+<li><strong>相干传播</strong>: 简化为单色情况</li>
+<li><strong>光谱学</strong>: 原子跃迁的自然线宽</li>
+</ol>
+<h2 id="164-">16.4 范西特-泽尼克定理</h2>
+<p>范西特-泽尼克定理是相干理论中最重要的结果之一，它阐明了空间相干性如何从非相干光源通过传播而产生。</p>
+<h3 id="1641">16.4.1 定理陈述</h3>
+<p>对于源平面中强度分布为 $I_s(\xi,\eta)$ 的平面非相干光源，在距离 $z$ 处的观测平面中的复相干度为：</p>
+<p><strong>$\gamma_{12} = \frac{\iint I_s(\xi,\eta) \exp[ik(\mathbf{r}_1-\mathbf{r}_2)\cdot(\xi,\eta)/z] d\xi d\eta}{\iint I_s(\xi,\eta) d\xi d\eta}$</strong></p>
+<p>在傍轴近似下，这变为：</p>
+<p><strong>$\gamma_{12} = \frac{\mathcal{F}{I_s(\xi,\eta)}|_{(u,v)=(x_1-x_2)/\lambda z, (y_1-y_2)/\lambda z}}{\iint I_s(\xi,\eta) d\xi d\eta}$</strong></p>
+<p>其中 $\mathcal{F}$ 表示二维傅里叶变换。</p>
+<h4 id="_26">严格推导</h4>
+<p>从非相干光源的互强度开始：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = \iint I_s(\mathbf{r}_s) G^*(\mathbf{r}_1,\mathbf{r}_s)G(\mathbf{r}_2,\mathbf{r}_s) d^2\mathbf{r}_s$</strong></p>
+<p>其中 $G$ 是格林函数。在自由空间中：</p>
+<p><strong>$G(\mathbf{r},\mathbf{r}_s) = \exp(ik|\mathbf{r}-\mathbf{r}_s|)/4\pi|\mathbf{r}-\mathbf{r}_s|$</strong></p>
+<p>对于 $z \gg |\mathbf{r}_\perp|$, $|\mathbf{r}_s|$ 的傍轴传播：</p>
+<p><strong>$|\mathbf{r}-\mathbf{r}_s| \approx z + (\mathbf{r}_\perp - \mathbf{r}_s)^2/2z$</strong></p>
+<p>代入并简化：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = (k/2\pi z)^2 \exp[ik(|\mathbf{r}_1|^2 - |\mathbf{r}_2|^2)/2z] \times \iint I_s(\mathbf{r}_s) \exp[ik(\mathbf{r}_2-\mathbf{r}_1)\cdot\mathbf{r}_s/z] d^2\mathbf{r}_s$</strong></p>
+<p>归一化相干度变为：</p>
+<p><strong>$\gamma_{12} = \exp[ik(|\mathbf{r}_1|^2 - |\mathbf{r}_2|^2)/2z] \times \mathcal{F}{I_s}(k(\mathbf{r}_2-\mathbf{r}_1)/2\pi z) / I_{total}$</strong></p>
+<p>对于与轴距离相等的点，二次相位项抵消，得到经典结果。</p>
+<h3 id="1642">16.4.2 物理诠释</h3>
+<p>该定理揭示：</p>
+<ol>
+<li>相干度是光源强度分布的归一化傅里叶变换</li>
+<li>较大的光源产生较小的相干区域</li>
+<li>相干函数继承了光源的对称性</li>
+</ol>
+<h3 id="1643">16.4.3 示例与应用</h3>
+<p><strong>圆形光源:</strong>
+对于半径为 $a$ 的均匀圆形光源：</p>
+<p><strong>$\gamma_{12} = \frac{2J_1(2\pi a|\mathbf{r}_1-\mathbf{r}_2|/\lambda z)}{(2\pi a|\mathbf{r}_1-\mathbf{r}_2|/\lambda z)}$</strong></p>
+<p>相干半径 (第一个零点) 为：
+<strong>$\rho_c = 0.61\lambda z/a$</strong></p>
+<p><strong>矩形光源:</strong>
+对于尺寸为 $L_x \times L_y$ 的矩形光源：</p>
+<p><strong>$\gamma_{12} = \text{sinc}(\pi L_x(x_1-x_2)/\lambda z) \times \text{sinc}(\pi L_y(y_1-y_2)/\lambda z)$</strong></p>
+<p><strong>双星:</strong>
+对于间隔为 $\theta$ 的两个点光源：</p>
+<p><strong>$\gamma_{12} = \cos(\pi\theta|\mathbf{r}_1-\mathbf{r}_2|/\lambda)$</strong></p>
+<p>这是恒星干涉测量的基础。</p>
+<h3 id="1644-">16.4.4 广义范西特-泽尼克定理</h3>
+<p>对于非平面几何和任意传播距离，广义形式使用格林函数：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = \iint I_s(\mathbf{r}_s)G^*(\mathbf{r}_1,\mathbf{r}_s)G(\mathbf{r}_2,\mathbf{r}_s) d^2\mathbf{r}_s$</strong></p>
+<p>其中 $G$ 是适用于该几何的格林函数。</p>
+<h2 id="165">16.5 部分相干光的传播</h2>
+<p>理解相干特性在传播过程中如何变化对于光学系统的精确建模至关重要。</p>
+<h3 id="1651">16.5.1 互相关函数的传播定律</h3>
+<p>互相关函数满足一对波动方程：</p>
+<p><strong>$\nabla_1^2 J(\mathbf{r}_1,\mathbf{r}_2) + k^2 J(\mathbf{r}_1,\mathbf{r}_2) = 0$</strong>
+<strong>$\nabla_2^2 J(\mathbf{r}_1,\mathbf{r}_2) + k^2 J(\mathbf{r}_1,\mathbf{r}_2) = 0$</strong></p>
+<p>其中 $\nabla_i^2$ 作用于坐标 $\mathbf{r}_i$。这些被称为沃尔夫方程。</p>
+<h3 id="1652">16.5.2 自由空间中的传播</h3>
+<p>对于从平面 $z=0$ 到平面 $z$ 的传播，使用菲涅尔近似：</p>
+<p><strong>$J(x_1,y_1,x_2,y_2;z) = (k/2\pi z)^2 \iiint\int J_0(\xi_1,\eta_1,\xi_2,\eta_2) \times \exp[ik/2z((x_1-\xi_1)^2 + (y_1-\eta_1)^2 - (x_2-\xi_2)^2 - (y_2-\eta_2)^2)] d\xi_1 d\eta_1 d\xi_2 d\eta_2$</strong></p>
+<h3 id="1653">16.5.3 相干模式表示</h3>
+<p>任何部分相干场都可以分解为相干模式：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = \sum_n \lambda_n \phi_n^*(\mathbf{r}_1)\phi_n(\mathbf{r}_2)$</strong></p>
+<p>其中 $\lambda_n$ 是特征值，$\phi_n$ 是满足以下条件的正交特征函数：</p>
+<p><strong>$\int J(\mathbf{r}_1,\mathbf{r}_2)\phi_n(\mathbf{r}_2) d^2\mathbf{r}_2 = \lambda_n\phi_n(\mathbf{r}_1)$</strong></p>
+<p>这被称为相干模式表示，类似于主成分分析。</p>
+<h3 id="1654">16.5.4 薛尔模型光源</h3>
+<p>一类重要的光源满足：</p>
+<p><strong>$J(\mathbf{r}_1,\mathbf{r}_2) = \sqrt{[I(\mathbf{r}_1)I(\mathbf{r}_2)]} \mu(\mathbf{r}_1-\mathbf{r}_2)$</strong></p>
+<p>其中 $\mu$ 是仅依赖于 $\mathbf{r}_1-\mathbf{r}_2$ 的相干函数。这些薛尔模型光源在传播过程中保持这种形式：</p>
+<p><strong>$J_z(\mathbf{r}_1,\mathbf{r}_2) = \sqrt{[I_z(\mathbf{r}_1)I_z(\mathbf{r}_2)]} \mu_z(\mathbf{r}_1-\mathbf{r}_2)$</strong></p>
+<h3 id="1655">16.5.5 与体渲染的联系</h3>
+<p>在部分相干照明的体渲染背景下，每个点的辐射度变为：</p>
+<p><strong>$L(\mathbf{x},\omega) = \iint W(\mathbf{x},\mathbf{x}',\omega)\sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\to\omega) d\omega' d^3\mathbf{x}'$</strong></p>
+<p>其中 $W(\mathbf{x},\mathbf{x}',\omega)$ 是照明的交叉谱密度。这概括了标准体渲染方程，以包含相干效应，这对于以下方面的精确建模至关重要：</p>
+<ul>
+<li>激光扫描显微镜</li>
+<li>光学相干断层扫描</li>
+<li>全息显示</li>
+<li>干涉成像</li>
+</ul>
+<h2 id="_27">章总结</h2>
+<p>本章建立了光学相干性的数学框架，将光场的统计特性与可观测的干涉现象联系起来。关键概念包括：</p>
+<ol>
+<li>
+<p><strong>时间相干性</strong>: 通过傅里叶变换关系与光谱带宽相关。相干时间 $\tau_c \approx 1/\Delta\nu$ 决定了可以发生干涉的最大光程差。</p>
+</li>
+<li>
+<p><strong>空间相干性</strong>: 由复相干度 $\gamma_{12}$ 量化，可通过干涉实验中的条纹可见度直接观测。</p>
+</li>
+<li>
+<p><strong>互相关函数</strong>: $\Gamma(\mathbf{r}_1,\mathbf{r}_2,\tau)$ 提供了部分相干场的完整二阶统计描述，交叉谱密度 $W$ 是其频域对应物。</p>
+</li>
+<li>
+<p><strong>范西特-泽尼克定理</strong>: 确立了远场空间相干性是光源强度分布的傅里叶变换，对于理解扩展光源的相干性至关重要。</p>
+</li>
+<li>
+<p><strong>传播定律</strong>: 沃尔夫方程控制着相干特性在传播过程中的演变，在包含统计效应的同时保持了波动性质。</p>
+</li>
+</ol>
+<p>体渲染方程概括为：
+<strong>$L(\mathbf{x},\omega) = \iint W(\mathbf{x},\mathbf{x}',\omega)\sigma_s(\mathbf{x}')p(\mathbf{x}',\omega'\to\omega) d\omega' d^3\mathbf{x}'$</strong></p>
+<p>通过交叉谱密度纳入了相干效应。</p>
+<h2 id="_28">练习</h2>
+<h3 id="161_1">练习 16.1: 相干时间计算</h3>
+<p>氦氖激光器的谱线宽度为 1 GHz。计算：
+a) 相干时间 $\tau_c$
+b) 相干长度 $l_c$
+c) 干涉条纹可见度 &gt; 0.5 的最大光程差</p>
+<p><em>提示: 对于高斯光谱，使用关系 $\tau_c \approx 0.44/\Delta\nu$。</em></p>
+<details>
+<summary>解答</summary>
+<p>a) $\tau_c = 0.44/\Delta\nu = 0.44/(10^9 \text{ Hz}) = 4.4 \times 10^{-10} \text{ s} = 0.44 \text{ ns}$</p>
+<p>b) $l_c = c \cdot \tau_c = (3 \times 10^8 \text{ m/s})(4.4 \times 10^{-10} \text{ s}) = 0.132 \text{ m} = 13.2 \text{ cm}$</p>
+<p>c) 对于高斯光谱，可见度 $V = \exp(-\pi^2\tau^2\Delta\nu^2/2\ln2)$
+   设 $V = 0.5$: $\tau = \sqrt{2\ln2 \cdot \ln2}/\pi\Delta\nu \approx 0.37/\Delta\nu$
+   最大光程差 $= c \cdot \tau = 0.37c/\Delta\nu = 11.1 \text{ cm}$</p>
+</details>
+<h3 id="162_1">练习 16.2: 扩展光源的杨氏双缝实验</h3>
+<p>钠灯 ($\lambda = 589 \text{ nm}$) 具有直径为 2 mm 的圆形孔径，在 1 m 距离处照射间距为 0.5 mm 的杨氏双缝。计算：
+a) 缝处的相干度
+b) 条纹可见度
+c) 可见度降至零的狭缝间距</p>
+<p><em>提示: 对圆形光源应用范西特-泽尼克定理。</em></p>
+<details>
+<summary>解答</summary>
+<p>a) 使用圆形光源的范西特-泽尼克定理：
+   $\gamma_{12} = \frac{2J_1(\pi Dd/\lambda z)}{(\pi Dd/\lambda z)}$
+   其中 $D = 2 \text{ mm}$, $d = 0.5 \text{ mm}$, $z = 1 \text{ m}$, $\lambda = 589 \text{ nm}$</p>
+<p>$\pi Dd/\lambda z = \pi(2\times10^{-3})(0.5\times10^{-3})/(589\times10^{-9})(1) = 5.33$
+   $\gamma_{12} = 2J_1(5.33)/5.33 \approx 2(-0.327)/5.33 = -0.123$</p>
+<p>b) 对于等强度狭缝：$V = |\gamma_{12}| = 0.123$</p>
+<p>c) 当 $\pi Dd/\lambda z = 3.83$ (J₁ 的第一个零点) 时，第一个零点出现
+   $d = 3.83\lambda z/\pi D = 3.83(589\times10^{-9})(1)/\pi(2\times10^{-3}) = 0.36 \text{ mm}$</p>
+</details>
+<h3 id="163-_1">练习 16.3: 维纳-辛钦应用</h3>
+<p>光源具有洛伦兹谱：$S(\omega) = S_0\Gamma^2/[(\omega-\omega_0)^2 + \Gamma^2]$
+推导：
+a) 时间相干函数 $\Gamma(\tau)$
+b) 相干时间
+c) 与相同半高全宽的高斯光谱进行比较</p>
+<p><em>提示: 使用傅里叶变换的围道积分。</em></p>
+<details>
+<summary>解答</summary>
+<p>a) $\Gamma(\tau) = \int S(\omega)e^{i\omega\tau} d\omega = S_0\Gamma^2 \int \frac{e^{i\omega\tau}}{[(\omega-\omega_0)^2 + \Gamma^2]} d\omega$</p>
+<p>对于 $\tau &gt; 0$，使用留数定理，极点在 $\omega = \omega_0 + i\Gamma$:
+   $\Gamma(\tau) = 2\pi i S_0\Gamma^2 \cdot \frac{e^{i(\omega_0+i\Gamma)\tau}}{2i\Gamma} = \pi S_0\Gamma e^{i\omega_0\tau}e^{-\Gamma\tau}$</p>
+<p>归一化：$\gamma(\tau) = e^{i\omega_0\tau}e^{-\Gamma|\tau|}$</p>
+<p>b) $\tau_c = \int_0^\infty |\gamma(\tau)|^2 d\tau = \int_0^\infty e^{-2\Gamma\tau} d\tau = 1/(2\Gamma)$</p>
+<p>对于 FWHM $= 2\Gamma$: $\tau_c = 1/\text{FWHM}$</p>
+<p>c) 高斯：$\tau_c = 0.44/\Delta\nu$
+   洛伦兹：$\tau_c = 1/(2\pi\Delta\nu) \approx 0.16/\Delta\nu$
+   洛伦兹由于其延伸的翼部，具有更短的相干时间。</p>
+</details>
+<p>好的，我将逐字翻译您提供的文本为中文，并将所有数学公式转换为 LaTeX 格式。</p>
+</details>
+<h3 id="164">练习 16.4：相干模式分解</h3>
+<p>对于具有高斯强度 $I(x) = I_0\exp(-x^2/w_0^2)$ 和高斯相干性 $\mu(\Delta x) = \exp(-\Delta x^2/2\sigma_c^2)$ 的 Schell 模型光源，找出前三个相干模式。</p>
+<p><em>提示：使用厄米-高斯函数作为基底。</em></p>
+<details>
+<summary>解答</summary>
+<p>特征值方程：$\int J(x,x')\varphi_n(x') dx' = \lambda_n\varphi_n(x)$</p>
+<p>对于此高斯 Schell 模型，特征函数是厄米-高斯函数：
+$\varphi_n(x) = (2^n n!\sqrt{\pi} \sigma)^{-1/2} H_n(x/\sigma) \exp(-x^2/2\sigma^2)$</p>
+<p>其中 $\sigma^4 = w_0^2\sigma_c^2/2$</p>
+<p>特征值：$\lambda_n = \lambda_0(\sigma_c^2/(\sigma_c^2 + w_0^2))^n$
+其中 $\lambda_0 = I_0\sqrt{2\pi\sigma_c^2w_0^2/(\sigma_c^2 + w_0^2)}$</p>
+<p>前三个模式：</p>
+<ul>
+<li>$n=0$: $\varphi_0(x) = (\pi\sigma^2)^{-1/4} \exp(-x^2/2\sigma^2)$, $\lambda_0$</li>
+<li>$n=1$: $\varphi_1(x) = (\pi\sigma^2)^{-1/4} \sqrt{2}x/\sigma \exp(-x^2/2\sigma^2)$, $\lambda_1$</li>
+<li>$n=2$: $\varphi_2(x) = (\pi\sigma^2)^{-1/4} (2x^2/\sigma^2 - 1)/\sqrt{2} \exp(-x^2/2\sigma^2)$, $\lambda_2$</li>
+</ul>
+</details>
+<h3 id="165_1">练习 16.5：相干性传播（挑战）</h3>
+<p>一个部分相干光束的初始互强度为 $J_0(x_1,x_2) = \exp(-|x_1-x_2|^2/2\sigma_0^2)\exp(-(x_1^2+x_2^2)/4w_0^2)$。求传播距离 $z$ 后的 $J(x_1,x_2,z)$。</p>
+<p><em>提示：使用互强度的菲涅尔传播积分。</em></p>
+<details>
+<summary>解答</summary>
+<p>使用菲涅尔传播：
+$J(x_1,x_2,z) = (k/2\pi z)^2 \iint J_0(\xi_1,\xi_2) \exp[ik(x_1-\xi_1)^2/2z] \exp[-ik(x_2-\xi_2)^2/2z] d\xi_1d\xi_2$</p>
+<p>代入高斯形式并配方：
+$J(x_1,x_2,z) = A(z) \exp(-|x_1-x_2|^2/2\sigma^2(z)) \exp(-(x_1^2+x_2^2)/4w^2(z))$</p>
+<p>其中：</p>
+<ul>
+<li>$w^2(z) = w_0^2(1 + z^2/z_R^2)$, $z_R = \pi w_0^2/\lambda$</li>
+<li>$\sigma^2(z) = \sigma_0^2 + \lambda^2z^2/(4\pi^2\sigma_0^2)$</li>
+<li>$A(z)$ 包含归一化因子</li>
+</ul>
+<p>光束保持高斯-Schell 形式，参数随传播演变。</p>
+</details>
+<h3 id="166-van-cittert-zernike">练习 16.6：恒星干涉测量中的 Van Cittert-Zernike 定理（挑战）</h3>
+<p>两台望远镜基线分离 $B$，观测一颗角分离为 $\theta$、强度比为 $R$ 的双星。推导可见度曲线 $V(B)$ 并展示如何提取 $\theta$ 和 $R$。</p>
+<p><em>提示：建模为两个非相干点源。</em></p>
+<details>
+<summary>解答</summary>
+<p>对于位于 $\pm\theta/2$ 角度、强度为 $I_1, I_2$ 的两颗恒星：
+$\gamma_{12} = [I_1\exp(ik\theta B/2) + I_2\exp(-ik\theta B/2)]/(I_1 + I_2)$</p>
+<p>令 $R = I_2/I_1$，则：
+$\gamma_{12} = [\exp(ik\theta B/2) + R\cdot\exp(-ik\theta B/2)]/(1 + R)$
+$\quad = [(1+R)\cos(k\theta B/2) + i(1-R)\sin(k\theta B/2)]/(1 + R)$</p>
+<p>可见度：$V(B) = |\gamma_{12}| = \sqrt{\cos^2(\pi\theta B/\lambda) + ((1-R)/(1+R))^2\sin^2(\pi\theta B/\lambda)}$</p>
+<p>分析：</p>
+<ul>
+<li>在 $B = 0$ 时：$V = 1$（完全相干）</li>
+<li>第一个最小值在 $\pi\theta B/\lambda = \pi/2$ 处，给出 $\theta = \lambda/2B_{min}$</li>
+<li>最小值处的可见度：$V_{min} = |1-R|/(1+R)$ 给出 $R$</li>
+<li>对于等强度恒星 ($R=1$)：$V = |\cos(\pi\theta B/\lambda)|$</li>
+</ul>
+</details>
+<h3 id="167">练习 16.7：体渲染中的相干性</h3>
+<p>推导激光扫描显微镜的修正体渲染方程，其中照明具有半径为 $\rho_c$ 的高斯空间相干性。</p>
+<p><em>提示：从相干体渲染方程开始，并对相干函数进行平均。</em></p>
+<details>
+<summary>解答</summary>
+<p>从点 $x'$ 处的相干照明开始：
+$L_{coh}(x,\omega) = \int E(x')\sigma_s(x')p(x',\omega'\to\omega)G(x',x) d^3x'$</p>
+<p>对于具有互强度 $J(x_1,x_2)$ 的部分相干照明：
+$L(x,\omega) = \iint J(x_1,x_2)\sigma_s(x_1)\sigma_s^<em>(x_2)p(x_1,\omega'\to\omega)p^</em>(x_2,\omega'\to\omega)G(x_1,x)G^*(x_2,x) d^3x_1d^3x_2$</p>
+<p>对于高斯相干性：$J(x_1,x_2) = I(x_1)\exp(-|x_1-x_2|^2/2\rho_c^2)$</p>
+<p>在 $\rho_c \to 0$（非相干）的极限下：
+$L(x,\omega) = \int I(x')|\sigma_s(x')|^2|p(x',\omega'\to\omega)|^2|G(x',x)|^2 d^3x'$</p>
+<p>对于有限的 $\rho_c$，相干体积效应发生在半径 $\rho_c$ 内，导致在距离 $z$ 处产生特征尺寸约为 $\sim\lambda z/\rho_c$ 的散斑图案。</p>
+</details>
+<h3 id="168">练习 16.8：交叉谱纯度（开放式）</h3>
+<p>研究部分相干场可以进行谱分解的条件，使得每个频率分量都是完全相干的。哪些物理光源满足此条件？</p>
+<p><em>提示：考虑当 $W(r_1,r_2,\omega)$ 可以分解为 $U^</em>(r_1,\omega)U(r_2,\omega)$ 时。*</p>
+<details>
+<summary>解答</summary>
+<p>如果一个场满足以下条件，则它是交叉谱纯的：
+$W(r_1,r_2,\omega) = U^*(r_1,\omega)U(r_2,\omega)S(\omega)$</p>
+<p>这要求谱相干度：
+$\mu(r_1,r_2,\omega) = W(r_1,r_2,\omega)/\sqrt{W(r_1,r_1,\omega)W(r_2,r_2,\omega)} = 1$</p>
+<p>对于所有 $S(\omega) \neq 0$ 的 $\omega$。</p>
+<p>物理示例：</p>
+<ol>
+<li><strong>滤波后的热光</strong>：白光通过窄带滤波器</li>
+<li><strong>锁模激光器</strong>：每个纵模都是相干的</li>
+<li><strong>稳态 Schell 模型光源</strong>：在特定传播条件下</li>
+</ol>
+<p>反例：</p>
+<ul>
+<li>移动光源（多普勒展宽破坏谱纯度）</li>
+<li>非线性过程（频率混合）</li>
+<li>时变介质</li>
+</ul>
+<p>对渲染的影响：交叉谱纯光源允许逐频率计算相干效应，大大简化了计算。</p>
+</details>
+<h2 id="_29">常见陷阱和错误</h2>
+<ol>
+<li>
+<p><strong>混淆相干时间和相干长度</strong></p>
+<ul>
+<li>错误：在需要 $l_c$ 的地方使用 $\tau_c$</li>
+<li>修正：记住 $l_c = c\cdot\tau_c$，相干长度的单位是距离</li>
+</ul>
+</li>
+<li>
+<p><strong>误用 van Cittert-Zernike 定理</strong></p>
+<ul>
+<li>错误：将其用于相干或部分相干光源</li>
+<li>修正：该定理仅适用于非相干光源；首先检查光源特性</li>
+</ul>
+</li>
+<li>
+<p><strong>相干度归一化不正确</strong></p>
+<ul>
+<li>错误：忘记除以 $\sqrt{I_1I_2}$ 进行归一化</li>
+<li>修正：始终计算 $\gamma_{12} = J_{12}/\sqrt{J_{11}J_{22}}$</li>
+</ul>
+</li>
+<li>
+<p><strong>复相干性中的符号错误</strong></p>
+<ul>
+<li>错误：在干涉计算中忽略 $\gamma_{12}$ 的相位</li>
+<li>修正：注意其复数性质；相位影响条纹位置</li>
+</ul>
+</li>
+<li>
+<p><strong>假设相干性得以保留</strong></p>
+<ul>
+<li>错误：将相干性视为传播过程中不变的量</li>
+<li>修正：使用 Wolf 方程或适当的传播定律</li>
+</ul>
+</li>
+<li>
+<p><strong>混淆时间相干性和空间相干性</strong></p>
+<ul>
+<li>错误：将时间相干性公式用于空间问题</li>
+<li>修正：确定是处理时间延迟（时间相干性）还是空间分离（空间相干性）</li>
+</ul>
+</li>
+<li>
+<p><strong>准单色近似的误用</strong></p>
+<ul>
+<li>错误：应用于宽带光源</li>
+<li>修正：在使用近似之前检查 $\Delta\nu/\nu_0 \ll 1$</li>
+</ul>
+</li>
+<li>
+<p><strong>忘记统计平均</strong></p>
+<ul>
+<li>错误：使用瞬时场而不是系综平均</li>
+<li>修正：所有相干函数都涉及时间或系综平均 $\langle\cdot\rangle$</li>
+</ul>
+</li>
+</ol>
+<h2 id="_30">最佳实践清单</h2>
+<h3 id="_31">设计评审</h3>
+<ul>
+<li>[ ] 确定是处理时间相干性、空间相干性还是两者兼有</li>
+<li>[ ] 验证光源相干特性（相干/部分相干/非相干）</li>
+<li>[ ] 选择适当的相干性度量（$\Gamma$, $J$, $W$, $\gamma$）</li>
+<li>[ ] 检查近似的有效性（傍轴、准单色）</li>
+</ul>
+<h3 id="_32">数学验证</h3>
+<ul>
+<li>[ ] 相干函数正确归一化</li>
+<li>[ ] 复共轭位置正确</li>
+<li>[ ] 傅里叶变换对一致（时间 $\leftrightarrow$ 频率，空间 $\leftrightarrow$ 空间频率）</li>
+<li>[ ] 整个过程中的单位量纲正确</li>
+</ul>
+<h3 id="_33">物理约束</h3>
+<ul>
+<li>[ ] $| \gamma_{12} | \le 1$ 处处成立</li>
+<li>[ ] 相干函数是厄米共轭的：$\Gamma(r_1,r_2,\tau) = \Gamma^*(r_2,r_1,-\tau)$</li>
+<li>[ ] 功率谱密度非负：$S(\omega) \ge 0$</li>
+<li>[ ] 传播中的能量守恒</li>
+</ul>
+<h3 id="_34">计算考量</h3>
+<ul>
+<li>[ ] 相干尺度采样充足（$\rho_c$ 的奈奎斯特采样）</li>
+<li>[ ] 振荡积分的数值积分稳定</li>
+<li>[ ] 相干模式展开的模式截断误差估计</li>
+<li>[ ] 蒙特卡洛方法的统计收敛性验证</li>
+</ul>
+<h3 id="_35">实验验证</h3>
+<ul>
+<li>[ ] 相干长度与光谱宽度测量结果一致</li>
+<li>[ ] 可见度测量结果与理论 $\gamma_{12}$ 一致</li>
+<li>[ ] 传播效应与 Wolf 方程预测一致</li>
+<li>[ ] Van Cittert-Zernike 定理对扩展光源的验证</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter15.html" class="nav-link prev">← 第15章：标量波动光学基础</a><a href="./chapter17.html" class="nav-link next">第17章：波前整形与自适应光学 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

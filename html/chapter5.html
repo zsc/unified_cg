@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第5章：基于物理的渲染</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class="active"><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class=""><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="5">第5章：基于物理的渲染</h1>
+<p>本章深入探讨基于物理的渲染（PBR）的数学基础，将光与物质的相互作用表述为辐射传输方程。我们将建立统一的体积渲染框架来描述散射介质、次表面散射和参与介质，并严格证明能量守恒与互易性原理在渲染中的应用。通过将传统的表面渲染扩展到体积渲染，本章为后续的神经渲染方法奠定物理基础。</p>
+<h2 id="51">5.1 辐射传输方程</h2>
+<p>辐射传输方程（Radiative Transfer Equation, RTE）是描述光在参与介质中传播的基本方程。它统一了吸收、发射和散射过程，为基于物理的体积渲染提供了数学框架。</p>
+<h3 id="511">5.1.1 基本形式推导</h3>
+<p>考虑光在位置 <strong>x</strong> 沿方向 <strong>ω</strong> 传播时的辐射亮度 $L(\mathbf{x}, \boldsymbol{\omega}, t)$。在微小距离 $ds$ 内，辐射亮度的变化由四个物理过程决定：</p>
+<ol>
+<li><strong>吸收（Absorption）</strong>：介质吸收光能，减少辐射亮度</li>
+<li><strong>外散射（Out-scattering）</strong>：光被散射到其他方向</li>
+<li><strong>发射（Emission）</strong>：介质自身发光</li>
+<li><strong>内散射（In-scattering）</strong>：其他方向的光被散射到当前方向</li>
+</ol>
+<p><strong>从微观到宏观的严格推导</strong></p>
+<p>考虑体积元 $dV = dA \cdot ds$，其中 $dA$ 是垂直于传播方向的截面积。时间 $dt$ 内通过该体积元的能量变化：</p>
+<ol>
+<li><strong>入射能量</strong>：$L(\mathbf{x}, \boldsymbol{\omega}) dA d\omega dt$</li>
+<li><strong>出射能量</strong>：$L(\mathbf{x} + ds\boldsymbol{\omega}, \boldsymbol{\omega}) dA d\omega dt$</li>
+<li><strong>吸收损失</strong>：$\sigma_a(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) dV d\omega dt$</li>
+<li><strong>散射损失</strong>：$\sigma_s(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) dV d\omega dt$</li>
+<li><strong>发射增益</strong>：$\sigma_a(\mathbf{x}) L_e(\mathbf{x}, \boldsymbol{\omega}) dV d\omega dt$</li>
+<li><strong>散射增益</strong>：$\sigma_s(\mathbf{x}) \int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\omega' dV d\omega dt$</li>
+</ol>
+<p>能量守恒要求：
+$$[L(\mathbf{x}, \boldsymbol{\omega}) - L(\mathbf{x} + ds\boldsymbol{\omega}, \boldsymbol{\omega})] dA = [-\sigma_t L + \sigma_a L_e + \sigma_s \int p L' d\omega'] dA \cdot ds$$
+取极限 $ds \to 0$，得到微分形式：
+$$\frac{dL(\mathbf{x}, \boldsymbol{\omega})}{ds} = -\sigma_t(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) + \sigma_a(\mathbf{x}) L_e(\mathbf{x}, \boldsymbol{\omega}) + \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+其中：</p>
+<ul>
+<li>$\sigma_t = \sigma_a + \sigma_s$：消光系数（extinction coefficient）</li>
+<li>$\sigma_a$：吸收系数（absorption coefficient）</li>
+<li>$\sigma_s$：散射系数（scattering coefficient）</li>
+<li>$L_e$：发射项（emission term）</li>
+<li>$p(\boldsymbol{\omega}' \to \boldsymbol{\omega})$：相位函数（phase function）</li>
+</ul>
+<p><strong>方向导数的几何解释</strong></p>
+<p>射线参数化：$\mathbf{x}(s) = \mathbf{x}_0 + s\boldsymbol{\omega}$，则：
+$$\frac{dL}{ds} = \frac{\partial L}{\partial x_i} \frac{dx_i}{ds} = \frac{\partial L}{\partial x_i} \omega_i = \boldsymbol{\omega} \cdot \nabla L$$
+这将沿射线的变化率转换为空间导数。</p>
+<p><strong>辐射传输方程的标准形式</strong>
+$$(\boldsymbol{\omega} \cdot \nabla) L(\mathbf{x}, \boldsymbol{\omega}) + \sigma_t(\mathbf{x}) L(\mathbf{x}, \boldsymbol{\omega}) = \sigma_a(\mathbf{x}) L_e(\mathbf{x}, \boldsymbol{\omega}) + \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+<strong>时间相关形式</strong></p>
+<p>对于非稳态问题，需要考虑时间导数：
+$$\frac{1}{c} \frac{\partial L}{\partial t} + (\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L = \sigma_a L_e + \sigma_s \int_{S^2} p L' d\boldsymbol{\omega}'$$
+其中 $c$ 是介质中的光速。</p>
+<p><strong>物理量的尺度分析</strong></p>
+<p>为了更好理解RTE中各项的相对重要性，考虑典型尺度：</p>
+<ul>
+<li>特征长度 $L_0$：场景或介质的典型尺寸</li>
+<li>平均自由程 $\ell = 1/\sigma_t$：光子碰撞间的平均距离</li>
+<li>光学厚度 $\tau = L_0/\ell = \sigma_t L_0$：无量纲参数</li>
+</ul>
+<p>根据$\tau$的大小，介质分类为：</p>
+<ul>
+<li><strong>光学薄介质</strong>（$\tau \ll 1$）：单次散射主导，可用Born近似</li>
+<li><strong>光学厚介质</strong>（$\tau \gg 1$）：多次散射主导，适用扩散近似</li>
+<li><strong>中等光学厚度</strong>（$\tau \approx 1$）：需要完整RTE求解</li>
+</ul>
+<p><strong>RTE的算子形式</strong></p>
+<p>定义传输算子 $\mathcal{T}$ 和散射算子 $\mathcal{S}$：
+$$\mathcal{T} = -(\boldsymbol{\omega} \cdot \nabla) - \sigma_t$$
+$$\mathcal{S}<a href="\mathbf{x}, \boldsymbol{\omega}">L</a> = \sigma_s(\mathbf{x}) \int_{S^2} p(\mathbf{x}, \boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+RTE可写作：
+$$\mathcal{T}[L] = -\sigma_a L_e - \mathcal{S}[L]$$
+或重排为：
+$$L = \mathcal{T}^{-1}[-\sigma_a L_e - \mathcal{S}[L]]$$
+这形式便于迭代求解和理论分析。</p>
+<h3 id="512">5.1.2 边界条件与初始条件</h3>
+<p>对于有界域 $\Omega \subset \mathbb{R}^3$，需要指定边界条件。设 $\partial\Omega$ 为域的边界，<strong>n</strong> 为外法向量。</p>
+<p><strong>入射边界条件</strong>：对于 $\mathbf{x} \in \partial\Omega$ 且 $\boldsymbol{\omega} \cdot \mathbf{n} &lt; 0$：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = L_{inc}(\mathbf{x}, \boldsymbol{\omega})$$</p>
+<p><strong>出射边界条件</strong>：对于 $\mathbf{x} \in \partial\Omega$ 且 $\boldsymbol{\omega} \cdot \mathbf{n} &gt; 0$：</p>
+<ul>
+<li>真空边界：无约束</li>
+<li>反射边界：$$L(\mathbf{x}, \boldsymbol{\omega}) = \int_{\boldsymbol{\omega}' \cdot \mathbf{n} &lt; 0} f_r(\mathbf{x}, \boldsymbol{\omega}', \boldsymbol{\omega}) L(\mathbf{x}, \boldsymbol{\omega}') |\boldsymbol{\omega}' \cdot \mathbf{n}| d\boldsymbol{\omega}'$$
+<strong>界面条件</strong>：在两种介质的界面上，需要考虑菲涅尔方程。设折射率为 $n_1$ 和 $n_2$，则：
+$$L_t = \frac{n_2^2}{n_1^2} T(\theta_i) L_i$$
+$$L_r = R(\theta_i) L_i$$
+其中 $T$ 和 $R$ 分别为透射率和反射率，满足 $T + R = 1$（能量守恒）。</li>
+</ul>
+<p><strong>Robin边界条件</strong></p>
+<p>对于半透明边界，使用混合边界条件：
+$$L(\mathbf{x}, \boldsymbol{\omega}) + \ell_b (\boldsymbol{\omega} \cdot \mathbf{n}) \frac{\partial L}{\partial n} = g(\mathbf{x}, \boldsymbol{\omega})$$
+其中 $\ell_b$ 是外推长度，与表面反射特性相关。</p>
+<p><strong>周期边界条件</strong></p>
+<p>对于周期性结构（如光子晶体）：
+$$L(\mathbf{x} + \mathbf{L}, \boldsymbol{\omega}) = L(\mathbf{x}, \boldsymbol{\omega})$$
+其中 <strong>L</strong> 是晶格周期向量。</p>
+<h3 id="513">5.1.3 解析解与数值方法</h3>
+<p>辐射传输方程的解析解仅在特殊情况下存在。我们首先考虑几种可解情况，然后讨论一般的数值方法。</p>
+<p><strong>情况1：均匀介质无散射</strong>（$\sigma_s = 0$）</p>
+<p>沿射线参数化：$\mathbf{x}(s) = \mathbf{x}_0 + s\boldsymbol{\omega}$，方程简化为常微分方程：
+$$\frac{dL}{ds} + \sigma_a L = \sigma_a L_e$$
+这是一阶线性ODE，使用积分因子$\mu(s) = e^{\sigma_a s}$：
+$$\frac{d}{ds}[L(s)e^{\sigma_a s}] = \sigma_a L_e(s) e^{\sigma_a s}$$
+积分得到通解：
+$$L(s) = L(0)e^{-\sigma_a s} + \sigma_a \int_0^s L_e(s') e^{-\sigma_a(s-s')} ds'$$
+这就是比尔-朗伯定律（Beer-Lambert law）的推广，包含了发射项。</p>
+<p><strong>情况2：各向同性单次散射</strong></p>
+<p>假设散射仅发生一次，且相位函数各向同性 $p = 1/(4\pi)$。使用Born近似：
+$$L = L^{(0)} + L^{(1)} + \mathcal{O}(\sigma_s^2)$$
+其中 $L^{(0)}$ 是无散射解，$L^{(1)}$ 是单次散射贡献：
+$$L^{(1)}(\mathbf{x}, \boldsymbol{\omega}) = \int_0^s T(0,s') \frac{\sigma_s(\mathbf{x}')}{4\pi} \int_{S^2} L^{(0)}(\mathbf{x}(s'), \boldsymbol{\omega}') d\boldsymbol{\omega}' ds'$$
+其中 $T(s_1,s_2) = \exp(-\int_{s_1}^{s_2} \sigma_t(s')ds')$ 为光学透射率。</p>
+<p><strong>情况3：小角度散射近似</strong></p>
+<p>当相位函数强烈前向散射（$g \to 1$）时，使用Fokker-Planck近似：
+$$\frac{\partial L}{\partial s} + \sigma_t L = \sigma_a L_e + \sigma_s L + \frac{\sigma_s(1-g)}{2} \nabla_\perp^2 L$$
+其中 $\nabla_\perp^2$ 是垂直于 <strong>ω</strong> 的拉普拉斯算子。</p>
+<p><strong>积分方程形式</strong></p>
+<p>将RTE改写为Volterra型积分方程，便于迭代求解：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = L_0(\mathbf{x}, \boldsymbol{\omega}) + \int_0^{\tau_b} e^{-\tau} Q(\mathbf{x}(\tau), \boldsymbol{\omega}) d\tau$$
+其中：</p>
+<ul>
+<li>$\tau = \int_0^s \sigma_t(s')ds'$ 是光学深度</li>
+<li>$Q = \sigma_a L_e + \sigma_s \int p L d\omega'$ 是源项</li>
+<li>$L_0$ 是边界贡献</li>
+</ul>
+<p><strong>特征线方法</strong></p>
+<p>RTE沿特征线（光线）是一维问题。定义特征坐标：
+$$\frac{d\mathbf{x}}{ds} = \boldsymbol{\omega}, \quad \frac{d\boldsymbol{\omega}}{ds} = 0$$
+沿特征线，RTE简化为：
+$$\frac{dL}{ds} + \sigma_t L = S(\mathbf{x}(s), \boldsymbol{\omega})$$
+这可用标准ODE方法求解。</p>
+<p><strong>数值方法详述</strong></p>
+<ol>
+<li>
+<p><strong>离散坐标法（Discrete Ordinates, S_N方法）</strong>：</p>
+<p>将角度空间离散化为 $N$ 个方向 ${\boldsymbol{\omega}_i}$，权重 ${w_i}$满足：
+$$\sum_{i=1}^N w_i = 4\pi, \quad \sum_{i=1}^N w_i \omega_{i,k} = 0, \quad \sum_{i=1}^N w_i \omega_{i,k}\omega_{i,l} = \frac{4\pi}{3}\delta_{kl}$$
+离散化的RTE系统：
+$$(\boldsymbol{\omega}_i \cdot \nabla) L_i + \sigma_t L_i = \sigma_a L_{e,i} + \sigma_s \sum_{j=1}^N w_j p_{ij} L_j$$
+常用正交集：Gauss-Legendre、Chebyshev等。</p>
+</li>
+<li>
+<p><strong>球谐函数展开（P_N方法）</strong>：</p>
+<p>将辐射亮度展开为球谐函数：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = \sum_{l=0}^{\infty} \sum_{m=-l}^{l} L_{lm}(\mathbf{x}) Y_{lm}(\boldsymbol{\omega})$$
+其中球谐系数：
+$$L_{lm}(\mathbf{x}) = \int_{S^2} L(\mathbf{x}, \boldsymbol{\omega}) Y_{lm}^*(\boldsymbol{\omega}) d\boldsymbol{\omega}$$
+代入RTE，利用球谐函数的递推关系和正交性，得到耦合PDE系统。P₁近似保留l=0,1项，导出扩散方程。</p>
+</li>
+<li>
+<p><strong>蒙特卡洛方法（Monte Carlo）</strong>：</p>
+<p>路径积分表示：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = \sum_{k=0}^{\infty} L^{(k)}(\mathbf{x}, \boldsymbol{\omega})$$
+其中 $L^{(k)}$ 是k次散射贡献。使用俄罗斯轮盘终止无限级数：
+$$L \approx \sum_{k=0}^{K} \frac{L^{(k)}}{p_k}$$
+其中 $p_k$ 是继续追踪的概率。</p>
+<p>方差减少技术：</p>
+<ul>
+<li><strong>重要性采样</strong>：根据贡献大小调整采样分布</li>
+<li><strong>分层采样</strong>：将样本空间分层以减少聚集</li>
+<li><strong>控制变量</strong>：使用已知期望的相关变量</li>
+</ul>
+</li>
+<li>
+<p><strong>有限元方法（FEM）</strong>：</p>
+<p>弱形式：
+$$\int_{\Omega \times S^2} \psi \left[ (\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L \right] d\mathbf{x} d\boldsymbol{\omega} = \int_{\Omega \times S^2} \psi S d\mathbf{x} d\boldsymbol{\omega}$$
+选择适当的测试函数$\psi$和基函数，构建稀疏线性系统。</p>
+<p><strong>流线上风Petrov-Galerkin（SUPG）</strong>：
+对于对流占优问题，添加人工扩散项：
+$$\psi_{SUPG} = \psi + \tau (\boldsymbol{\omega} \cdot \nabla)\psi$$
+其中 $\tau$ 是稳定化参数。</p>
+</li>
+<li>
+<p><strong>格子Boltzmann方法</strong>：</p>
+<p>基于速度离散的动力学方程：
+$$f_i(t+\Delta t, \mathbf{x}+\boldsymbol{\omega}_i\Delta t) - f_i(t,\mathbf{x}) = \Omega_i$$
+其中 $\Omega_i$ 是碰撞算子，$f_i$ 是分布函数。</p>
+</li>
+</ol>
+<p><strong>收敛性分析</strong></p>
+<p>对于迭代方法，收敛条件是散射算子的谱半径小于1：
+$$\rho(\mathcal{K}) = \sup_{\mathbf{x}} \frac{\sigma_s(\mathbf{x})}{\sigma_t(\mathbf{x})} &lt; 1$$
+收敛速度：
+$$||L^{(n)} - L|| \leq C \rho^n ||L^{(0)} - L||$$
+<strong>误差估计</strong></p>
+<p>对于离散化方法，总误差包括：</p>
+<ul>
+<li><strong>截断误差</strong>：$O(h^p)$，其中$h$是网格尺寸，$p$是方法阶数</li>
+<li><strong>统计误差</strong>（蒙特卡洛）：$O(1/\sqrt{N})$，$N$是样本数</li>
+<li><strong>射线效应</strong>（S_N方法）：在光学薄区域的非物理条纹</li>
+</ul>
+<h2 id="52">5.2 体积散射与相位函数</h2>
+<p>体积散射是光与介质中微粒相互作用的结果。相位函数描述了散射光的角度分布，是参与介质渲染的核心组件。</p>
+<h3 id="521">5.2.1 散射系数与吸收系数</h3>
+<p><strong>微观到宏观的推导</strong></p>
+<p>考虑介质中密度为 $\rho(\mathbf{x})$ 的散射粒子，每个粒子的散射截面为 $\sigma_s$，吸收截面为 $\sigma_a$。宏观系数为：
+$$\sigma_s(\mathbf{x}) = \rho(\mathbf{x}) \cdot \sigma_{s,particle}$$
+$$\sigma_a(\mathbf{x}) = \rho(\mathbf{x}) \cdot \sigma_{a,particle}$$
+对于混合介质，总系数是各成分的线性组合：
+$$\sigma_t = \sum_i \rho_i \sigma_{t,i}$$
+<strong>散射截面的物理含义</strong></p>
+<p>散射截面定义为入射能量流与散射功率的比值：
+$$\sigma_s = \frac{P_{scattered}}{I_{incident}}$$
+对于球形粒子，几何截面 $\sigma_{geo} = \pi r^2$，但散射截面可能大于或小于几何截面：</p>
+<ul>
+<li><strong>散射效率因子</strong> $Q_s = \sigma_s/\sigma_{geo}$</li>
+<li>小粒子（Rayleigh）：$Q_s \propto r^4/\lambda^4$</li>
+<li>大粒子（几何光学）：$Q_s \to 2$（衍射贡献）</li>
+</ul>
+<p><strong>单散射反照率（Single Scattering Albedo）</strong></p>
+<p>定义单散射反照率 $\alpha$ 为散射与消光的比值：
+$$\alpha = \frac{\sigma_s}{\sigma_t} = \frac{\sigma_s}{\sigma_a + \sigma_s}$$
+物理意义：光子与介质相互作用时被散射（而非吸收）的概率。</p>
+<ul>
+<li>$\alpha = 0$：纯吸收介质</li>
+<li>$\alpha = 1$：纯散射介质（无吸收）</li>
+<li>$0 &lt; \alpha &lt; 1$：一般情况</li>
+</ul>
+<p><strong>平均自由程（Mean Free Path）</strong></p>
+<p>光子在介质中两次相互作用之间的平均距离：
+$$\ell = \frac{1}{\sigma_t}$$
+概率分布遵循指数分布：
+$$P(s) = \sigma_t e^{-\sigma_t s}$$
+相关长度尺度：</p>
+<ul>
+<li><strong>散射平均自由程</strong>：$\ell_s = 1/\sigma_s$</li>
+<li><strong>吸收平均自由程</strong>：$\ell_a = 1/\sigma_a$</li>
+<li><strong>传输平均自由程</strong>：$\ell^* = 1/\sigma_t' = 1/[\sigma_a + \sigma_s(1-g)]$</li>
+</ul>
+<p><strong>波长依赖性</strong></p>
+<p>光学系数通常与波长相关：</p>
+<ul>
+<li><strong>Rayleigh散射</strong>：$\sigma_s \propto \lambda^{-4}$（蓝天现象）</li>
+<li><strong>Mie散射</strong>：复杂振荡行为</li>
+<li><strong>吸收</strong>：取决于材质的电子跃迁和振动模式</li>
+</ul>
+<h3 id="522">5.2.2 相位函数的数学性质</h3>
+<p>相位函数 $p(\boldsymbol{\omega}' \to \boldsymbol{\omega})$ 描述了光从方向 <strong>ω'</strong> 散射到方向 <strong>ω</strong> 的概率密度。</p>
+<p><strong>归一化条件</strong>
+$$\int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) d\boldsymbol{\omega} = 1$$
+<strong>对称性</strong></p>
+<ol>
+<li>
+<p><strong>旋转不变性</strong>：大多数介质中，相位函数仅依赖于散射角 $\theta = \arccos(\boldsymbol{\omega}' \cdot \boldsymbol{\omega})$：
+$$p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) = p(\cos\theta)$$</p>
+</li>
+<li>
+<p><strong>互易性</strong>（某些情况下）：
+$$p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) = p(\boldsymbol{\omega} \to \boldsymbol{\omega}')$$</p>
+</li>
+<li>
+<p><strong>前后对称性</strong>（某些粒子）：
+$$p(\cos\theta) = p(\cos(\pi - \theta))$$
+<strong>矩与各向异性参数</strong></p>
+</li>
+</ol>
+<p>第 n 阶矩：
+$$\mu_n = \int_{-1}^{1} \cos^n\theta \cdot p(\cos\theta) d(\cos\theta)$$
+各向异性参数 g（平均余弦）：
+$$g = \mu_1 = \int_{S^2} (\boldsymbol{\omega}' \cdot \boldsymbol{\omega}) p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) d\boldsymbol{\omega}$$</p>
+<ul>
+<li>$g &gt; 0$：前向散射为主</li>
+<li>$g = 0$：各向同性散射</li>
+<li>$g &lt; 0$：后向散射为主</li>
+</ul>
+<p><strong>Legendre多项式展开</strong></p>
+<p>相位函数可展开为Legendre多项式：
+$$p(\cos\theta) = \sum_{l=0}^{\infty} \frac{2l+1}{4\pi} \chi_l P_l(\cos\theta)$$
+其中展开系数：
+$$\chi_l = 2\pi \int_{-1}^{1} p(\cos\theta) P_l(\cos\theta) d(\cos\theta)$$
+注意：$\chi_0 = 1$（归一化），$\chi_1 = g$（各向异性参数）</p>
+<p><strong>相位函数的信息熵</strong></p>
+<p>定义Shannon熵量化散射的随机性：
+$$H[p] = -\int_{S^2} p(\boldsymbol{\omega}) \ln p(\boldsymbol{\omega}) d\boldsymbol{\omega}$$</p>
+<ul>
+<li>各向同性：$H_{max} = \ln(4\pi)$</li>
+<li>完全前向：$H_{min} = 0$</li>
+<li>实际介质：$0 &lt; H &lt; \ln(4\pi)$</li>
+</ul>
+<h3 id="523">5.2.3 常见相位函数模型</h3>
+<ol>
+<li><strong>各向同性散射</strong>
+$$p(\cos\theta) = \frac{1}{4\pi}$$
+特点：$g = 0$，数学最简单，适用于高度多次散射的情况。</li>
+</ol>
+<p>采样：$\cos\theta = 1 - 2\xi_1$, $\phi = 2\pi\xi_2$</p>
+<p>应用场景：</p>
+<ul>
+<li>密集烟雾的多次散射</li>
+<li>扩散近似的验证</li>
+<li>理论分析的基准</li>
+</ul>
+<ol start="2">
+<li><strong>Rayleigh 散射</strong></li>
+</ol>
+<p>适用于粒子尺寸远小于波长的情况（$x = 2\pi r/\lambda \ll 1$）：
+$$p_{Rayleigh}(\cos\theta) = \frac{3}{16\pi}(1 + \cos^2\theta)$$
+各向异性参数：$g = 0$（对称散射）</p>
+<p>偏振形式（考虑偏振态）：
+$$p_{Rayleigh}(\cos\theta, \phi) = \frac{3}{16\pi} \begin{pmatrix} 1 + \cos^2\theta &amp; \sin^2\theta \cos(2\phi) \ \sin^2\theta \cos(2\phi) &amp; 1 + \cos^2\theta \end{pmatrix}$$
+采样方法：</p>
+<ol>
+<li>生成 $u = 2\xi_1 - 1$</li>
+<li>如果 $u^2 &gt; (1 + u^2)\xi_2$，拒绝并重试</li>
+<li>
+<p>否则 $\cos\theta = u$</p>
+</li>
+<li>
+<p><strong>Henyey-Greenstein 相位函数</strong></p>
+</li>
+</ol>
+<p>最常用的参数化相位函数：
+$$p_{HG}(\cos\theta) = \frac{1}{4\pi} \frac{1 - g^2}{(1 + g^2 - 2g\cos\theta)^{3/2}}$$
+优点：</p>
+<ul>
+<li>单参数 $g \in [-1,1]$ 控制各向异性</li>
+<li>解析形式简单</li>
+<li>满足归一化条件</li>
+<li>存在解析采样方法</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>无法准确模拟强后向散射峰</li>
+<li>对某些材质（如生物组织）过于简化</li>
+</ul>
+<p>勒让德展开：
+$$p_{HG}(\cos\theta) = \frac{1}{4\pi} \sum_{l=0}^{\infty} (2l+1) g^l P_l(\cos\theta)$$
+解析采样（见后续重要性采样部分）</p>
+<ol start="4">
+<li><strong>Schlick 相位函数</strong></li>
+</ol>
+<p>Henyey-Greenstein 的有理近似，计算更高效：
+$$p_{Schlick}(\cos\theta) = \frac{1}{4\pi} \frac{1 - k^2}{(1 + k\cos\theta)^2}$$
+参数转换：$k = 1.55g - 0.55g^3$（保持相同的平均余弦）</p>
+<p>误差分析：$|p_{Schlick} - p_{HG}|/p_{HG} &lt; 0.02$ 对大部分角度</p>
+<p>计算效率提升：避免了HG中的幂运算和平方根</p>
+<ol start="5">
+<li><strong>双 Henyey-Greenstein（Double HG）</strong></li>
+</ol>
+<p>混合前向和后向散射，更好地拟合实测数据：
+$$p_{DHG}(\cos\theta) = \alpha p_{HG}(\cos\theta; g_1) + (1-\alpha) p_{HG}(\cos\theta; g_2)$$
+参数约束确保物理合理性：</p>
+<ul>
+<li>$\alpha \in [0,1]$：混合权重</li>
+<li>$g_1 &gt; 0$：前向散射成分</li>
+<li>$g_2 &lt; 0$：后向散射成分</li>
+<li>平均各向异性：$g = \alpha g_1 + (1-\alpha)g_2$</li>
+</ul>
+<p>典型参数（生物组织）：</p>
+<ul>
+<li>皮肤：$\alpha \approx 0.8, g_1 \approx 0.9, g_2 \approx -0.3$</li>
+<li>肌肉：$\alpha \approx 0.9, g_1 \approx 0.95, g_2 \approx -0.5$</li>
+</ul>
+<ol start="6">
+<li><strong>Fournier-Forand 相位函数</strong></li>
+</ol>
+<p>海洋光学中常用，考虑颗粒大小分布：
+$$p_{FF}(\cos\theta) = \frac{1}{4\pi(1-\delta)^2\delta^v} \left[ v(1-\delta) - (1-\delta^v) \right] + \frac{1-\delta^v}{4\pi(1-\delta)^2\delta^v} \frac{3\cos^2\theta - 1}{(\sin\theta/2)^2}$$
+其中：</p>
+<ul>
+<li>$\delta = 4\sin^2(\theta/2)/(3(n-1)^2)$</li>
+<li>$v = (3-\mu)/2$</li>
+<li>$\mu$：颗粒大小分布的Junge指数</li>
+<li>$n$：相对折射率</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>准确描述海洋悬浮粒子</li>
+<li>包含强前向散射峰</li>
+<li>小角度近似为衍射峰</li>
+</ul>
+<ol start="7">
+<li><strong>Mie 散射理论</strong></li>
+</ol>
+<p>对于球形粒子的精确解，基于麦克斯韦方程：</p>
+<p>散射振幅函数：
+$$S_1(\theta) = \sum_{n=1}^{\infty} \frac{2n+1}{n(n+1)} [a_n \pi_n(\cos\theta) + b_n \tau_n(\cos\theta)]$$
+$$S_2(\theta) = \sum_{n=1}^{\infty} \frac{2n+1}{n(n+1)} [a_n \tau_n(\cos\theta) + b_n \pi_n(\cos\theta)]$$
+其中 $a_n, b_n$ 是Mie系数，涉及球贝塞尔函数：
+$$a_n = \frac{m\psi_n(mx)\psi'_n(x) - \psi_n(x)\psi'_n(mx)}{m\psi_n(mx)\xi'_n(x) - \xi_n(x)\psi'_n(mx)}$$
+相位函数：
+$$p_{Mie}(\cos\theta) = \frac{4\pi}{k^2\sigma_s} \left[ |S_1(\theta)|^2 + |S_2(\theta)|^2 \right]$$
+计算考虑：</p>
+<ul>
+<li>级数截断：$n_{max} \approx x + 4x^{1/3} + 2$</li>
+<li>数值稳定性：使用向下递推计算贝塞尔函数</li>
+<li>效率优化：预计算并缓存系数</li>
+</ul>
+<ol start="8">
+<li><strong>SGGX 相位函数</strong></li>
+</ol>
+<p>基于微表面理论，适用于纤维和毛发：
+$$p_{SGGX}(\cos\theta) = \frac{D(\mathbf{h})}{4|\boldsymbol{\omega}' \cdot \mathbf{h}|}$$
+其中 $D(\mathbf{h})$ 是SGGX分布，$\mathbf{h}$ 是半向量。</p>
+<p>SGGX分布：
+$$D(\mathbf{h}) = \frac{1}{\pi \alpha_x \alpha_y} \frac{1}{(\mathbf{h} \cdot \mathbf{S}^{-1} \mathbf{h})^2}$$
+S 是$3 \times 3$协方差矩阵，描述纤维方向分布。</p>
+<p><strong>相位函数的重要性采样</strong></p>
+<p><strong>Henyey-Greenstein 采样</strong>：</p>
+<p>给定均匀随机数 $\xi_1, \xi_2 \in [0,1]$：</p>
+<ol>
+<li>
+<p>采样散射角：
+$$\cos\theta = \begin{cases}
+\frac{1}{2g}\left[1 + g^2 - \left(\frac{1-g^2}{1-g+2g\xi_1}\right)^2\right] &amp; g \neq 0 \
+1 - 2\xi_1 &amp; g = 0
+\end{cases}$$</p>
+</li>
+<li>
+<p>采样方位角：$\phi = 2\pi\xi_2$</p>
+</li>
+<li>
+<p>构造散射方向（局部坐标系）：</p>
+<ul>
+<li>构建正交基 ${\mathbf{t}, \mathbf{b}, \boldsymbol{\omega}'}$</li>
+<li>$\sin\theta = \sqrt{1 - \cos^2\theta}$</li>
+<li>$\boldsymbol{\omega} = \sin\theta \cdot \cos\phi \cdot \mathbf{t} + \sin\theta \cdot \sin\phi \cdot \mathbf{b} + \cos\theta \cdot \boldsymbol{\omega}'$</li>
+</ul>
+</li>
+</ol>
+<p>PDF值：$p_{HG}(\cos\theta)$</p>
+<p><strong>拒绝采样法（通用方法）</strong>：</p>
+<p>对于复杂相位函数：</p>
+<ol>
+<li>找到包络函数 $M \cdot q(\theta) \geq p(\theta)$</li>
+<li>从 $q(\theta)$ 采样候选值</li>
+<li>以概率 $p(\theta)/(M \cdot q(\theta))$ 接受</li>
+</ol>
+<p>效率：$\eta = 1/M$，选择好的$q(\theta)$最大化效率</p>
+<p><strong>表格法采样</strong>：</p>
+<ol>
+<li>预计算CDF：$F(\theta_i) = \int_0^{\theta_i} p(\theta)\sin\theta d\theta$</li>
+<li>二分查找：$F^{-1}(\xi)$</li>
+<li>线性插值获得精确值</li>
+</ol>
+<p>存储优化：非均匀采样，在变化剧烈区域加密</p>
+<p><strong>混合重要性采样</strong>：</p>
+<p>结合相位函数和其他因素（如光源方向）：
+$$p_{mix}(\boldsymbol{\omega}) = \alpha p_{phase}(\boldsymbol{\omega}) + (1-\alpha) p_{light}(\boldsymbol{\omega})$$
+使用多重重要性采样（MIS）组合不同策略：
+$$w_i = \frac{p_i^2}{\sum_j p_j^2} \quad \text{(balance heuristic)}$$
+<strong>相位函数的预计算与优化</strong></p>
+<ol>
+<li><strong>球谐系数缓存</strong>：预计算前N项Legendre系数</li>
+<li><strong>查找表</strong>：离散化角度空间，存储函数值</li>
+<li><strong>解析近似</strong>：使用有理函数逼近复杂相位函数</li>
+<li><strong>GPU优化</strong>：向量化计算，利用纹理缓存</li>
+</ol>
+<h2 id="53">5.3 通过扩散的次表面散射</h2>
+<p>次表面散射（Subsurface Scattering, SSS）描述光进入半透明材质后在内部散射并从不同位置出射的现象。当散射远强于吸收时，可用扩散近似简化辐射传输方程。</p>
+<h3 id="531">5.3.1 扩散方程推导</h3>
+<p><strong>P₁近似（球谐函数展开）</strong></p>
+<p>将辐射亮度展开为球谐函数的前两项：
+$$L(\mathbf{x}, \boldsymbol{\omega}) \approx \frac{1}{4\pi}\phi(\mathbf{x}) + \frac{3}{4\pi}\mathbf{E}(\mathbf{x}) \cdot \boldsymbol{\omega}$$
+其中：</p>
+<ul>
+<li>$\phi(\mathbf{x}) = \int_{S^2} L(\mathbf{x}, \boldsymbol{\omega}) d\boldsymbol{\omega}$：辐射通量（fluence）</li>
+<li>$\mathbf{E}(\mathbf{x}) = \int_{S^2} L(\mathbf{x}, \boldsymbol{\omega})\boldsymbol{\omega} d\boldsymbol{\omega}$：辐射通量矢量</li>
+</ul>
+<p><strong>从RTE到扩散方程的严格推导</strong></p>
+<p>将P₁展开代入RTE：
+$$(\boldsymbol{\omega} \cdot \nabla)\left[\frac{\phi}{4\pi} + \frac{3}{4\pi}\mathbf{E} \cdot \boldsymbol{\omega}\right] + \sigma_t\left[\frac{\phi}{4\pi} + \frac{3}{4\pi}\mathbf{E} \cdot \boldsymbol{\omega}\right] = \text{源项}$$
+对所有方向积分（零阶矩）：
+$$\nabla \cdot \mathbf{E} + \sigma_a \phi = Q$$
+对<strong>ω</strong>加权积分（一阶矩）：
+$$\frac{1}{3}\nabla\phi + \sigma_t' \mathbf{E} = \mathbf{0}$$
+其中利用了 $\int\boldsymbol{\omega}\otimes\boldsymbol{\omega} d\boldsymbol{\omega} = (4\pi/3)\mathbf{I}$。</p>
+<p><strong>扩散近似的条件</strong></p>
+<ol>
+<li>散射占主导：$\sigma_s \gg \sigma_a$（即 $\alpha \approx 1$）</li>
+<li>近似各向同性：$|\mathbf{E}| \ll \phi$</li>
+<li>远离边界和光源（距离 &gt; 几个平均自由程）</li>
+</ol>
+<p>在这些条件下，辐射通量矢量遵循Fick定律：
+$$\mathbf{E}(\mathbf{x}) = -D \nabla \phi(\mathbf{x})$$
+扩散系数：
+$$D = \frac{1}{3\sigma_t'} = \frac{1}{3[\sigma_a + \sigma_s(1-g)]}$$
+其中 $\sigma_t' = \sigma_a + \sigma_s'$ 是约化消光系数，$\sigma_s' = \sigma_s(1-g)$ 是约化散射系数。</p>
+<p><strong>扩散方程</strong></p>
+<p>将Fick定律代入连续性方程：
+$$\nabla \cdot (-D\nabla\phi) + \sigma_a\phi = Q$$
+对于均匀介质：
+$$\nabla^2 \phi(\mathbf{x}) - \frac{\sigma_a}{D} \phi(\mathbf{x}) = -\frac{Q(\mathbf{x})}{D}$$
+或写作：
+$$\nabla^2 \phi - \kappa^2 \phi = -\frac{Q}{D}$$
+其中：</p>
+<ul>
+<li>$\kappa = \sqrt{\sigma_a/D} = \sqrt{3\sigma_a\sigma_t'}$：有效衰减系数</li>
+<li>扩散长度：$L_D = 1/\kappa$</li>
+</ul>
+<p><strong>边界条件</strong></p>
+<p>在介质-真空界面，需要考虑菲涅尔反射。</p>
+<p><strong>精确边界条件</strong>（Marshak）：
+$$\phi(\mathbf{x}_s) = \int_{\boldsymbol{\omega} \cdot \mathbf{n} &lt; 0} L(\mathbf{x}_s, \boldsymbol{\omega}) d\boldsymbol{\omega} = 2\pi \int_0^{1} L(\mathbf{x}_s, -\mu) \mu d\mu$$
+<strong>外推边界条件</strong>（近似）：
+$$\phi(\mathbf{x}_s) + 2AD(\mathbf{n} \cdot \nabla)\phi(\mathbf{x}_s) = 0$$
+其中 $A$ 是与菲涅尔反射相关的参数：
+$$A = \frac{1 + F_{dr}}{1 - F_{dr}}$$
+<strong>菲涅尔反射率的计算</strong></p>
+<p>漫反射菲涅尔反射率：
+$$F_{dr} = \int_0^{\pi/2} R(\theta) \sin(2\theta) d\theta$$
+对于相对折射率 $\eta = n_2/n_1$：</p>
+<ul>
+<li>$\eta &lt; 1$：$F_{dr} \approx -1.440\eta^{-2} + 0.710\eta^{-1} + 0.668 + 0.0636\eta$</li>
+<li>$\eta &gt; 1$：$F_{dr} \approx -0.4399 + 0.7099/\eta - 0.3319/\eta^2 + 0.0636/\eta^3$</li>
+</ul>
+<p><strong>扩散近似的有效性范围</strong></p>
+<p>定义无量纲参数：</p>
+<ul>
+<li>光学厚度：$\tau = \sigma_t'L$（L是特征长度）</li>
+<li>反照率：$\alpha' = \sigma_s'/\sigma_t'$</li>
+</ul>
+<p>扩散近似误差：
+$$\epsilon \approx \frac{1}{\sqrt{3\tau(1-\alpha')}}$$
+要求 $\epsilon &lt; 0.1$，需要：</p>
+<ul>
+<li>$\tau &gt; 10$ 且 $\alpha' &gt; 0.9$</li>
+<li>或 $\tau(1-\alpha') &gt; 3.3$</li>
+</ul>
+<h3 id="532">5.3.2 偶极子近似</h3>
+<p><strong>点光源的格林函数</strong></p>
+<p>对于无限介质中的点光源 $Q(\mathbf{x}) = \delta(\mathbf{x} - \mathbf{x}_0)$，扩散方程的解为：
+$$\phi(\mathbf{x}) = \frac{1}{4\pi D} \frac{e^{-\kappa r}}{r}$$
+其中 $r = ||\mathbf{x} - \mathbf{x}_0||$。</p>
+<p><strong>偶极子源配置</strong></p>
+<p>为满足边界条件，使用镜像源方法：</p>
+<ol>
+<li>真实源：位于 $\mathbf{x}_r = \mathbf{x}_0 + z_m\mathbf{n}$（深度 $z_m = 1/\sigma_t'$）</li>
+<li>镜像源：位于 $\mathbf{x}_v = \mathbf{x}_0 - (z_m + 2z_b)\mathbf{n}$</li>
+</ol>
+<p>其中 $z_b = 2AD$ 是外推边界距离。</p>
+<p><strong>BSSRDF的扩散近似</strong></p>
+<p>双向次表面散射分布函数（BSSRDF）定义出射辐射亮度与入射辐照度的关系：
+$$S(\mathbf{x}_i, \boldsymbol{\omega}_i; \mathbf{x}_o, \boldsymbol{\omega}_o) = \frac{dL_o(\mathbf{x}_o, \boldsymbol{\omega}_o)}{dE_i(\mathbf{x}_i, \boldsymbol{\omega}_i)}$$
+在扩散近似下：
+$$S_d(\mathbf{x}_i, \mathbf{x}_o) = \frac{1}{4\pi} F_t(\eta, \boldsymbol{\omega}_i) R_d(||\mathbf{x}_i - \mathbf{x}_o||) F_t(\eta, \boldsymbol{\omega}_o)$$
+扩散剖面 $R_d(r)$ 为：
+$$R_d(r) = \frac{\alpha'}{4\pi} \left[ \frac{e^{-\sigma_{tr}d_r}}{d_r^2} + \frac{e^{-\sigma_{tr}d_v}}{d_v^2} \right]$$
+其中：</p>
+<ul>
+<li>$d_r = \sqrt{r^2 + z_r^2}$：到真实源的距离</li>
+<li>$d_v = \sqrt{r^2 + z_v^2}$：到虚拟源的距离</li>
+<li>$\sigma_{tr} = \sqrt{3\sigma_a\sigma_t'}$：有效传输系数</li>
+<li>$\alpha' = \sigma_s'/\sigma_t'$：约化反照率</li>
+</ul>
+<h3 id="533">5.3.3 多层材质模型</h3>
+<p><strong>层状介质的解析解</strong></p>
+<p>对于N层平行介质，每层有不同的光学性质${\sigma_{a,i}, \sigma_{s,i}, g_i}$。在每层内：
+$$\frac{d^2\phi_i}{dz^2} - \kappa_i^2 \phi_i = 0$$
+通解形式：
+$$\phi_i(z) = A_i e^{-\kappa_i z} + B_i e^{\kappa_i z}$$
+<strong>界面连续性条件</strong></p>
+<p>在层间界面 $z = z_i$：</p>
+<ol>
+<li>通量连续：$\phi_i(z_i) = \phi_{i+1}(z_i)$</li>
+<li>通量导数连续：$D_i(d\phi_i/dz)|_i = D_{i+1}(d\phi_{i+1}/dz)|_i$</li>
+</ol>
+<p>构成线性方程组，可解得各层系数。</p>
+<p><strong>多极展开方法</strong></p>
+<p>对于更复杂的几何，使用多极展开：
+$$\phi(\mathbf{x}) = \sum_{n=0}^{\infty} \sum_{m=-n}^{n} a_{nm} \psi_{nm}(\mathbf{x})$$
+其中 $\psi_{nm}$ 是满足边界条件的基函数。</p>
+<p><strong>快速多极方法（FMM）</strong></p>
+<p>对于大量散射源，直接求和的复杂度为 $O(N^2)$。FMM通过层次分解将复杂度降至 $O(N \log N)$：</p>
+<ol>
+<li>将空间分解为八叉树</li>
+<li>对远场使用多极展开</li>
+<li>对近场直接计算</li>
+</ol>
+<p><strong>量化多层SSS</strong></p>
+<p>定义有效穿透深度：
+$$d_{eff} = \frac{1}{\sigma_{tr}} = \frac{1}{\sqrt{3\sigma_a\sigma_t'}}$$
+多层材质的有效BSSRDF可通过加权平均近似：
+$$S_{multi} \approx \sum_i w_i S_i$$
+权重 $w_i$ 基于各层的光学厚度和位置。</p>
+<h2 id="54">5.4 参与介质</h2>
+<p>参与介质（Participating Media）是指光在其中传播时会发生吸收、发射和散射的介质，如烟雾、云、水等。本节探讨如何在体积渲染框架下处理这些介质。</p>
+<h3 id="541">5.4.1 均匀与非均匀介质</h3>
+<p><strong>均匀介质</strong></p>
+<p>在均匀介质中，光学性质不随空间变化：$\sigma_a$、$\sigma_s$、$g$ 为常数。</p>
+<p>透射率的解析形式：
+$$T(s) = e^{-\sigma_t s}$$
+内散射积分简化为：
+$$L_s = \sigma_s \int_0^s e^{-\sigma_t t} \int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) L_{in}(\mathbf{x}_0 + t\boldsymbol{\omega}, \boldsymbol{\omega}') d\boldsymbol{\omega}' dt$$
+<strong>非均匀介质</strong></p>
+<p>光学性质随空间变化：$\sigma_a(\mathbf{x})$、$\sigma_s(\mathbf{x})$、$g(\mathbf{x})$。</p>
+<p>透射率的一般形式：
+$$T(s_1, s_2) = \exp\left(-\int_{s_1}^{s_2} \sigma_t(\mathbf{x}(s)) ds\right)$$
+光学厚度（optical depth）：
+$$\tau(s_1, s_2) = \int_{s_1}^{s_2} \sigma_t(\mathbf{x}(s)) ds$$
+则 $T = e^{-\tau}$。</p>
+<p><strong>介质的数学分类</strong></p>
+<ol>
+<li><strong>分段常数</strong>：空间划分为有限个均匀区域</li>
+<li><strong>连续变化</strong>：$\sigma_t(\mathbf{x})$ 是连续函数</li>
+<li><strong>随机介质</strong>：$\sigma_t(\mathbf{x})$ 是随机场</li>
+</ol>
+<p>对于随机介质，使用统计描述：
+$$\langle T \rangle = \exp\left(-\int \langle\sigma_t\rangle ds\right) \cdot C(\tau)$$
+其中 $C(\tau)$ 是相关修正因子。</p>
+<h3 id="542">5.4.2 光线行进算法</h3>
+<p><strong>Ray Marching 基础</strong></p>
+<p>将射线离散为 $N$ 步，步长 $\Delta s$：
+$$L_{out} = L_{in} \prod_{i=0}^{N-1} T_i + \sum_{i=0}^{N-1} L_{s,i} \prod_{j=i+1}^{N-1} T_j$$
+其中：</p>
+<ul>
+<li>$T_i = \exp(-\sigma_{t,i} \Delta s)$：第 i 步的透射率</li>
+<li>$L_{s,i}$：第 i 步的散射贡献</li>
+</ul>
+<p><strong>自适应步长策略</strong></p>
+<ol>
+<li>
+<p><strong>基于光学厚度</strong>：保持每步 $\Delta\tau = \sigma_t \Delta s$ 恒定
+$$\Delta s_i = \frac{\Delta \tau_{target}}{\sigma_t(\mathbf{x}_i)}$$</p>
+</li>
+<li>
+<p><strong>基于误差估计</strong>：使用Richardson外推
+$$\epsilon = |L_{N} - L_{2N}|$$
+当 $\epsilon &gt; \epsilon_{max}$ 时细分步长。</p>
+</li>
+<li>
+<p><strong>重要性引导</strong>：在重要区域（如光源附近）使用更小步长</p>
+</li>
+</ol>
+<p><strong>Woodcock Tracking（Delta Tracking）</strong></p>
+<p>虚拟粒子方法，将非均匀介质转化为均匀介质处理：</p>
+<ol>
+<li>定义主消光系数：$\bar{\sigma}_t \geq \max \sigma_t(\mathbf{x})$</li>
+<li>虚拟消光系数：$\sigma_n(\mathbf{x}) = \bar{\sigma}_t - \sigma_t(\mathbf{x})$</li>
+<li>采样自由程：$s \sim \bar{\sigma}_t \exp(-\bar{\sigma}_t s)$</li>
+<li>在采样点以概率 $\sigma_t(\mathbf{x})/\bar{\sigma}_t$ 发生真实相互作用</li>
+</ol>
+<p>优点：无偏，处理高频变化介质
+缺点：$\bar{\sigma}_t \gg \sigma_t$ 时效率低</p>
+<p><strong>Ratio Tracking</strong></p>
+<p>Woodcock tracking 的推广，使用控制变量：
+$$\bar{\sigma}_t(\mathbf{x}) = \mu(\mathbf{x}) \sigma_t^{max}$$
+其中 $0 &lt; \mu(\mathbf{x}) \leq 1$ 是空间变化的控制函数。</p>
+<p><strong>Spectral Tracking</strong></p>
+<p>对于波长相关的介质，独立追踪每个波长会导致相关性丢失。联合采样策略：
+$$P(s, \lambda) = \sigma_t(\mathbf{x}(s), \lambda) \exp\left(-\int_0^s \sigma_t(\mathbf{x}(t), \lambda) dt\right) P(\lambda)$$</p>
+<h3 id="543">5.4.3 重要性采样策略</h3>
+<p><strong>距离采样</strong></p>
+<p>给定透射率 $T(s) = \exp(-\int\sigma_t ds)$，采样碰撞距离：</p>
+<ol>
+<li>
+<p><strong>均匀介质</strong>：逆变换采样
+$$s = -\frac{\ln(1-\xi)}{\sigma_t}$$</p>
+</li>
+<li>
+<p><strong>分段常数</strong>：逐段采样
+        <code>τ_target = -ln(1-ξ)
+        τ_sum = 0
+        for each segment i:
+            τ_i = σ_t,i * length_i
+            if τ_sum + τ_i &gt; τ_target:
+                s = (τ_target - τ_sum) / σ_t,i
+                break
+            τ_sum += τ_i</code></p>
+</li>
+<li>
+<p><strong>一般非均匀</strong>：数值求解
+$$\int_0^s \sigma_t(\mathbf{x}(t)) dt = -\ln(1-\xi)$$
+<strong>相位函数采样</strong></p>
+</li>
+<li>
+<p><strong>Henyey-Greenstein</strong>：见5.2.3节</p>
+</li>
+<li><strong>Rayleigh</strong>：使用拒绝采样或分解方法</li>
+<li><strong>Tabulated</strong>：构建CDF并二分查找</li>
+</ol>
+<p><strong>联合重要性采样</strong></p>
+<p>考虑光源方向的重要性：
+$$p(\boldsymbol{\omega}) = \alpha p_{phase}(\boldsymbol{\omega}) + (1-\alpha) p_{light}(\boldsymbol{\omega})$$
+MIS（Multiple Importance Sampling）权重：
+$$w_{phase} = \frac{p_{phase}^2}{p_{phase}^2 + p_{light}^2}$$
+<strong>Equiangular Sampling</strong></p>
+<p>对于点光源或小光源，沿射线的重要性呈现峰值。等角采样：
+$$t(\xi) = D \tan\left((1-\xi)\theta_a + \xi\theta_b\right)$$
+其中 $D$ 是到光源的最近距离，$[\theta_a, \theta_b]$ 是角度范围。</p>
+<p><strong>Joint Importance Sampling</strong></p>
+<p>结合距离采样和等角采样：
+$$p(t) = \frac{1}{2} p_{distance}(t) + \frac{1}{2} p_{equiangular}(t)$$
+使用MIS组合两种策略的贡献。</p>
+<p><strong>体积光子映射</strong></p>
+<p>存储介质中的光子：</p>
+<pre class="codehilite"><code>struct VolumePhoton {
+    vec3 position
+    vec3 direction  
+    vec3 power
+    float radius    // 用于密度估计
+}
+</code></pre>
+
+<p>辐射亮度估计：
+$$L(\mathbf{x}, \boldsymbol{\omega}) = \frac{1}{4\pi r^3} \sum_{i \in N(\mathbf{x},r)} p(\boldsymbol{\omega}_i \to \boldsymbol{\omega}) \Phi_i$$</p>
+<h2 id="55">5.5 能量守恒与互易性</h2>
+<p>能量守恒和互易性是基于物理的渲染的两个基本原理。它们不仅确保渲染结果的物理正确性，还提供了验证算法实现的有力工具。</p>
+<h3 id="551">5.5.1 能量守恒的数学表述</h3>
+<p><strong>BRDF的能量守恒</strong></p>
+<p>对于任意入射方向 $\boldsymbol{\omega}_i$，反射的总能量不能超过入射能量：
+$$\int_{\Omega} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o \leq 1$$
+定义方向反射率（directional albedo）：
+$$\rho_d(\boldsymbol{\omega}_i) = \int_{\Omega} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_o$$
+能量守恒要求：$\rho_d(\boldsymbol{\omega}_i) \leq 1$ 对所有方向成立。</p>
+<p><strong>半球反射率（Hemispherical Albedo）</strong></p>
+<p>平均所有入射方向：
+$$\rho_{hh} = \frac{1}{\pi} \int_{\Omega} \int_{\Omega} f_r(\boldsymbol{\omega}_i, \boldsymbol{\omega}_o) (\boldsymbol{\omega}_i \cdot \mathbf{n}) (\boldsymbol{\omega}_o \cdot \mathbf{n}) d\boldsymbol{\omega}_i d\boldsymbol{\omega}_o$$
+对于朗伯表面：$\rho_{hh} = \rho$（反射率常数）。</p>
+<p><strong>相位函数的能量守恒</strong></p>
+<p>已在5.2.2节讨论：
+$$\int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) d\boldsymbol{\omega} = 1$$
+<strong>辐射传输方程的能量守恒</strong></p>
+<p>对RTE在所有方向积分：
+$$\int_{S^2} (\boldsymbol{\omega} \cdot \nabla) L d\boldsymbol{\omega} + \sigma_a \phi - \sigma_a \phi_e = 0$$
+其中利用了散射项的守恒性。这导出辐射通量的守恒方程：
+$$\nabla \cdot \mathbf{F} + \sigma_a (\phi - \phi_e) = 0$$
+<strong>渲染方程的能量分析</strong></p>
+<p>定义传输算子 $\mathcal{T}$：
+$$(\mathcal{T}L)(\mathbf{x}, \boldsymbol{\omega}) = \int_{\mathcal{M}} \int_{S^2} K(\mathbf{x}, \boldsymbol{\omega} \leftarrow \mathbf{x}', \boldsymbol{\omega}') L(\mathbf{x}', \boldsymbol{\omega}') d\boldsymbol{\omega}' d\mathbf{x}'$$
+能量守恒要求算子范数 $||\mathcal{T}|| &lt; 1$，保证Neumann级数收敛：
+$$L = L_e + \mathcal{T}L_e + \mathcal{T}^2L_e + ...$$</p>
+<h3 id="552-helmholtz">5.5.2 Helmholtz互易原理</h3>
+<p><strong>基本陈述</strong></p>
+<p>光路可逆：交换光源和探测器位置，测得的辐射亮度相同。</p>
+<p>数学表述：
+$$f_r(\boldsymbol{\omega}_i \to \boldsymbol{\omega}_o) = f_r(\boldsymbol{\omega}_o \to \boldsymbol{\omega}_i)$$
+<strong>互易性的推广</strong></p>
+<ol>
+<li>
+<p><strong>BSSRDF互易性</strong>：
+$$S(\mathbf{x}_i, \boldsymbol{\omega}_i; \mathbf{x}_o, \boldsymbol{\omega}_o) = S(\mathbf{x}_o, -\boldsymbol{\omega}_o; \mathbf{x}_i, -\boldsymbol{\omega}_i)$$</p>
+</li>
+<li>
+<p><strong>相位函数互易性</strong>：
+$$p(\boldsymbol{\omega}_i \to \boldsymbol{\omega}_o) = p(-\boldsymbol{\omega}_o \to -\boldsymbol{\omega}_i)$$</p>
+</li>
+<li>
+<p><strong>传输互易性</strong>：
+    设 $G(\mathbf{x}, \mathbf{y})$ 为从 <strong>y</strong> 到 <strong>x</strong> 的格林函数，则：
+$$G(\mathbf{x}, \mathbf{y}) = G(\mathbf{y}, \mathbf{x})$$
+<strong>互易性的物理起源</strong></p>
+</li>
+</ol>
+<p>基于时间反演对称性和洛伦兹互易定理。在经典电磁理论中：
+$$\int_V \mathbf{J}_1 \cdot \mathbf{E}_2 dV = \int_V \mathbf{J}_2 \cdot \mathbf{E}_1 dV$$
+<strong>非互易情况</strong></p>
+<ol>
+<li><strong>磁光效应</strong>：存在外磁场时</li>
+<li><strong>非线性光学</strong>：强光场下</li>
+<li><strong>荧光和磷光</strong>：涉及能级跃迁</li>
+</ol>
+<p><strong>互易性在渲染中的应用</strong></p>
+<ol>
+<li><strong>双向路径追踪</strong>：连接光路时利用互易性</li>
+<li><strong>光子映射</strong>：光子传播和聚集查询的对称性</li>
+<li><strong>算法验证</strong>：检查BRDF实现是否满足互易性</li>
+</ol>
+<h3 id="553">5.5.3 白炉测试与验证</h3>
+<p><strong>白炉测试（White Furnace Test）</strong></p>
+<p>在完全封闭的均匀发光环境中，所有点的辐射亮度应相等。</p>
+<p>设置：</p>
+<ul>
+<li>封闭场景，所有表面 $\rho = 1$（完美漫反射）</li>
+<li>均匀发射 $L_e = 1$</li>
+<li>无吸收介质</li>
+</ul>
+<p>理论结果：$L(\mathbf{x}, \boldsymbol{\omega}) = 1$ 处处成立。</p>
+<p><strong>数值验证方法</strong></p>
+<ol>
+<li>
+<p><strong>蒙特卡洛收敛性</strong>：
+$$\text{Variance}[L_N] \propto \frac{1}{N}$$
+其中 $N$ 是样本数。</p>
+</li>
+<li>
+<p><strong>能量平衡检查</strong>：
+$$\left| \frac{\text{Power}_{out} - \text{Power}_{in}}{\text{Power}_{in}} \right| &lt; \epsilon$$</p>
+</li>
+<li>
+<p><strong>互易性测试</strong>：
+    交换光源和相机，比较结果：
+$$\left| \frac{L_{forward} - L_{backward}}{L_{forward}} \right| &lt; \epsilon$$
+<strong>体积介质的白炉测试</strong></p>
+</li>
+</ol>
+<p>对于参与介质，修改条件：</p>
+<ul>
+<li>单散射反照率 $\alpha = 1$（纯散射）</li>
+<li>各向同性相位函数</li>
+</ul>
+<p>稳态解：$\phi(\mathbf{x}) = \text{const}$</p>
+<p><strong>灰炉测试（Gray Furnace Test）</strong></p>
+<p>更一般的情况，表面反射率 $\rho &lt; 1$：
+$$L = \frac{L_e}{1 - \rho}$$
+这提供了多次反射正确实现的验证。</p>
+<p><strong>基于物理约束的调试</strong></p>
+<ol>
+<li><strong>正定性</strong>：$L \geq 0, T \in [0,1]$</li>
+<li><strong>归一化</strong>：$\int p d\omega = 1, \int \text{BRDF} \cos \theta d\omega \leq 1$  </li>
+<li><strong>对称性</strong>：检查旋转不变性等</li>
+<li><strong>极限情况</strong>：<ul>
+<li>$\sigma_t \to 0$：退化为真空</li>
+<li>$\sigma_s \to 0$：纯吸收（Beer定律）</li>
+<li>$g \to 0$：各向同性散射</li>
+</ul>
+</li>
+</ol>
+<p><strong>误差度量</strong></p>
+<p>相对误差：
+$$E_{rel} = \frac{||L_{computed} - L_{reference}||}{||L_{reference}||}$$
+RMSE（均方根误差）：
+$$E_{RMS} = \sqrt{\frac{1}{N} \sum_i (L_i^{comp} - L_i^{ref})^2}$$
+感知误差（如SSIM）考虑人眼特性。</p>
+<h2 id="_1">本章小结</h2>
+<p>本章建立了基于物理的渲染的数学框架，核心是辐射传输方程（RTE）：
+$$(\boldsymbol{\omega} \cdot \nabla) L + \sigma_t L = \sigma_a L_e + \sigma_s \int_{S^2} p(\boldsymbol{\omega}' \to \boldsymbol{\omega}) L(\boldsymbol{\omega}') d\boldsymbol{\omega}'$$
+关键概念：</p>
+<ul>
+<li><strong>光学系数</strong>：吸收 $\sigma_a$、散射 $\sigma_s$、消光 $\sigma_t = \sigma_a + \sigma_s$</li>
+<li><strong>相位函数</strong>：描述散射方向分布，如Henyey-Greenstein</li>
+<li><strong>扩散近似</strong>：高散射介质的简化，导出BSSRDF</li>
+<li><strong>参与介质算法</strong>：Ray Marching、Woodcock Tracking等</li>
+<li><strong>基本原理</strong>：能量守恒和Helmholtz互易性</li>
+</ul>
+<p>这些概念构成了体积渲染的统一框架，为后续章节中的神经渲染方法提供物理基础。</p>
+<h2 id="_2">练习题</h2>
+<h3 id="_3">基础题</h3>
+<p><strong>练习 5.1</strong> 证明对于纯吸收介质（$\sigma_s = 0$），辐射传输方程的解满足比尔-朗伯定律。</p>
+<details>
+<summary>提示</summary>
+<p>将 $\sigma_s = 0$ 代入RTE，得到一阶常微分方程。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>设 $\sigma_s = 0$，RTE简化为：
+$$(\boldsymbol{\omega} \cdot \nabla) L + \sigma_a L = \sigma_a L_e$$
+沿射线参数化，$\partial L/\partial s + \sigma_a L = \sigma_a L_e$。</p>
+<p>齐次解：$L_h = C e^{-\sigma_a s}$</p>
+<p>特解：设$L_p = A$，代入得$A = L_e$</p>
+<p>通解：$L(s) = L_e + (L(0) - L_e)e^{-\sigma_a s}$</p>
+<p>当$L_e = 0$时，$L(s) = L(0)e^{-\sigma_a s}$，即比尔-朗伯定律。</p>
+</details>
+<p><strong>练习 5.2</strong> 推导Henyey-Greenstein相位函数的归一化常数。</p>
+<details>
+<summary>提示</summary>
+<p>使用球坐标系，积分$\int p(\cos\theta)\sin\theta d\theta d\phi = 1$。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>HG相位函数：
+$$p_{HG}(\cos\theta) = C \frac{1 - g^2}{(1 + g^2 - 2g\cos\theta)^{3/2}}$$
+归一化条件：
+$$\int_0^{2\pi} d\phi \int_0^{\pi} p_{HG}(\cos\theta) \sin\theta d\theta = 1$$
+令$\mu = \cos\theta$：
+$$2\pi C (1-g^2) \int_{-1}^{1} \frac{d\mu}{(1 + g^2 - 2g\mu)^{3/2}} = 1$$
+计算积分：
+$$I = \frac{2}{|g|} \left[ \frac{1}{\sqrt{1+g^2-2g\mu}} \right]_{-1}^{1} = \frac{2}{|g|} \left( \frac{1}{|1-g|} - \frac{1}{1+|g|} \right) = \frac{4}{1-g^2}$$
+因此 $C = 1/(4\pi)$。</p>
+</details>
+<p><strong>练习 5.3</strong> 证明扩散系数 $D = 1/(3\sigma_t')$ 的物理意义。</p>
+<details>
+<summary>提示</summary>
+<p>考虑各向同性点源的稳态扩散，利用Fick定律。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>从RTE的P₁近似出发，辐射通量矢量：
+$$\mathbf{E} = \int_{S^2} L(\boldsymbol{\omega})\boldsymbol{\omega} d\boldsymbol{\omega}$$
+在扩散近似下，$L$近似各向同性加小的各向异性项：
+$$L \approx \frac{\phi}{4\pi} + \frac{3}{4\pi} \mathbf{E} \cdot \boldsymbol{\omega}$$
+将此代入RTE并对<strong>ω</strong>加权积分，得到：
+$$\nabla \phi + 3\sigma_t' \mathbf{E} = 0$$
+即 $\mathbf{E} = -\nabla\phi/(3\sigma_t')$，对比Fick定律 $\mathbf{E} = -D\nabla\phi$，得 $D = 1/(3\sigma_t')$。</p>
+<p>物理意义：扩散系数与约化平均自由程 $1/\sigma_t'$ 成正比，因子1/3来自三维空间的各向同性平均。</p>
+</details>
+<h3 id="_4">挑战题</h3>
+<p><strong>练习 5.4</strong> 推导双层介质（表层+基底）的BSSRDF解析表达式。</p>
+<details>
+<summary>提示</summary>
+<p>使用层间的连续性条件和边界条件，求解耦合的扩散方程。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>设两层光学性质为 $(D_1, \kappa_1)$ 和 $(D_2, \kappa_2)$，厚度为 $d$。</p>
+<p>每层的通解：</p>
+<ul>
+<li>层1：$\phi_1(z) = A_1 e^{-\kappa_1 z} + B_1 e^{\kappa_1 z}$</li>
+<li>层2：$\phi_2(z) = A_2 e^{-\kappa_2(z-d)}$</li>
+</ul>
+<p>边界条件：</p>
+<ol>
+<li>$z = 0$（表面）：$\phi_1 + 2AD_1\partial\phi_1/\partial z = 0$</li>
+<li>$z = d$（界面）：$\phi_1 = \phi_2, D_1\partial\phi_1/\partial z = D_2\partial\phi_2/\partial z$</li>
+<li>$z \to \infty$：$\phi_2 \to 0$</li>
+</ol>
+<p>求解得到传递矩阵，最终BSSRDF为两个指数项的组合，反映两层的贡献。</p>
+</details>
+<p><strong>练习 5.5</strong> 设计一个自适应的ray marching算法，基于局部光学厚度调整步长。</p>
+<details>
+<summary>提示</summary>
+<p>目标是保持每步的光学厚度$\Delta\tau$近似恒定，同时限制最大和最小步长。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>算法框架：</p>
+<ol>
+<li>设定目标光学厚度 $\Delta\tau_{target}$（如0.1）</li>
+<li>在当前位置 $\mathbf{x}$ 估计 $\sigma_t(\mathbf{x})$</li>
+<li>计算步长：$\Delta s = \min(\max(\Delta\tau_{target}/\sigma_t(\mathbf{x}), \Delta s_{min}), \Delta s_{max})$</li>
+<li>预测下一步的$\sigma_t$，如果变化剧烈则细分</li>
+<li>使用误差估计（如Richardson外推）验证精度</li>
+</ol>
+<p>关键优化：</p>
+<ul>
+<li>使用$\sigma_t$的梯度信息预测变化</li>
+<li>在边界附近强制小步长</li>
+<li>缓存已计算的$\sigma_t$值</li>
+<li>考虑视觉重要性（近处用小步长）</li>
+</ul>
+</details>
+<p><strong>练习 5.6</strong> 分析Woodcock tracking在极端情况下的效率，并提出改进方案。</p>
+<details>
+<summary>提示</summary>
+<p>考虑$\sigma_t^{max} \gg \sigma_t^{average}$的情况，分析期望的拒绝次数。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>Woodcock tracking的效率分析：</p>
+<p>平均接受概率：
+$$p_{accept} = \frac{\langle \sigma_t \rangle}{\sigma_t^{max}}$$</p>
+<p>期望步数：$N = 1/p_{accept}$</p>
+<p>极端情况：</p>
+<ol>
+<li>
+<p>稀疏峰值：$\sigma_t$在小区域很大，其他地方接近0</p>
+<ul>
+<li>效率极低：$N \approx \sigma_t^{max}/\sigma_t^{avg} \gg 1$</li>
+</ul>
+</li>
+<li>
+<p>改进方案：</p>
+<ul>
+<li>空间划分：将空间分成多个区域，每个使用局部$\sigma_t^{max}$</li>
+<li>Ratio tracking：使用空间变化的控制函数$\mu(\mathbf{x})$</li>
+<li>混合方法：在高变化区域用ray marching，均匀区域用Woodcock</li>
+</ul>
+</li>
+</ol>
+<p>实现要点：</p>
+<ul>
+<li>预计算$\sigma_t$的空间分布统计</li>
+<li>自适应选择采样策略</li>
+<li>使用重要性信息（如到光源距离）调整控制函数</li>
+</ul>
+</details>
+<p><strong>练习 5.7</strong> 证明在多次散射主导的情况下，各向异性散射介质可以用等效的各向同性散射介质近似。</p>
+<details>
+<summary>提示</summary>
+<p>使用相似性理论（similarity theory），考虑多次散射后的角度分布。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>相似性理论的核心思想：经过多次散射后，光的方向分布趋于各向同性。</p>
+<p>定义约化系数：</p>
+<ul>
+<li>$\sigma_s' = \sigma_s(1-g)$：约化散射系数</li>
+<li>$\sigma_t' = \sigma_a + \sigma_s'$：约化消光系数</li>
+</ul>
+<p>证明步骤：</p>
+<ol>
+<li>考虑n次散射后的角度分布，使用中心极限定理</li>
+<li>显示均方散射角 $\langle\theta^2\rangle \propto n(1-g)$</li>
+<li>定义扩散长度 $\ell^<em> = 1/\sigma_t'$，在距离 $\gg \ell^</em>$ 时分布接近各向同性</li>
+</ol>
+<p>等效性：</p>
+<ul>
+<li>原介质：$(\sigma_a, \sigma_s, g)$</li>
+<li>等效介质：$(\sigma_a, \sigma_s', 0)$</li>
+</ul>
+<p>适用条件：</p>
+<ul>
+<li>光学厚度 $\tau \gg 1$</li>
+<li>观察距离 $\gg \ell^*$</li>
+<li>单散射反照率 $\alpha \approx 1$</li>
+</ul>
+<p>这解释了为什么扩散近似在次表面散射中如此有效。</p>
+</details>
+<h2 id="_5">常见陷阱与错误</h2>
+<ol>
+<li>
+<p><strong>相位函数归一化错误</strong></p>
+<ul>
+<li>错误：忘记$4\pi$因子或使用错误的积分域</li>
+<li>正确：$\int_{S^2} p d\omega = 1$，注意是在整个球面积分</li>
+</ul>
+</li>
+<li>
+<p><strong>能量不守恒的BRDF</strong></p>
+<ul>
+<li>错误：BRDF参数设置导致 $\int f_r \cos\theta d\omega &gt; 1$</li>
+<li>检查：实现白炉测试验证</li>
+</ul>
+</li>
+<li>
+<p><strong>扩散近似的误用</strong></p>
+<ul>
+<li>错误：在薄层或低散射介质使用扩散近似</li>
+<li>准则：光学厚度 $\tau &gt; 10$ 且 $\alpha &gt; 0.9$</li>
+</ul>
+</li>
+<li>
+<p><strong>数值不稳定</strong></p>
+<ul>
+<li>错误：在 $\sigma_t \approx 0$ 时直接计算 $\exp(-\sigma_t s)/\sigma_t$</li>
+<li>解决：使用泰勒展开或特殊处理</li>
+</ul>
+</li>
+<li>
+<p><strong>采样偏差</strong></p>
+<ul>
+<li>错误：重要性采样的PDF与实际采样不匹配</li>
+<li>验证：统计采样分布，与理论PDF比较</li>
+</ul>
+</li>
+<li>
+<p><strong>边界条件处理</strong></p>
+<ul>
+<li>错误：忽略菲涅尔效应或使用错误的外推距离</li>
+<li>影响：次表面散射结果偏暗或偏亮</li>
+</ul>
+</li>
+</ol>
+<h2 id="_6">最佳实践检查清单</h2>
+<h3 id="_7">算法实现</h3>
+<ul>
+<li>[ ] RTE求解器通过白炉测试</li>
+<li>[ ] BRDF满足能量守恒和互易性</li>
+<li>[ ] 相位函数正确归一化</li>
+<li>[ ] 数值方法在极限情况下稳定</li>
+</ul>
+<h3 id="_8">性能优化</h3>
+<ul>
+<li>[ ] 使用空间数据结构加速介质查询</li>
+<li>[ ] 实现多种采样策略并用MIS组合</li>
+<li>[ ] 缓存重复计算（如光学厚度积分）</li>
+<li>[ ] 考虑LOD：远处使用简化模型</li>
+</ul>
+<h3 id="_9">验证测试</h3>
+<ul>
+<li>[ ] 与解析解对比（如单次散射）</li>
+<li>[ ] 检查能量守恒（输入功率=输出功率）</li>
+<li>[ ] 验证互易性（交换光源和相机）</li>
+<li>[ ] 收敛性分析（误差 $\propto 1/\sqrt{N}$）</li>
+</ul>
+<h3 id="_10">参数设置</h3>
+<ul>
+<li>[ ] 物理合理的光学系数（$\sigma_a, \sigma_s$基于测量数据）</li>
+<li>[ ] 相位函数的g参数符合材质特性</li>
+<li>[ ] 步长设置平衡精度和性能</li>
+<li>[ ] 采样数量基于场景复杂度调整</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter4.html" class="nav-link prev">← 第4章：基于图像的渲染</a><a href="./chapter6.html" class="nav-link next">第6章：神经辐射场基础（NeRF） →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

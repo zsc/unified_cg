@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第9章：显式神经表示</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/highlight.css">
+    <script src="./assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-list"><li class=""><a href="./index.html">统一计算机图形学：从几何光学到波动物理</a></li><li class=""><a href="./chapter1.html">第1章：几何光学与渲染基础</a></li><li class=""><a href="./chapter2.html">第2章：光场与近场光学</a></li><li class=""><a href="./chapter3.html">第三章：基于点的渲染与统一体渲染方程</a></li><li class=""><a href="./chapter4.html">第4章：基于图像的渲染</a></li><li class=""><a href="./chapter5.html">第5章：基于物理的渲染</a></li><li class=""><a href="./chapter6.html">第6章：神经辐射场基础（NeRF）</a></li><li class=""><a href="./chapter7.html">第7章：动态神经辐射场</a></li><li class=""><a href="./chapter8.html">第8章：4D神经表示与频域方法</a></li><li class="active"><a href="./chapter9.html">第9章：显式神经表示</a></li><li class=""><a href="./chapter10.html">第10章：3D高斯溅射</a></li><li class=""><a href="./chapter11.html">第11章：逆向渲染的数学基础</a></li><li class=""><a href="./chapter12.html">第12章：可微渲染 (Differentiable Rendering)</a></li><li class=""><a href="./chapter13.html">第13章：材质与几何重建</a></li><li class=""><a href="./chapter14.html">第14章：神经逆向渲染</a></li><li class=""><a href="./chapter15.html">第15章：标量波动光学基础</a></li><li class=""><a href="./chapter16.html">第16章：相干理论</a></li><li class=""><a href="./chapter17.html">第17章：波前整形与自适应光学</a></li><li class=""><a href="./chapter18.html">第18章：统计光学与散斑</a></li><li class=""><a href="./chapter19.html">第19章：衍射理论与计算方法</a></li><li class=""><a href="./chapter20.html">第20章：非线性光学与显微成像</a></li><li class=""><a href="./chapter21.html">第21章：半经典光-物质相互作用</a></li><li class=""><a href="./chapter22.html">第22章：偏振光学基础</a></li><li class=""><a href="./chapter23.html">第23章：偏振渲染</a></li><li class=""><a href="./chapter24.html">第24章：全息显示与计算全息</a></li><li class=""><a href="./chapter25.html">第25章：超材料与变换光学</a></li><li class=""><a href="./chapter26.html">第26章：拓扑光子学</a></li><li class=""><a href="./chapter27.html">第27章：量子光学基础</a></li><li class=""><a href="./chapter28.html">第28章：量子成像与计算</a></li><li class=""><a href="./CLAUDE.html">Untitled</a></li></ul>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="9">第9章：显式神经表示</h1>
+<p>在前面的章节中，我们探讨了将辐射场表示为连续函数的隐式神经表示（NeRF）。本章转向显式表示方法，这些方法直接在离散空间结构中存储场景信息。显式表示的核心优势在于查询效率和直观的空间组织，而主要挑战在于内存需求和离散化带来的伪影。我们将展示如何将这些显式表示统一到体积渲染框架中，并分析它们相对于隐式方法的计算和存储权衡。</p>
+<h2 id="91">9.1 体素网格与八叉树</h2>
+<h3 id="911">9.1.1 经典体素表示</h3>
+<p>最直接的显式表示是规则体素网格。对于分辨率为 $N^3$ 的体素网格，我们将空间离散化为：</p>
+<p>$$\mathbf{x}_{ijk} = \mathbf{x}_{\min} + \left(\frac{i}{N}, \frac{j}{N}, \frac{k}{N}\right) \odot (\mathbf{x}_{\max} - \mathbf{x}_{\min})$$
+其中 $i,j,k \in {0,1,...,N-1}$，$\odot$ 表示逐元素乘积。</p>
+<p>每个体素存储局部体积属性：</p>
+<ul>
+<li>密度：$\sigma_{ijk} \in \mathbb{R}^+$</li>
+<li>辐射：$\mathbf{c}_{ijk} \in \mathbb{R}^3$ 或更一般的球谐系数 $\mathbf{k}_{ijk} \in \mathbb{R}^{(L+1)^2 \times 3}$</li>
+<li>可选：法线 $\mathbf{n}_{ijk}$、材质属性等</li>
+</ul>
+<p>体积渲染方程在离散情况下变为黎曼和近似：
+$$C(\mathbf{r}) = \sum_{n=1}^{N_{\text{samples}}} T_n \alpha_n \mathbf{c}_n$$
+其中：</p>
+<ul>
+<li>$T_n = \exp\left(-\sum_{m=1}^{n-1} \sigma_m \delta_m\right)$ 是透射率</li>
+<li>$\alpha_n = 1 - \exp(-\sigma_n \delta_n)$ 是不透明度  </li>
+<li>$\delta_n$ 是样本间距</li>
+</ul>
+<p>这个离散化引入了 $O(\delta^2)$ 的误差，根据中点法则：
+$$\left|\int_a^b f(t)dt - \sum_{n} f(t_n)\delta\right| \leq \frac{(b-a)\delta^2}{24}\max_{t \in [a,b]}|f''(t)|$$
+<strong>离散化的数学基础</strong></p>
+<p>从连续体积渲染方程出发：
+$$C(\mathbf{r}) = \int_{t_{\text{near}}}^{t_{\text{far}}} T(t)\sigma(\mathbf{r}(t))\mathbf{c}(\mathbf{r}(t),\mathbf{d})dt$$
+其中透射率 $T(t) = \exp\left(-\int_{t_{\text{near}}}^t \sigma(\mathbf{r}(s))ds\right)$。</p>
+<p>应用分片常数近似，假设在区间 $[t_n, t_{n+1}]$ 内：</p>
+<ul>
+<li>$\sigma(\mathbf{r}(t)) \approx \sigma_n$（体素中心值）</li>
+<li>$\mathbf{c}(\mathbf{r}(t),\mathbf{d}) \approx \mathbf{c}_n$</li>
+</ul>
+<p>则透射率的递推关系：
+$$T_{n+1} = T_n \cdot \exp(-\sigma_n \delta_n)$$
+区间 $[t_n, t_{n+1}]$ 对颜色的贡献：
+$$\Delta C_n = \int_{t_n}^{t_{n+1}} T(t)\sigma(t)\mathbf{c}(t)dt \approx T_n \sigma_n \mathbf{c}_n \int_{t_n}^{t_{n+1}} \exp\left(-\int_{t_n}^t \sigma_n ds\right)dt$$
+计算内部积分：
+$$\int_{t_n}^{t_{n+1}} \exp(-\sigma_n(t-t_n))dt = \frac{1}{\sigma_n}[1 - \exp(-\sigma_n \delta_n)]$$
+因此：
+$$\Delta C_n = T_n \mathbf{c}_n [1 - \exp(-\sigma_n \delta_n)] = T_n \alpha_n \mathbf{c}_n$$
+这正是我们使用的离散公式，其中 $\alpha_n = 1 - \exp(-\sigma_n \delta_n)$ 是精确的局部不透明度。</p>
+<p><strong>采样策略与误差分析</strong></p>
+<p>为了减少离散化误差，可以采用更高阶的数值积分方法：</p>
+<ol>
+<li>
+<p><strong>梯形法则</strong>：使用端点值的平均，误差降至 $O(\delta^2)$
+$$\int_{t_i}^{t_{i+1}} f(t)dt \approx \frac{\delta}{2}[f(t_i) + f(t_{i+1})]$$</p>
+</li>
+<li>
+<p><strong>Simpson法则</strong>：使用二次插值，误差为 $O(\delta^4)$
+$$\int_{t_i}^{t_{i+2}} f(t)dt \approx \frac{\delta}{3}[f(t_i) + 4f(t_{i+1}) + f(t_{i+2})]$$</p>
+</li>
+<li>
+<p><strong>自适应采样</strong>：在高频区域（边界、细节）增加采样密度
+   - 基于梯度的细化：$\delta_{\text{local}} = \delta_0 / (1 + |\nabla\sigma|)$
+   - 基于曲率的细化：考虑二阶导数 $\nabla^2\sigma$</p>
+</li>
+</ol>
+<p><strong>误差传播分析</strong></p>
+<p>考虑数值积分误差如何影响最终渲染结果。设真实积分为 $I$，数值近似为 $\tilde{I}$，则：</p>
+<p>对于颜色积分：
+$$\epsilon_C = \left|C - \tilde{C}\right| \leq \int_{t_{\text{near}}}^{t_{\text{far}}} |T(t)||\epsilon_\sigma(t)|dt + \int_{t_{\text{near}}}^{t_{\text{far}}} |\epsilon_T(t)||\sigma(t)\mathbf{c}(t)|dt$$
+其中：</p>
+<ul>
+<li>$\epsilon_\sigma(t)$ 是密度离散化误差</li>
+<li>$\epsilon_T(t)$ 是透射率累积误差</li>
+</ul>
+<p>透射率误差满足递推关系：
+$$\epsilon_{T,n+1} \leq \epsilon_{T,n} + T_n \cdot \epsilon_{\exp}(\sigma_n\delta_n)$$
+其中 $\epsilon_{\exp}(x) \approx \frac{x^2}{2}e^x \cdot \epsilon_x$ 是指数函数的误差传播。</p>
+<p><strong>最优采样密度</strong></p>
+<p>给定总采样预算 $N_{\text{total}}$，如何分配采样点以最小化误差？使用变分法，最优采样密度满足：
+$$\rho(t) \propto \sqrt{|f''(t)|}$$
+其中 $f(t) = T(t)\sigma(t)\mathbf{c}(t)$ 是被积函数。这导致在场景边界（$\sigma$ 变化剧烈）处需要更密集的采样。</p>
+<p><strong>体素遍历算法</strong></p>
+<p>光线与体素网格的相交使用3D DDA（Digital Differential Analyzer）算法：</p>
+<ol>
+<li><strong>初始化</strong>：计算光线进入边界框的参数 $t_{\text{min}}$</li>
+<li>
+<p><strong>步进计算</strong>：
+$$t_{\text{next},d} = t_{\text{current}} + \frac{\text{sign}(\mathbf{d}_d)}{\mathbf{d}_d} \cdot \text{voxelSize}_d$$
+其中 $d \in {x,y,z}$</p>
+</li>
+<li>
+<p><strong>选择最近边界</strong>：$t_{\text{next}} = \min(t_{\text{next},x}, t_{\text{next},y}, t_{\text{next},z})$</p>
+</li>
+<li><strong>更新体素索引</strong>：根据最小 $t$ 对应的维度递增</li>
+</ol>
+<p>该算法的复杂度为 $O(N)$，其中 $N$ 是光线穿过的体素数，最坏情况下为 $O(N_{\text{grid}})$。</p>
+<p><strong>Amanatides-Woo算法详解</strong></p>
+<p>更高效的体素遍历使用Amanatides-Woo算法，它预计算步进参数：</p>
+<p>给定光线 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$：</p>
+<ol>
+<li>
+<p><strong>初始化参数</strong>：
+   - 步长：$\Delta t_x = |\text{voxelSize}/\mathbf{d}_x|$，类似地计算 $\Delta t_y, \Delta t_z$
+   - 初始边界：$t_{\max,x} = (\text{voxelBound}_x - \mathbf{o}_x)/\mathbf{d}_x$
+   - 步进方向：$\text{step}_x = \text{sign}(\mathbf{d}_x)$</p>
+</li>
+<li>
+<p><strong>主循环</strong>：
+   ```
+   while (t &lt; t_far) {
+       // 处理当前体素 (ix, iy, iz)
+       processVoxel(ix, iy, iz)</p>
+<p>// 找到最近的边界
+   if (t_max_x &lt; t_max_y &amp;&amp; t_max_x &lt; t_max_z) {
+       t = t_max_x
+       t_max_x += Delta_t_x
+       ix += step_x
+   } else if (t_max_y &lt; t_max_z) {
+       t = t_max_y
+       t_max_y += Delta_t_y
+       iy += step_y
+   } else {
+       t = t_max_z
+       t_max_z += Delta_t_z
+       iz += step_z
+   }
+   }
+   ```</p>
+</li>
+</ol>
+<p><strong>整数算术优化</strong></p>
+<p>为避免浮点误差累积，可以使用整数算术版本：
+$$\text{error}_d = \text{error}_d + |\mathbf{d}_d| \cdot \text{voxelSize}$$
+当 $\text{error}_d \geq |\mathbf{d}_{\max}| \cdot \text{voxelSize}$ 时，递增对应维度并减少误差。</p>
+<p>这种方法完全避免了浮点数操作，适合硬件实现。</p>
+<h3 id="912">9.1.2 三线性插值</h3>
+<p>为避免块状伪影，我们在体素中心之间进行三线性插值。给定查询点 $\mathbf{x}$，首先找到包含它的体素 $(i,j,k)$，然后计算局部坐标：
+$$\mathbf{u} = \left(\frac{x - x_{i}}{x_{i+1} - x_i}, \frac{y - y_{j}}{y_{j+1} - y_j}, \frac{z - z_{k}}{z_{k+1} - z_k}\right)$$
+三线性插值公式为：
+$$f(\mathbf{x}) = \sum_{i'=0}^{1}\sum_{j'=0}^{1}\sum_{k'=0}^{1} f_{i+i',j+j',k+k'} \prod_{d \in {x,y,z}} \begin{cases}
+1-u_d &amp; \text{if } d'=0 \
+u_d &amp; \text{if } d'=1
+\end{cases}$$
+这等价于三次线性插值的嵌套：
+$$f(\mathbf{x}) = \text{lerp}_z\left(\text{lerp}_y\left(\text{lerp}_x(f_{000}, f_{100}, u_x), \text{lerp}_x(f_{010}, f_{110}, u_x), u_y\right), \ldots, u_z\right)$$
+这保证了 $C^0$ 连续性但在体素边界处导数不连续，导致法线计算时出现阶跃。</p>
+<p><strong>三线性插值的张量表示</strong></p>
+<p>三线性插值可以视为三阶张量的多线性形式。定义插值张量 $\mathcal{F} \in \mathbb{R}^{2 \times 2 \times 2}$，其元素为八个顶点值：
+$$\mathcal{F}_{i'j'k'} = f_{i+i',j+j',k+k'}$$
+则插值结果为：
+$$f(\mathbf{u}) = \mathcal{F} \times_1 \mathbf{w}^x \times_2 \mathbf{w}^y \times_3 \mathbf{w}^z$$
+其中 $\mathbf{w}^d = [1-u_d, u_d]^T$ 是每个维度的权重向量，$\times_n$ 表示沿第 $n$ 个模式的张量乘积。</p>
+<p>展开后：
+$$f(\mathbf{u}) = \sum_{i',j',k' \in {0,1}} \mathcal{F}_{i'j'k'} \cdot w^x_{i'} \cdot w^y_{j'} \cdot w^z_{k'}$$
+这种表示揭示了三线性插值的张量分解结构，为后续的TensoRF方法提供了理论基础。</p>
+<p><strong>插值权重的几何解释</strong></p>
+<p>三线性插值的权重具有直观的几何意义——每个顶点的贡献与查询点到对角顶点形成的子体积成正比：
+$$w_{ijk} = \prod_{d \in {x,y,z}} \begin{cases}
+(1-u_d) &amp; \text{if bit}_d(ijk) = 0 \
+u_d &amp; \text{if bit}_d(ijk) = 1
+\end{cases}$$
+其中 $\text{bit}_d(ijk)$ 提取索引的第 $d$ 位。</p>
+<p><strong>重心坐标解释</strong></p>
+<p>另一种理解是通过重心坐标。在立方体中，任意点 $\mathbf{x}$ 可以表示为八个顶点的加权平均：
+$$\mathbf{x} = \sum_{i=0}^{7} \lambda_i \mathbf{v}_i$$
+其中 $\lambda_i \geq 0$ 且 $\sum_i \lambda_i = 1$。对于立方体，重心坐标恰好等于三线性插值权重：$\lambda_i = w_i$。</p>
+<p>这个性质保证了：</p>
+<ol>
+<li><strong>保凸性</strong>：插值结果在顶点值的凸包内</li>
+<li><strong>线性精确性</strong>：对线性函数 $f(\mathbf{x}) = \mathbf{a}^T\mathbf{x} + b$，插值是精确的</li>
+<li><strong>对称性</strong>：对于对称的顶点值，插值结果也对称</li>
+</ol>
+<p><strong>梯度计算</strong></p>
+<p>尽管函数值连续，梯度在体素边界不连续。体素内部的梯度为：
+$$\nabla f(\mathbf{x}) = \begin{pmatrix}
+\frac{\partial f}{\partial x} \
+\frac{\partial f}{\partial y} \
+\frac{\partial f}{\partial z}
+\end{pmatrix} = \begin{pmatrix}
+\frac{1}{\Delta x} \sum_{j',k'} (f_{1,j',k'} - f_{0,j',k'}) w_{j',k'}^{yz} \
+\frac{1}{\Delta y} \sum_{i',k'} (f_{i',1,k'} - f_{i',0,k'}) w_{i',k'}^{xz} \
+\frac{1}{\Delta z} \sum_{i',j'} (f_{i',j',1} - f_{i',j',0}) w_{i',j'}^{xy}
+\end{pmatrix}$$
+其中 $w^{yz}$ 表示仅在 $y,z$ 维度的权重积。</p>
+<p><strong>梯度不连续性分析</strong></p>
+<p>考虑体素边界 $x = x_{i+1}$ 处的梯度跳变。从左侧接近（体素 $i$ 内）：
+$$\frac{\partial f}{\partial x}\bigg|_{x_{i+1}^-} = \frac{1}{\Delta x}[(f_{i+1,j,k} - f_{i,j,k})(1-u_y)(1-u_z) + \ldots]$$
+从右侧接近（体素 $i+1$ 内）：
+$$\frac{\partial f}{\partial x}\bigg|_{x_{i+1}^+} = \frac{1}{\Delta x}[(f_{i+2,j,k} - f_{i+1,j,k})(1-u_y)(1-u_z) + \ldots]$$
+跳变大小：
+$$\Delta\left(\frac{\partial f}{\partial x}\right) = \frac{\partial f}{\partial x}\bigg|_{x_{i+1}^+} - \frac{\partial f}{\partial x}\bigg|_{x_{i+1}^-}$$
+这个跳变导致：</p>
+<ol>
+<li><strong>法线计算不稳定</strong>：基于梯度的法线在体素边界不连续</li>
+<li><strong>光照计算伪影</strong>：反射计算依赖于法线，导致可见的网格结构</li>
+<li><strong>优化不稳定性</strong>：导数不连续使得基于梯度的优化方法收敛困难</li>
+</ol>
+<p><strong>平滑梯度计算</strong></p>
+<p>为缓解梯度不连续问题，常用方法包括：</p>
+<ol>
+<li>
+<p><strong>中心差分</strong>：使用相邻体素值
+$$\frac{\partial f}{\partial x} \approx \frac{f_{i+1,j,k} - f_{i-1,j,k}}{2\Delta x}$$</p>
+</li>
+<li>
+<p><strong>Sobel算子</strong>：带有平滑核的差分
+$$G_x = \begin{bmatrix}
+   -1 &amp; 0 &amp; 1 \
+   -2 &amp; 0 &amp; 2 \
+   -1 &amp; 0 &amp; 1
+   \end{bmatrix} * f$$</p>
+</li>
+<li>
+<p><strong>预平滑</strong>：先对场进行高斯平滑，再计算梯度</p>
+</li>
+</ol>
+<p><strong>高阶插值方案</strong></p>
+<p>为获得更平滑的结果，可以使用高阶插值：</p>
+<ol>
+<li>
+<p><strong>三次样条插值</strong>：保证 $C^2$ 连续性
+$$f(\mathbf{x}) = \sum_{i=-1}^{2}\sum_{j=-1}^{2}\sum_{k=-1}^{2} f_{i+i_0,j+j_0,k+k_0} \cdot B(u_x-i)B(u_y-j)B(u_z-k)$$
+其中 $B(t)$ 是三次B样条基函数</p>
+</li>
+<li>
+<p><strong>Catmull-Rom插值</strong>：通过4个点的三次插值
+$$f(u) = \frac{1}{2}\begin{pmatrix} u^3 &amp; u^2 &amp; u &amp; 1 \end{pmatrix} \begin{pmatrix}
+   -1 &amp; 3 &amp; -3 &amp; 1 \
+   2 &amp; -5 &amp; 4 &amp; -1 \
+   -1 &amp; 0 &amp; 1 &amp; 0 \
+   0 &amp; 2 &amp; 0 &amp; 0
+   \end{pmatrix} \begin{pmatrix} f_{-1} \ f_0 \ f_1 \ f_2 \end{pmatrix}$$</p>
+</li>
+<li>
+<p><strong>Kaiser-Bessel窗插值</strong>：最小化频谱泄漏
+$$w(r) = \begin{cases}
+   \frac{I_0(\beta\sqrt{1-r^2})}{I_0(\beta)} &amp; |r| \leq 1 \
+   0 &amp; |r| &gt; 1
+   \end{cases}$$
+其中 $I_0$ 是修正贝塞尔函数，$\beta$ 控制窗口形状</p>
+</li>
+</ol>
+<p><strong>B样条基函数详解</strong></p>
+<p>三次均匀B样条基函数定义为：
+$$B(t) = \begin{cases}
+\frac{2}{3} - |t|^2 + \frac{|t|^3}{2} &amp; 0 \leq |t| &lt; 1 \
+\frac{(2-|t|)^3}{6} &amp; 1 \leq |t| &lt; 2 \
+0 &amp; |t| \geq 2
+\end{cases}$$
+它具有以下性质：</p>
+<ul>
+<li><strong>紧支撑</strong>：$\text{supp}(B) = [-2,2]$</li>
+<li><strong>$C^2$ 连续</strong>：二阶导数连续</li>
+<li><strong>划分单位性</strong>：$\sum_{i \in \mathbb{Z}} B(t-i) = 1$</li>
+<li><strong>凸性</strong>：保证插值结果不会产生振荡</li>
+</ul>
+<p><strong>插值的频域分析</strong></p>
+<p>从频域角度看，插值是一个低通滤波过程。三线性插值的频率响应：
+$$H(\boldsymbol{\omega}) = \prod_{d \in {x,y,z}} \text{sinc}^2\left(\frac{\omega_d\Delta_d}{2}\right)$$
+其中 $\text{sinc}(x) = \sin(x)/x$。这表明：</p>
+<ol>
+<li><strong>高频衰减</strong>：以 $|\omega|^{-2}$ 速率衰减</li>
+<li><strong>混叠</strong>：当采样率不足时产生摩尔纹</li>
+<li><strong>相位失真</strong>：非线性相位响应导致形状改变</li>
+</ol>
+<p>更高阶的插值方法提供更好的频率特性，但计算成本也更高。</p>
+<h3 id="913">9.1.3 稀疏八叉树</h3>
+<p>对于大多数场景，空间是稀疏的——大部分体积为空。八叉树通过自适应细分提供了高效的表示。每个节点代表一个立方体区域，可以是：</p>
+<ul>
+<li><strong>叶节点</strong>：存储实际数据 $(\sigma, \mathbf{c})$</li>
+<li><strong>内部节点</strong>：包含8个子节点的指针</li>
+</ul>
+<p>形式化定义：</p>
+<pre class="codehilite"><code>struct OctreeNode {
+    Vector3 center;     // 节点中心
+    float halfWidth;    // 半边长
+    union {
+        struct { float sigma; Vector3 color; } leaf;
+        OctreeNode* children[8];
+    };
+    bool isLeaf;
+}
+</code></pre>
+
+<p>子节点索引通过位操作确定：
+$$\text{childIndex} = (x &gt; x_c) + 2(y &gt; y_c) + 4(z &gt; z_c)$$
+八叉树遍历算法：</p>
+<ol>
+<li>从根节点开始</li>
+<li>计算射线与当前节点的交点</li>
+<li>如果是叶节点，采样并累积</li>
+<li>否则递归访问相交的子节点</li>
+</ol>
+<p>遍历的期望复杂度为 $O(\log N)$，其中 $N$ 是叶节点数。证明基于平衡树的高度为 $\lceil \log_8 N \rceil$。</p>
+<p>存储复杂度从密集网格的 $O(N^3)$ 降低到 $O(N_{\text{occupied}})$，其中 $N_{\text{occupied}}$ 是非空体素的数量。实际压缩率取决于场景稀疏性。</p>
+<p><strong>八叉树的数学结构</strong></p>
+<p>八叉树可以视为空间的递归分解。设空间域为 $\Omega = [0,1]^3$，则第 $\ell$ 层的每个节点对应一个子域：
+$$\Omega_{\ell,i,j,k} = \left[\frac{i}{2^\ell}, \frac{i+1}{2^\ell}\right] \times \left[\frac{j}{2^\ell}, \frac{j+1}{2^\ell}\right] \times \left[\frac{k}{2^\ell}, \frac{k+1}{2^\ell}\right]$$
+其中 $i,j,k \in {0,1,...,2^\ell-1}$。</p>
+<p>特征函数表示：
+$$\chi_{\ell,i,j,k}(\mathbf{x}) = \begin{cases}
+1 &amp; \mathbf{x} \in \Omega_{\ell,i,j,k} \
+0 &amp; \text{otherwise}
+\end{cases}$$
+场的多分辨率表示：
+$$f(\mathbf{x}) = \sum_{\ell=0}^{L} \sum_{(i,j,k) \in \mathcal{L}_\ell} c_{\ell,i,j,k} \chi_{\ell,i,j,k}(\mathbf{x})$$
+其中 $\mathcal{L}_\ell$ 是第 $\ell$ 层的叶节点集合，$c_{\ell,i,j,k}$ 是存储的值。</p>
+<p><strong>高效光线-八叉树相交</strong></p>
+<p>优化的遍历算法利用空间相干性：</p>
+<ol>
+<li>
+<p><strong>参数化相交测试</strong>：对于光线 $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$，计算与节点边界的进入/退出参数：
+$$t_{\text{near}} = \max_{i \in {x,y,z}} \frac{(\mathbf{c}_i - h_i - \mathbf{o}_i)}{\mathbf{d}_i}, \quad t_{\text{far}} = \min_{i \in {x,y,z}} \frac{(\mathbf{c}_i + h_i - \mathbf{o}_i)}{\mathbf{d}_i}$$
+其中 $\mathbf{c}$ 是节点中心，$h$ 是半边长</p>
+</li>
+<li>
+<p><strong>子节点访问顺序</strong>：基于光线方向确定遍历顺序，优先访问更近的子节点：
+   <code>childOrder = ComputeTraversalOrder(rayDirection)
+   for i in childOrder:
+       if RayIntersectsChild(ray, children[i]):
+           TraverseChild(ray, children[i])</code></p>
+</li>
+<li>
+<p><strong>早期终止</strong>：当累积透明度低于阈值时停止遍历：
+$$T &lt; \epsilon \Rightarrow \text{terminate}$$
+<strong>区间算术优化</strong></p>
+</li>
+</ol>
+<p>为避免浮点误差，使用区间算术进行保守的相交测试：
+$$[t_{\text{near}}^-, t_{\text{near}}^+] = \max_{i} \left[\frac{\mathbf{c}_i - h_i - \mathbf{o}_i}{\mathbf{d}_i} - \epsilon, \frac{\mathbf{c}_i - h_i - \mathbf{o}_i}{\mathbf{d}_i} + \epsilon\right]$$
+这保证不会错过任何相交，代价是可能会访问一些额外的边界节点。</p>
+<p><strong>遍历顺序预计算</strong></p>
+<p>对于给定的光线方向 $\mathbf{d} = (d_x, d_y, d_z)$，预计算所有可能的子节点访问顺序：</p>
+<pre class="codehilite"><code>int orderLUT[8][8] = {
+    // d_x &gt;= 0, d_y &gt;= 0, d_z &gt;= 0
+    {0, 1, 2, 3, 4, 5, 6, 7},
+    // d_x &lt; 0, d_y &gt;= 0, d_z &gt;= 0
+    {1, 0, 3, 2, 5, 4, 7, 6},
+    // ...
+};
+int lutIndex = (d_x &lt; 0) + 2*(d_y &lt; 0) + 4*(d_z &lt; 0);
+</code></pre>
+
+<p>这种查找表方法避免了遍历时的排序计算。</p>
+<p><strong>自适应细分准则</strong></p>
+<p>决定何时细分节点的准则包括：</p>
+<ol>
+<li>
+<p><strong>基于密度的细分</strong>：当节点内密度变化超过阈值
+$$\text{var}(\sigma) &gt; \tau_{\sigma} \Rightarrow \text{subdivide}$$</p>
+</li>
+<li>
+<p><strong>基于梯度的细分</strong>：在边界区域增加分辨率
+$$|\nabla\sigma| &gt; \tau_{\nabla} \Rightarrow \text{subdivide}$$</p>
+</li>
+<li>
+<p><strong>视点相关细分</strong>：基于投影大小动态调整
+$$\frac{\text{nodeSize}}{|\mathbf{x} - \mathbf{o}_{\text{camera}}|} &gt; \tau_{\text{pixel}} \Rightarrow \text{subdivide}$$
+<strong>信息论细分准则</strong></p>
+</li>
+</ol>
+<p>使用信息增益来决定是否细分。设节点 $n$ 包含样本集 $S_n$，则信息熵：
+$$H(S_n) = -\sum_{i} p_i \log p_i$$
+其中 $p_i$ 是类别 $i$ 的概率（例如，空/非空）。</p>
+<p>细分后的信息增益：
+$$IG = H(S_n) - \sum_{c=0}^{7} \frac{|S_{n,c}|}{|S_n|} H(S_{n,c})$$
+当 $IG &gt; \tau_{IG}$ 时进行细分。</p>
+<p><strong>误差引导的细分</strong></p>
+<p>基于重建误差的自适应细分：
+$$E_n = \int_{\Omega_n} |f(\mathbf{x}) - \bar{f}_n|^2 d\mathbf{x}$$
+其中 $\bar{f}_n$ 是节点 $n$ 内的常数近似。</p>
+<p>使用泰勒展开估计误差：
+$$E_n \approx \frac{h_n^2}{12} \int_{\Omega_n} |\nabla f(\mathbf{x})|^2 d\mathbf{x}$$
+其中 $h_n$ 是节点大小。这导致基于梯度的细分准则。</p>
+<p><strong>内存优化技术</strong></p>
+<ol>
+<li>
+<p><strong>线性八叉树</strong>：使用Morton编码将树结构线性化
+$$\text{MortonCode}(x,y,z) = \sum_{i=0}^{L-1} 2^{3i}[(x_i) + 2(y_i) + 4(z_i)]$$
+其中 $x_i, y_i, z_i$ 是坐标的第 $i$ 位</p>
+</li>
+<li>
+<p><strong>节点池分配</strong>：预分配大块内存，减少碎片
+   <code>nodePool = AllocateBlock(MAX_NODES * sizeof(OctreeNode))
+   freeList = InitializeFreeList(nodePool)</code></p>
+</li>
+<li>
+<p><strong>LOD（细节层次）</strong>：存储多分辨率版本
+   - 粗糙级别用于远处物体
+   - 精细级别用于近处细节
+   - 级别间的平滑过渡</p>
+</li>
+</ol>
+<p><strong>Morton编码的位交织实现</strong></p>
+<p>Morton编码的核心是位交织操作。对于32位整数：</p>
+<pre class="codehilite"><code>uint32_t expandBits(uint32_t v) {
+    v = (v * 0x00010001u) &amp; 0xFF0000FFu;
+    v = (v * 0x00000101u) &amp; 0x0F00F00Fu;
+    v = (v * 0x00000011u) &amp; 0xC30C30C3u;
+    v = (v * 0x00000005u) &amp; 0x49249249u;
+    return v;
+}
+
+uint32_t morton3D(uint32_t x, uint32_t y, uint32_t z) {
+    return expandBits(x) | (expandBits(y) &lt;&lt; 1) | (expandBits(z) &lt;&lt; 2);
+}
+</code></pre>
+
+<p>这种编码保持了空间局部性：相邻的Morton码对应空间中相近的位置。</p>
+<p><strong>紧凑指针结构</strong></p>
+<p>为进一步减少内存，使用紧凑的指针表示：</p>
+<pre class="codehilite"><code>struct CompactOctreeNode {
+    uint32_t childrenOffset; // 相对于节点池的偏移
+    uint8_t validMask;       // 位掩码指示哪些子节点存在
+    uint8_t leafMask;        // 位掩码指示哪些子节点是叶子
+    // 数据紧随其后
+};
+</code></pre>
+
+<p>这将每个节点的开销从64字节降低到约16字节。</p>
+<p><strong>并行构建算法</strong></p>
+<p>利用GPU并行性加速八叉树构建：</p>
+<ol>
+<li>
+<p><strong>自顶向下构建</strong>：
+   - 并行计算每个节点的占用状态
+   - 使用原子操作分配子节点
+   - 复杂度：$O(\log N)$ 并行步骤</p>
+</li>
+<li>
+<p><strong>自底向上构建</strong>：
+   - 首先对所有点进行空间排序（Morton编码）
+   - 并行识别节点边界
+   - 自底向上合并构建树
+   - 复杂度：$O(N \log N)$ 工作量，$O(\log N)$ 深度</p>
+</li>
+</ol>
+<p><strong>基于合并的并行构建</strong></p>
+<p>给定排序后的点集，使用分治策略：</p>
+<ol>
+<li>
+<p><strong>划分阶段</strong>：找到分割点将点集分为8个子集
+   <code>parallel for each level l:
+       for each node at level l:
+           splitPoints = FindOctantBoundaries(points)
+           AssignPointsToChildren(points, splitPoints)</code></p>
+</li>
+<li>
+<p><strong>合并阶段</strong>：自底向上合并节点信息
+   <code>parallel for each level l from leaf to root:
+       for each node at level l:
+           node.bounds = Union(children.bounds)
+           node.density = Average(children.density)</code></p>
+</li>
+</ol>
+<p><strong>GPU优化策略</strong></p>
+<ol>
+<li><strong>宽度优先遍历</strong>：适合GPU的SIMD执行模型</li>
+<li><strong>紧凑存储布局</strong>：最大化合并内存访问</li>
+<li><strong>工作负载平衡</strong>：使用工作窃取模式处理不均匀的树结构</li>
+<li><strong>流压缩</strong>：即时压缩稀疏节点，减少内存带宽</li>
+</ol>
+<p>这些优化使得可以在毫秒级时间内构建包含数百万节点的八叉树。</p>
+<h2 id="92-plenoxels">9.2 Plenoxels：球谐函数体素</h2>
+<h3 id="921">9.2.1 球谐函数回顾</h3>
+<p>球谐函数 $Y_{\ell}^m(\theta, \phi)$ 形成了球面 $S^2$ 上平方可积函数的完备正交基。它们是拉普拉斯-贝尔特拉米算子在球面上的本征函数：
+$$\nabla^2_{S^2} Y_{\ell}^m = -\ell(\ell+1) Y_{\ell}^m$$
+复球谐函数定义为：
+$$Y_{\ell}^m(\theta, \phi) = \sqrt{\frac{2\ell+1}{4\pi}\frac{(\ell-m)!}{(\ell+m)!}} P_{\ell}^m(\cos\theta) e^{im\phi}$$
+其中 $P_{\ell}^m$ 是关联勒让德多项式，满足：
+$$P_{\ell}^m(x) = (-1)^m (1-x^2)^{m/2} \frac{d^m}{dx^m} P_{\ell}(x)$$
+对于计算机图形学中的实值函数，我们使用实球谐函数基：</p>
+<ul>
+<li>$Y_{\ell m} = \sqrt{2} \Re(Y_{\ell}^m) = \sqrt{2} N_{\ell}^m P_{\ell}^m(\cos\theta) \cos(m\phi)$ 当 $m &gt; 0$</li>
+<li>$Y_{\ell 0} = N_{\ell}^0 P_{\ell}(\cos\theta)$ 当 $m = 0$</li>
+<li>$Y_{\ell m} = \sqrt{2} \Im(Y_{\ell}^{|m|}) = \sqrt{2} N_{\ell}^{|m|} P_{\ell}^{|m|}(\cos\theta) \sin(|m|\phi)$ 当 $m &lt; 0$</li>
+</ul>
+<p>前几阶的具体形式：</p>
+<ul>
+<li>$Y_{00} = \frac{1}{2\sqrt{\pi}}$ （常数项）</li>
+<li>$Y_{1,-1} = \sqrt{\frac{3}{4\pi}} y$，$Y_{10} = \sqrt{\frac{3}{4\pi}} z$，$Y_{11} = \sqrt{\frac{3}{4\pi}} x$</li>
+<li>$Y_{2,-2} = \frac{1}{2}\sqrt{\frac{15}{\pi}} xy$，等等</li>
+</ul>
+<h3 id="922-plenoxels">9.2.2 Plenoxels 表示</h3>
+<p>Plenoxels（"Plenoptic Voxels"的缩写）是一种纯显式优化方法，完全避免了神经网络。在每个体素中存储：</p>
+<ol>
+<li><strong>体积密度</strong> $\sigma \in \mathbb{R}^+$：控制不透明度</li>
+<li><strong>球谐系数</strong> $\mathbf{k} \in \mathbb{R}^{(L+1)^2 \times 3}$：编码视角相关的RGB颜色</li>
+</ol>
+<p>视角相关的辐射通过球谐展开计算：
+$$\mathbf{c}(\mathbf{x}, \mathbf{d}) = \text{sigmoid}\left(\sum_{\ell=0}^{L} \sum_{m=-\ell}^{\ell} \mathbf{k}_{\ell m}(\mathbf{x}) Y_{\ell m}(\mathbf{d})\right)$$
+其中：</p>
+<ul>
+<li>$L$ 是最大阶数（$L=0$：1个系数，$L=1$：4个系数，$L=2$：9个系数）</li>
+<li>sigmoid函数确保颜色值在 $[0,1]$ 范围内</li>
+<li>高阶项捕获高频视角变化（镜面反射等）</li>
+</ul>
+<h3 id="923">9.2.3 直接优化</h3>
+<p>与NeRF不同，Plenoxels直接优化体素参数，无需神经网络。这导致了一个大规模但结构化的优化问题。损失函数包含数据项和正则化项：
+$$\mathcal{L} = \mathcal{L}_{\text{data}} + \lambda_{\text{TV}} \mathcal{L}_{\text{TV}} + \lambda_{\text{sparse}} \mathcal{L}_{\text{sparse}}$$
+<strong>数据项</strong>衡量渲染图像与真实图像的差异：
+$$\mathcal{L}_{\text{data}} = \sum_{\mathbf{r} \in \mathcal{R}} |\hat{C}(\mathbf{r}) - C(\mathbf{r})|^2$$
+<strong>总变差（TV）正则化</strong>促进空间平滑性：
+$$\mathcal{L}_{\text{TV}} = \sum_{i,j,k} \left(|\sigma_{i+1,j,k} - \sigma_{i,j,k}|^2 + |\sigma_{i,j+1,k} - \sigma_{i,j,k}|^2 + |\sigma_{i,j,k+1} - \sigma_{i,j,k}|^2\right)$$
+这等价于各向异性TV范数，防止密度场出现噪声。</p>
+<p><strong>稀疏性正则化</strong>鼓励空体素：
+$$\mathcal{L}_{\text{sparse}} = \sum_{i,j,k} \log(1 + \sigma_{ijk}^2/\epsilon^2)$$
+这是 $\ell_1$ 范数的平滑近似，避免了不可微点。</p>
+<p>优化使用Adam优化器，学习率调度遵循：
+$$\eta(t) = \eta_0 \cdot 0.1^{t/T}$$
+梯度通过可微体积渲染反向传播：
+$$\frac{\partial \mathcal{L}}{\partial \sigma_{ijk}} = \sum_{\mathbf{r} \text{ through } (i,j,k)} \frac{\partial \mathcal{L}}{\partial C(\mathbf{r})} \frac{\partial C(\mathbf{r})}{\partial \sigma_{ijk}}$$</p>
+<h2 id="93-tensorf">9.3 TensoRF：张量分解辐射场</h2>
+<h3 id="931">9.3.1 张量分解基础</h3>
+<p>TensoRF的核心洞察是辐射场具有低秩结构——场景中的规律性（平面、对称性、重复纹理）导致信息冗余。通过张量分解，我们可以用紧凑的因子表示高维数据。</p>
+<p>考虑4D辐射场张量 $\mathcal{T} \in \mathbb{R}^{X \times Y \times Z \times C}$，其中前三维是空间坐标，第四维是特征通道。</p>
+<p><strong>CP分解（CANDECOMP/PARAFAC）</strong>将张量表示为秩-1张量的和：
+$$\mathcal{T} = \sum_{r=1}^{R} \lambda_r \cdot \mathbf{u}_r \otimes \mathbf{v}_r \otimes \mathbf{w}_r \otimes \mathbf{s}_r$$
+其中：</p>
+<ul>
+<li>$\lambda_r$ 是权重</li>
+<li>$\mathbf{u}_r \in \mathbb{R}^X$，$\mathbf{v}_r \in \mathbb{R}^Y$，$\mathbf{w}_r \in \mathbb{R}^Z$，$\mathbf{s}_r \in \mathbb{R}^C$ 是因子向量</li>
+<li>$\otimes$ 表示外积</li>
+</ul>
+<p>元素形式：
+$$\mathcal{T}_{ijkc} = \sum_{r=1}^{R} \lambda_r u_{ri} v_{rj} w_{rk} s_{rc}$$
+<strong>向量-矩阵（VM）分解</strong>是CP分解的推广，将某些模式组合成矩阵：
+$$\mathcal{T} = \sum_{r=1}^{R_1} \mathbf{M}_{r,xy} \otimes \mathbf{v}_{r,z} \otimes \mathbf{b}_{r,1} + \sum_{r=1}^{R_2} \mathbf{M}_{r,xz} \otimes \mathbf{v}_{r,y} \otimes \mathbf{b}_{r,2} + \sum_{r=1}^{R_3} \mathbf{M}_{r,yz} \otimes \mathbf{v}_{r,x} \otimes \mathbf{b}_{r,3}$$
+其中 $\mathbf{M}_{r,\cdot} \in \mathbb{R}^{D_1 \times D_2}$ 是矩阵因子。这种分解更灵活，可以捕获平面结构。</p>
+<h3 id="932">9.3.2 密度和外观分解</h3>
+<p>TensoRF 分别建模密度和外观，利用它们的不同特性：</p>
+<p><strong>密度场</strong>使用VM分解：
+$$\sigma(\mathbf{x}) = \text{ReLU}\left(\sum_{r=1}^{R_\sigma} \left\langle \mathbf{A}_r^{\sigma}, \mathbf{x} \right\rangle + b_\sigma\right)$$
+其中 $\mathbf{A}_r^{\sigma}$ 是通过VM分解得到的：
+$$\mathbf{A}_r^{\sigma} = \sum_{i=1}^{3} \mathbf{M}_{r,i}^{\sigma} \otimes \mathbf{v}_{r,i}^{\sigma}$$
+这种分解特别适合表示平面结构（墙壁、地板）和轴对齐的几何。</p>
+<p><strong>外观场</strong>结合张量分解和小型神经网络：
+$$\mathbf{c}(\mathbf{x}, \mathbf{d}) = \mathcal{F}_\theta\left(\mathbf{f}_{\text{app}}(\mathbf{x}), \mathbf{d}\right)$$
+其中外观特征 $\mathbf{f}_{\text{app}}(\mathbf{x})$ 通过VM分解计算：
+$$\mathbf{f}_{\text{app}}(\mathbf{x}) = \sum_{r=1}^{R_c} \left\langle \mathbf{A}_r^{c}, \mathbf{x} \right\rangle$$
+解码器 $\mathcal{F}_\theta$ 是一个2层MLP，将空间特征和视角方向映射到RGB颜色：
+$$\mathcal{F}_\theta: \mathbb{R}^{R_c} \times S^2 \rightarrow [0,1]^3$$
+这种混合方法平衡了表达能力和计算效率。</p>
+<h3 id="933">9.3.3 存储和计算复杂度</h3>
+<p><strong>存储分析</strong>：</p>
+<p>对于分辨率 $N^3$ 的密集网格，原始存储需求为 $O(N^3C)$，其中 $C$ 是每个体素的通道数。</p>
+<p>TensoRF的存储需求：</p>
+<ul>
+<li><strong>CP分解</strong>：每个秩-1分量需要 $3N$ 个参数，总共 $3RN$ 参数</li>
+<li><strong>VM分解</strong>：每个平面 $N^2$ 参数，每个向量 $N$ 参数，总共 $R(N^2 + N) \approx RN^2$ 参数</li>
+</ul>
+<p>压缩率：
+$$\text{压缩率} = \frac{N^3C}{RN^2} = \frac{NC}{R}$$
+典型情况下，$N=300$，$C=4$，$R=16$，压缩率约为 75×。</p>
+<p><strong>计算复杂度</strong>：</p>
+<p>查询单个点的值：</p>
+<ul>
+<li>密集网格：$O(1)$ 数组访问</li>
+<li>CP分解：$O(R)$ 向量内积计算</li>
+<li>VM分解：$O(R)$ 矩阵-向量乘法</li>
+</ul>
+<p>虽然单点查询更慢，但：</p>
+<ol>
+<li>$R \ll N$（通常 $R \sim 16-48$）</li>
+<li>向量运算可以高效并行化</li>
+<li>缓存局部性更好（因子向量可以驻留在缓存中）</li>
+</ol>
+<h2 id="94">9.4 低秩与稀疏表示</h2>
+<h3 id="941">9.4.1 数学基础</h3>
+<p>辐射场的低秩结构源于场景的内在规律性——平坦表面、重复纹理、对称性等。这些规律性在适当的基下表现为数据矩阵的低秩性。</p>
+<p><strong>奇异值分解（SVD）</strong>提供了最优低秩近似。对于矩阵 $\mathbf{A} \in \mathbb{R}^{m \times n}$：
+$$\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T = \sum_{i=1}^{r} \sigma_i \mathbf{u}_i \mathbf{v}_i^T$$
+其中：</p>
+<ul>
+<li>$\mathbf{U} \in \mathbb{R}^{m \times r}$：左奇异向量</li>
+<li>$\mathbf{\Sigma} = \text{diag}(\sigma_1, ..., \sigma_r)$：奇异值，$\sigma_1 \geq \sigma_2 \geq ... \geq \sigma_r &gt; 0$</li>
+<li>$\mathbf{V} \in \mathbb{R}^{n \times r}$：右奇异向量</li>
+</ul>
+<p><strong>Eckart-Young定理</strong>：最优 $k$ 秩近似（在任何酉不变范数下）是：
+$$\mathbf{A}_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^T$$
+近似误差：
+$$|\mathbf{A} - \mathbf{A}_k|_F = \sqrt{\sum_{i=k+1}^{r} \sigma_i^2}$$
+$$|\mathbf{A} - \mathbf{A}_k|_2 = \sigma_{k+1}$$
+<strong>有效秩</strong>衡量矩阵的"近似秩"：
+$$r_{\text{eff}}(\mathbf{A}) = \frac{|\mathbf{A}|_F^2}{|\mathbf{A}|_2^2} = \frac{\sum_{i=1}^r \sigma_i^2}{\sigma_1^2}$$
+当奇异值快速衰减时，有效秩远小于真实秩，表明数据可压缩。</p>
+<h3 id="942">9.4.2 稀疏性诱导</h3>
+<p>许多场景在适当的变换域中是稀疏的。关键是找到使信号稀疏的基。</p>
+<p><strong>稀疏表示问题</strong>：给定过完备字典 $\mathbf{D} \in \mathbb{R}^{n \times p}$（$p &gt; n$），寻找稀疏系数 $\mathbf{w}$：
+$$\mathbf{f} = \mathbf{D}\mathbf{w}, \quad |\mathbf{w}|_0 \ll p$$
+其中 $|\mathbf{w}|_0$ 计算非零元素个数。</p>
+<p>由于 $\ell_0$ 优化是NP难的，我们使用 $\ell_1$ 松弛：
+$$\min_{\mathbf{w}} \frac{1}{2}|\mathbf{y} - \mathbf{D}\mathbf{w}|_2^2 + \lambda|\mathbf{w}|_1$$
+这是LASSO问题，可通过多种算法求解：</p>
+<p><strong>迭代收缩阈值算法（ISTA）</strong>：
+$$\mathbf{w}^{(k+1)} = \mathcal{S}_{\lambda/L}\left(\mathbf{w}^{(k)} + \frac{1}{L}\mathbf{D}^T(\mathbf{y} - \mathbf{D}\mathbf{w}^{(k)})\right)$$
+其中 $\mathcal{S}_\tau(x) = \text{sign}(x)\max(|x|-\tau, 0)$ 是软阈值算子，$L$ 是 $\mathbf{D}^T\mathbf{D}$ 的最大特征值。</p>
+<p><strong>快速ISTA（FISTA）</strong>通过动量加速收敛：
+$$\mathbf{z}^{(k+1)} = \mathbf{w}^{(k)} + \frac{k-1}{k+2}(\mathbf{w}^{(k)} - \mathbf{w}^{(k-1)})$$
+收敛率从 $O(1/k)$ 提升到 $O(1/k^2)$。</p>
+<h3 id="943">9.4.3 压缩感知视角</h3>
+<p>压缩感知理论表明，稀疏信号可以从远少于奈奎斯特速率的测量中精确重建。</p>
+<p><strong>限制等距性质（RIP）</strong>：矩阵 $\mathbf{A}$ 满足阶为 $s$ 的RIP，如果存在 $\delta_s \in (0,1)$ 使得对所有 $s$-稀疏向量 $\mathbf{x}$：
+$$(1-\delta_s)|\mathbf{x}|_2^2 \leq |\mathbf{A}\mathbf{x}|_2^2 \leq (1+\delta_s)|\mathbf{x}|_2^2$$
+<strong>重建保证</strong>：如果 $\mathbf{A}$ 满足 $\delta_{2s} &lt; \sqrt{2} - 1$，则 $\ell_1$ 最小化的解 $\mathbf{x}^<em>$ 满足：
+$$|\mathbf{x}^</em> - \mathbf{x}|_2 \leq \frac{C}{\sqrt{s}}|\mathbf{x} - \mathbf{x}_s|_1 + C'\epsilon$$
+其中 $\mathbf{x}_s$ 是 $\mathbf{x}$ 的最佳 $s$ 项近似，$\epsilon$ 是测量噪声。</p>
+<p>对于辐射场重建：</p>
+<ul>
+<li><strong>测量</strong>：多视角图像（每个像素是一个线性测量）</li>
+<li><strong>信号</strong>：体素化的场景表示</li>
+<li><strong>稀疏基</strong>：小波、DCT或学习的字典</li>
+</ul>
+<p>所需测量数：$M = O(s\log(N/s))$，其中 $s$ 是稀疏度，$N$ 是信号维度。</p>
+<h2 id="95">9.5 显式与隐式权衡</h2>
+<h3 id="951">9.5.1 内存占用</h3>
+<p><strong>隐式（NeRF）</strong>：</p>
+<ul>
+<li>固定大小：$O(W \times L)$，其中 $W$ 是宽度，$L$ 是层数</li>
+<li>与场景复杂度无关</li>
+<li>典型值：~5MB</li>
+</ul>
+<p><strong>显式（体素）</strong>：</p>
+<ul>
+<li>密集：$O(N^3 \times C)$</li>
+<li>稀疏：$O(N_{\text{occupied}} \times C)$</li>
+<li>低秩：$O(R \times N \times C)$</li>
+<li>典型值：100MB-10GB</li>
+</ul>
+<h3 id="952">9.5.2 渲染速度</h3>
+<p><strong>查询复杂度</strong>：</p>
+<ul>
+<li>隐式：$O(L)$ 神经网络前向传播</li>
+<li>显式：$O(1)$ 数组查找或 $O(\log N)$ 树遍历</li>
+</ul>
+<p><strong>缓存效率</strong>：</p>
+<ul>
+<li>显式方法具有更好的空间局部性</li>
+<li>可以利用GPU纹理硬件</li>
+</ul>
+<h3 id="953">9.5.3 训练特性</h3>
+<p><strong>收敛速度</strong>：</p>
+<ul>
+<li>显式：直接优化，收敛更快</li>
+<li>隐式：通过梯度下降，需要更多迭代</li>
+</ul>
+<p><strong>表示能力</strong>：</p>
+<ul>
+<li>隐式：平滑先验，更好的插值</li>
+<li>显式：可以表示高频细节，但可能过拟合</li>
+</ul>
+<h3 id="954">9.5.4 统一视角</h3>
+<p>两种方法都解决相同的体积渲染方程：
+$$C(\mathbf{r}) = \int_{t_n}^{t_f} T(t)\sigma(t)\mathbf{c}(t,\mathbf{d})dt$$
+区别在于如何表示 $\sigma$ 和 $\mathbf{c}$：</p>
+<ul>
+<li>隐式：$\sigma = f_\theta(\gamma(\mathbf{x}))$</li>
+<li>显式：$\sigma = \text{interp}({\sigma_{ijk}})$</li>
+</ul>
+<p>选择取决于具体应用需求。</p>
+<h2 id="_1">本章小结</h2>
+<p>本章探讨了神经辐射场的显式表示方法，展示了如何将离散空间结构统一到体积渲染框架中：</p>
+<p><strong>核心概念</strong>：</p>
+<ol>
+<li><strong>体素网格</strong>：最直接的显式表示，通过三线性插值实现连续性</li>
+<li><strong>Plenoxels</strong>：使用球谐函数编码视角相关效果，直接优化无需神经网络</li>
+<li><strong>TensoRF</strong>：通过张量分解实现紧凑表示，将存储从 $O(N^3)$ 降至 $O(RN)$</li>
+<li><strong>低秩结构</strong>：利用场景的内在规律性进行压缩</li>
+</ol>
+<p><strong>关键公式</strong>：</p>
+<ul>
+<li>离散体积渲染：$C(\mathbf{r}) = \sum_{n=1}^{N} T_n \alpha_n \mathbf{c}_n$</li>
+<li>球谐展开：$\mathbf{c}(\mathbf{d}) = \sum_{\ell,m} \mathbf{k}_{\ell m} Y_{\ell m}(\mathbf{d})$</li>
+<li>张量分解：$\mathcal{T} = \sum_{r=1}^{R} \mathbf{u}_r \otimes \mathbf{v}_r \otimes \mathbf{w}_r \otimes \mathbf{s}_r$</li>
+</ul>
+<p><strong>实践要点</strong>：</p>
+<ul>
+<li>显式方法提供更快的查询速度但需要更多内存</li>
+<li>低秩和稀疏表示在保持质量的同时大幅减少存储</li>
+<li>选择显式或隐式取决于速度、内存和质量的权衡</li>
+</ul>
+<h2 id="_2">练习题</h2>
+<h3 id="_3">基础题</h3>
+<p><strong>练习 9.1：八叉树遍历复杂度</strong>
+证明在平衡八叉树中，从根到叶的平均遍历深度是 $O(\log N)$，其中 $N$ 是叶节点数。</p>
+<details>
+<summary>提示</summary>
+<p>考虑深度为 $d$ 的完全八叉树最多包含多少叶节点。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>深度为 $d$ 的完全八叉树最多有 $8^d$ 个叶节点。</p>
+<p>如果有 $N$ 个叶节点，则最小深度 $d$ 满足：
+$$8^{d-1} &lt; N \leq 8^d$$
+取对数：
+$$d-1 &lt; \log_8 N \leq d$$
+因此 $d = \lceil \log_8 N \rceil = O(\log N)$。</p>
+<p>平均情况下，假设叶节点均匀分布，平均深度约为 $\log_8 N$。</p>
+</details>
+<p><strong>练习 9.2：球谐函数正交性</strong>
+证明前两阶球谐函数在单位球面上正交：
+$$\int_{S^2} Y_{\ell m}(\mathbf{d}) Y_{\ell' m'}(\mathbf{d}) d\mathbf{d} = \delta_{\ell\ell'}\delta_{mm'}$$</p>
+<details>
+<summary>提示</summary>
+<p>使用球坐标 $(\theta, \phi)$ 并利用关联勒让德多项式的正交性。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>在球坐标中：
+$$\int_{S^2} Y_{\ell m} Y_{\ell' m'} d\mathbf{d} = \int_0^{2\pi} \int_0^{\pi} Y_{\ell m}(\theta,\phi) Y_{\ell' m'}(\theta,\phi) \sin\theta d\theta d\phi$$
+代入球谐函数定义：
+$$= \sqrt{\frac{(2\ell+1)(2\ell'+1)}{16\pi^2} \frac{(\ell-m)!(\ell'-m')!}{(\ell+m)!(\ell'+m')!}} \times$$
+$$\int_0^{2\pi} e^{i(m-m')\phi} d\phi \int_0^{\pi} P_{\ell}^m(\cos\theta) P_{\ell'}^{m'}(\cos\theta) \sin\theta d\theta$$
+方位角积分给出 $2\pi\delta_{mm'}$。</p>
+<p>对于极角积分，令 $x = \cos\theta$：
+$$\int_{-1}^{1} P_{\ell}^m(x) P_{\ell'}^{m}(x) dx = \frac{2}{2\ell+1} \frac{(\ell+m)!}{(\ell-m)!} \delta_{\ell\ell'}$$
+组合所有项得到 $\delta_{\ell\ell'}\delta_{mm'}$。</p>
+</details>
+<p><strong>练习 9.3：三线性插值连续性</strong>
+证明三线性插值在体素边界处是 $C^0$ 连续但不是 $C^1$ 连续。</p>
+<details>
+<summary>提示</summary>
+<p>检查跨越体素边界时函数值和导数的行为。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>考虑1D情况的线性插值：
+$$f(x) = f_0(1-x) + f_1 x, \quad x \in [0,1]$$
+在边界 $x=1$ 处，从当前体素：$f(1^-) = f_1$
+从相邻体素（新坐标系）：$f(0^+) = f_1$</p>
+<p>因此函数值连续（$C^0$）。</p>
+<p>但导数：</p>
+<ul>
+<li>当前体素：$f'(1^-) = f_1 - f_0$</li>
+<li>相邻体素：$f'(0^+) = f_2 - f_1$</li>
+</ul>
+<p>一般情况下 $f'(1^-) \neq f'(0^+)$，所以不是 $C^1$ 连续。</p>
+<p>三线性情况类似，在每个维度独立应用。</p>
+</details>
+<h3 id="_4">挑战题</h3>
+<p><strong>练习 9.4：张量分解误差界</strong>
+给定秩为 $r$ 的 3 阶张量 $\mathcal{T} \in \mathbb{R}^{n \times n \times n}$，推导 CP 分解的最优 $k$ 项近似误差界。</p>
+<details>
+<summary>提示</summary>
+<p>类比矩阵 SVD 的 Eckart-Young 定理，但注意张量情况更复杂。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>与矩阵不同，张量的最优低秩近似不一定由截断的CP分解给出。但我们可以建立界限。</p>
+<p>设 $\mathcal{T}_k$ 是最优 $k$ 秩近似，$\tilde{\mathcal{T}}_k$ 是 $k$ 项CP分解。则：
+$$|\mathcal{T} - \tilde{\mathcal{T}}_k|_F \leq \sqrt{1 + \epsilon_k} |\mathcal{T} - \mathcal{T}_k|_F$$
+其中 $\epsilon_k$ 依赖于张量的条件数。</p>
+<p>对于"良态"张量（如低秩加噪声），CP分解给出近最优近似：
+$$|\mathcal{T} - \tilde{\mathcal{T}}_k|_F \leq C\sqrt{\sum_{i=k+1}^r \lambda_i^2}$$
+其中 $\lambda_i$ 是张量的"奇异值"（通过高阶SVD定义），$C$ 是常数。</p>
+</details>
+<p><strong>练习 9.5：稀疏八叉树的期望存储</strong>
+考虑在单位立方体中均匀分布的 $M$ 个点，每个点占据半径 $\epsilon$ 的球。推导存储这些点所需的八叉树节点数的期望值。</p>
+<details>
+<summary>提示</summary>
+<p>计算不同深度级别的期望占用体素数。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>在深度 $d$ 处，体素大小为 $2^{-d}$。</p>
+<p>一个半径 $\epsilon$ 的球与体素相交的条件是球心到体素的距离 $\leq \epsilon + \frac{\sqrt{3}}{2} \cdot 2^{-d}$。</p>
+<p>在深度 $d$ 的期望占用体素数：
+$$E[N_d] = \min\left(8^d, M \cdot V_{\text{intersection}}(d) \cdot 8^d\right)$$
+其中 $V_{\text{intersection}}(d)$ 是相交体积。</p>
+<p>当 $2^{-d} \gg \epsilon$：一个球占据 $O(1)$ 个体素
+当 $2^{-d} \ll \epsilon$：一个球占据 $O((\epsilon \cdot 2^d)^3)$ 个体素</p>
+<p>最优深度约为 $d^<em> = \log_2(1/\epsilon)$，总存储：
+$$E[N_{\text{total}}] = O(M) + O(M(\epsilon \cdot 2^{d^</em>})^3) = O(M)$$</p>
+<p>因此稀疏八叉树存储与点数成线性关系。</p>
+</details>
+<p><strong>练习 9.6：Plenoxels vs NeRF 收敛分析</strong>
+分析为什么直接优化体素参数（Plenoxels）比通过神经网络（NeRF）收敛更快。考虑优化landscape和梯度流。</p>
+<details>
+<summary>提示</summary>
+<p>比较参数到输出的映射复杂度和梯度传播路径。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p><strong>Plenoxels 优化景观</strong>：</p>
+<ul>
+<li>参数直接映射到输出：$\theta_{ijk} \rightarrow C(\mathbf{r})$</li>
+<li>凸优化问题（对每个体素独立）</li>
+<li>梯度：$\frac{\partial \mathcal{L}}{\partial \theta_{ijk}} = \sum_{\mathbf{r} \text{ through } ijk} \frac{\partial \mathcal{L}}{\partial C(\mathbf{r})} \frac{\partial C(\mathbf{r})}{\partial \theta_{ijk}}$</li>
+</ul>
+<p><strong>NeRF 优化景观</strong>：</p>
+<ul>
+<li>非凸，多个局部最小值</li>
+<li>梯度通过多层网络：$\frac{\partial \mathcal{L}}{\partial \mathbf{W}} = \frac{\partial \mathcal{L}}{\partial C} \prod_{l} \frac{\partial f_l}{\partial f_{l-1}} \frac{\partial f_1}{\partial \mathbf{W}}$</li>
+<li>梯度消失/爆炸问题</li>
+</ul>
+<p><strong>收敛速度差异</strong>：</p>
+<ol>
+<li><strong>条件数</strong>：Plenoxels 的 Hessian 对角占优，条件数更好</li>
+<li><strong>局部性</strong>：每个体素参数主要影响局部区域</li>
+<li><strong>并行性</strong>：体素更新可以并行进行</li>
+</ol>
+<p>理论上，Plenoxels 的收敛速度为 $O(1/t)$（凸优化），而 NeRF 为 $O(1/\sqrt{t})$（非凸）。</p>
+</details>
+<h2 id="_5">常见陷阱与错误</h2>
+<ol>
+<li>
+<p><strong>内存爆炸</strong>：密集体素网格的 $O(N^3)$ 增长
+   - 调试技巧：始终从粗分辨率开始，监控内存使用</p>
+</li>
+<li>
+<p><strong>混叠伪影</strong>：采样不足导致的摩尔纹
+   - 调试技巧：使用抗混叠滤波器，增加超采样</p>
+</li>
+<li>
+<p><strong>数值不稳定</strong>：张量分解中的退化情况
+   - 调试技巧：添加小的正则化项 $\epsilon I$，使用稳定的初始化</p>
+</li>
+<li>
+<p><strong>边界伪影</strong>：体素边界的不连续性
+   - 调试技巧：扩展边界体素，使用更高阶插值</p>
+</li>
+<li>
+<p><strong>稀疏性与质量权衡</strong>：过度稀疏化导致细节丢失
+   - 调试技巧：使用自适应阈值，保留重要区域</p>
+</li>
+<li>
+<p><strong>球谐截断误差</strong>：低阶球谐不能表示高频
+   - 调试技巧：分析频谱内容，自适应选择阶数</p>
+</li>
+</ol>
+<h2 id="_6">最佳实践检查清单</h2>
+<p>设计显式神经表示时，确保：</p>
+<ul>
+<li>[ ] <strong>分辨率选择</strong>：基于场景尺度和可用内存选择合适的体素分辨率</li>
+<li>[ ] <strong>稀疏性策略</strong>：实现高效的稀疏数据结构（八叉树、哈希表）</li>
+<li>[ ] <strong>插值方法</strong>：选择适当的插值（三线性、三次样条）平衡质量和速度</li>
+<li>[ ] <strong>压缩技术</strong>：应用低秩分解或量化减少内存占用</li>
+<li>[ ] <strong>正则化设计</strong>：包含空间平滑性和稀疏性约束</li>
+<li>[ ] <strong>初始化策略</strong>：使用场景先验（如视觉外壳）初始化占用</li>
+<li>[ ] <strong>自适应细化</strong>：实现由误差度量引导的渐进式细化</li>
+<li>[ ] <strong>缓存优化</strong>：组织数据布局以最大化GPU缓存命中率</li>
+<li>[ ] <strong>数值稳定性</strong>：在所有计算中处理退化情况</li>
+<li>[ ] <strong>评估指标</strong>：测量渲染质量、速度和内存使用的权衡</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="./chapter8.html" class="nav-link prev">← 第8章：4D神经表示与频域方法</a><a href="./chapter10.html" class="nav-link next">第10章：3D高斯溅射 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>
